@@ -47,6 +47,7 @@ public:
 			    std::map<std::string, int> &metaInts,
 			    std::map<std::string, std::string> &metaStrings) = 0;
   virtual void readString(const std::string&name, std::string &data) = 0;
+  virtual bool hasVariable(const std::string &variable) = 0;
 #if defined(APLUSPLUS) || defined(PPLUSPLUS)
   virtual void readVariable(const std::string &variable, floatArray &data) = 0;
 #endif
