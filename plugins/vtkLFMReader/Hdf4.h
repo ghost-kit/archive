@@ -28,6 +28,7 @@ public:
 		    std::map<std::string, int> &metaInts,
 		    std::map<std::string, std::string> &metaStrings);
   void readString(const std::string&name, std::string &data);
+  bool hasVariable(const std::string &variable);
 #if defined(APLUSPLUS) || defined(PPLUSPLUS)
   void readVariable(const std::string &variable, floatArray &data);
 #endif

@@ -175,7 +175,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   f.readVariable("Z_grid", Z_grid, rank, dims);   delete []dims;
   
   float *rho = NULL;
-  f.readVariable("rho_",   rho,    rank, dims);   delete []dims;
+  if (f.hasVariable("rho_"))
+      f.readVariable("rho_",   rho,    rank, dims);   delete []dims;
   
   float *c = NULL;
   f.readVariable("c_",     c,      rank, dims);   delete []dims; 

@@ -160,6 +160,19 @@ void Hdf4::readString(const std::string&name, std::string &data)
 
 
 /*******************************************************************************
+ * Returns true if the current file contains a particular variable.
+ ******************************************************************************/
+bool Hdf4::hasVariable(const std::string &variable)
+{
+  int32 varId = SDnametoindex(fileId, variable.c_str());
+  if (varId == -1)
+    return false;
+  else
+    return true;
+}
+
+
+/*******************************************************************************
  * Read @variable into @data.
  *
  * Notes: 
