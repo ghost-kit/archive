@@ -3,6 +3,10 @@
 
 #include "vtkStructuredGridReader.h"
 #include "vtkDelimitedTextReader.h"
+#include "vtkToolkits.h"
+#include "vtkPolyDataAlgorithm.h"
+#include <vtkstd/string>
+#include <vtkstd/vector>
 
 namespace GRID_SCALE
 {
@@ -79,7 +83,11 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
 
   char *HdfFileName;
   int GridScaleType;
-
+  int NumberOfTimeSteps;
+  //BTX    
+  vtkstd::vector<double> TimeStepValues;
+  //ETX
+    
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
@@ -109,7 +117,7 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
 
-private:
+ private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
 };
