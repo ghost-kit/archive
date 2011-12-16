@@ -17,16 +17,19 @@ Hdf4::~Hdf4()
 void Hdf4::open(const string &filename, const int &ioType)
 {
   int32 accessMode;
-  if (ioType == IO::READ){
-    accessMode = DFACC_RDONLY;
-  }
+  
+    
+  if (ioType == IO::READ)
+    {
+      accessMode = DFACC_RDONLY;
+    }
   else if (ioType == IO::WRITE){
     accessMode = DFACC_CREATE;
   }
   else{
     cerr << "ERROR:  " <<__FILE__ << "::" << __FUNCTION__ << "(" << __LINE__ << ") Did not understand ioType" << endl;
   }
-  
+    
   ERRORCHECK( fileId = SDstart(filename.c_str(), accessMode) );
 }
 
@@ -71,7 +74,7 @@ void Hdf4::readMetaData(std::map<std::string, double> &metaDoubles,
     // Get attribute name
     ERRORCHECK( SDattrinfo( fileId, i, attrName, &dataType, &nCharacters) );
 
-      // Read the attribute.
+    // Read the attribute.
     if (dataType == DFNT_FLOAT64){
       double attrValue;
       ERRORCHECK( SDreadattr( fileId, i, &attrValue) );
@@ -183,6 +186,10 @@ void Hdf4::readVariable(const std::string &variable, float *&data, int &rank, in
     indexEnd[i] = 0;
   }
   /*Get the info about the dataset */
+  cout << "========" << endl;
+  cout << "FileID: " << fileId << endl;
+  cout << "Variable: " << variable << endl;
+  cout << "========" << endl;
   ERRORCHECK( varId = SDnametoindex(fileId,variable.c_str()) );
 
   SDselectId = SDselect(fileId,varId);

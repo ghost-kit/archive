@@ -1,39 +1,109 @@
 <ServerManagerConfiguration>
-  <ProxyGroup name="sources">
-    <SourceProxy 
-       name="vtkLFMReader"
-       class="vtkLFMReader">
-      <StringVectorProperty
-         name="FileName"
-	 animateable="0"
-         command="SetFileName"
-         number_of_elements="1">
-        <FileListDomain name="files"/>
-      </StringVectorProperty>
-
-      <IntVectorProperty
-         name="GridScaleFactor"
-         command="SetGridScaleType"
-         number_of_elements="1"
-         default_values="0">
-	<!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkLfmReader.h! -->
-        <EnumerationDomain name="enum">
-	  <Entry value="0" text="No scaling: 1.0"/>
-          <Entry value="1" text="Earth Radius: 6.5e8 cm"/>
-          <Entry value="2" text="Solar Radius: 6.955e10 cm"/>
-          <Entry value="3" text="Astronomical Unit: 1.5e13 cm"/>
-        </EnumerationDomain>
-        <Documentation>
-          This property indicates which transform mode will be used.
-        </Documentation>
-      </IntVectorProperty>
-
-      <Hints>
-        <ReaderFactory
-	   extensions="hdf"
-	   file_description="LFM Data File"/>
-      </Hints>
-
-    </SourceProxy>
-  </ProxyGroup>
+   
+<!-- This proxy group is for the actual reader.  If this wasn't a time series capable reader, this all you would need, but the proxy group name would have to be "sources" -->
+    
+    <ProxyGroup name="internal_sources">
+        <SourceProxy 
+            name="vtkLFMReader"
+            class="vtkLFMReader">
+            <StringVectorProperty
+                name="FileName"
+                animateable="0"
+                command="SetFileName"
+                number_of_elements="1">
+                <FileListDomain name="files"/>
+            </StringVectorProperty>
+            
+            <IntVectorProperty
+                name="GridScaleFactor"
+                command="SetGridScaleType"
+                number_of_elements="1"
+                default_values="0">
+                <!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkLfmReader.h! -->
+                <EnumerationDomain name="enum">
+                    <Entry value="0" text="No scaling: 1.0"/>
+                    <Entry value="1" text="Earth Radius: 6.5e8 cm"/>
+                    <Entry value="2" text="Solar Radius: 6.955e10 cm"/>
+                    <Entry value="3" text="Astronomical Unit: 1.5e13 cm"/>
+                </EnumerationDomain>
+                <Documentation>
+                    This property indicates which transform mode will be used.
+                </Documentation>
+            </IntVectorProperty>
+            
+            
+            <Hints>
+                <ReaderFactory
+                extensions="hdf"
+                file_description="LFM Data File"/>
+            </Hints>
+            
+        </SourceProxy>
+        
+    </ProxyGroup>
+    
+    <!-- This Proxy Group is what makes the time series work.  You must also be exporting your timestep data from your reader code.  Also note that this proxy is set to sources, while we create a new proxy, internal_sources (above) for thea actual reader. -->
+    
+    <ProxyGroup name="sources">
+        
+        <FileSeriesReaderProxy name="vtkLFMReader"
+            class="vtkFileSeriesReader"
+            label="LFM File Reader"
+            file_name_method="SetHdfFileName">
+            <Documentation>
+                This Property makes it possible to open a series of files based on the integered input files.
+            </Documentation>
+            
+            <Hints>
+                <ReaderFactory
+                extensions="hdf"
+                file_description="LFM Data File"/>
+            </Hints>
+            
+            <SubProxy>
+                <Proxy name="Reader"
+                proxygroup="internal_sources" proxyname="vtkLFMReader" />
+                <ExposedProperties>
+                    <Property name="GridScaleFactor" />
+                    
+                </ExposedProperties>
+            </SubProxy>
+            
+            <StringVectorProperty name="FileNameInfo"
+                command="GetCurrentFileName"
+                information_only="1">
+                <SimpleStringInformationHelper />
+            </StringVectorProperty>
+            
+            <StringVectorProperty name="FileNames"
+                clean_command="RemoveAllFileNames"
+                command="AddFileName"
+                animateable="1"
+                number_of_elements="0" 
+                repeat_command="1">
+                <FileListDomain name="files" />
+                <Documentation>
+                    The file or list of files to be read by the reader.
+                    A list of files will be sequenced over time.
+                </Documentation>
+            </StringVectorProperty>
+            
+            <!-- This exposes the Timestep Values to the ParaView UI.  Must be implemented in reader to get the time step values -->
+            
+            <DoubleVectorProperty name="TimestepValues"
+                repeatable="1"
+                information_only="1">
+                <TimeStepsInformationHelper />
+                <Documentation>
+                    Available timestep values.
+                </Documentation>
+            </DoubleVectorProperty>
+        </FileSeriesReaderProxy>
+        
+        
+        
+    </ProxyGroup>
+    
+    
+    
 </ServerManagerConfiguration>
