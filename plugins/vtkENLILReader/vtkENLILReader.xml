@@ -1,0 +1,43 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy 
+       name="vtkENLILReader"
+       class="vtkENLILReader">
+      <StringVectorProperty
+         name="FileName"
+	 animateable="0"
+         command="SetFileName"
+         number_of_elements="1">
+        <FileListDomain name="files"/>
+      </StringVectorProperty>
+
+      <IntVectorProperty
+         name="GridScaleFactor"
+         command="SetGridScaleType"
+         number_of_elements="1"
+         default_values="0">
+	<!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkENLILReader.h! -->
+        <EnumerationDomain name="enum">
+	  <Entry value="0" text="No scaling: 1.0"/>
+          <Entry value="1" text="Earth Radius: 6.5e6 m"/>
+          <Entry value="2" text="Solar Radius: 6.955e8 m"/>
+          <Entry value="3" text="Astronomical Unit: 1.5e11 m"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which transform mode will be used.
+        </Documentation>
+      </IntVectorProperty>
+
+        
+
+        
+      <Hints>
+        <ReaderFactory
+	   extensions="enc"
+	   file_description="ENLIL Data File"/>
+      </Hints>
+
+    </SourceProxy>
+      
+  </ProxyGroup>
+</ServerManagerConfiguration>
