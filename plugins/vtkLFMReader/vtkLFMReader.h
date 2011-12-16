@@ -83,6 +83,14 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
 
   char *HdfFileName;
   int GridScaleType;
+  
+  //THESE VALUES are needed for dealing with Time Steps
+  //  Added TimeStep Variables:
+  //    1) NumberOfTimeSteps
+  //    2) TimeStepValues
+  //
+  //  The BTX and ETX comments must encompase stl calls when in a header file
+  // Added by Joshua Murphy 1 DEC 2011
   int NumberOfTimeSteps;
   //BTX    
   vtkstd::vector<double> TimeStepValues;
