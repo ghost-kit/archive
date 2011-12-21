@@ -199,11 +199,7 @@ void Hdf4::readVariable(const std::string &variable, float *&data, int &rank, in
     indexEnd[i] = 0;
   }
   /*Get the info about the dataset */
-  cout << "========" << endl;
-  cout << "FileID: " << fileId << endl;
-  cout << "Variable: " << variable << endl;
-  cout << "========" << endl;
-  ERRORCHECK( varId = SDnametoindex(fileId,variable.c_str()) );
+   ERRORCHECK( varId = SDnametoindex(fileId,variable.c_str()) );
 
   SDselectId = SDselect(fileId,varId);
   ERRORCHECK( SDgetinfo(SDselectId,dataName,&rank_i32,dimensions_i32,&dataType,&nAttributes) );
