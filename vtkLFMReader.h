@@ -17,18 +17,18 @@ namespace GRID_SCALE
     AU     = 3   
   };
   static const float ScaleFactor[4] = { 1.0,
-					6.5e8,
-					6.955e10,
-					1.5e13 };
+    6.5e8,
+    6.955e10,
+    1.5e13 };
 }
 
 class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
 {
- public:
+public:
   static vtkLFMReader *New();
   vtkTypeMacro(vtkLFMReader, vtkStructuredGridReader);
   void PrintSelf(ostream& os, vtkIndent indent);
-
+  
   /**
    * This method allows you to specify the name of the data file to be
    * loaded by your reader. The method is not required to have this
@@ -51,10 +51,35 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
   virtual void SetFileName(const char *fileName) { this->SetHdfFileName(fileName); }
   vtkGetStringMacro(HdfFileName);
   virtual char *GetFileName() { return this->GetHdfFileName(); }
-
+  
   vtkSetMacro(GridScaleType, int);
   vtkGetMacro(GridScaleType, int);
-
+  
+  
+  /*
+   * Selective Fields
+   */
+  vtkSetMacro(ReadDensityFields, int);
+  vtkGetMacro(ReadDensityFields, int);
+  
+  vtkSetMacro(ReadMagFields, int);
+  vtkGetMacro(ReadMagFields, int);
+  
+  vtkSetMacro(ReadElecFields, int);
+  vtkGetMacro(ReadElecFields, int);
+  
+  vtkSetMacro(ReadVelFields, int);
+  vtkGetMacro(ReadVelFields, int);
+  
+  vtkSetMacro(ReadSoundFields, int);
+  vtkGetMacro(ReadSoundFields, int);
+  
+  vtkSetMacro(ReadAVGMagFields, int);
+  vtkGetMacro(ReadAVGMagFields, int);
+  
+  vtkSetMacro(ReadAVGElecFields, int);
+  vtkGetMacro(ReadAVGElecFields, int);
+  
   /**
    * The purpose of this method is to determine whether
    * this reader can read a specified data file. Its input parameter
@@ -67,35 +92,47 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
    * ParaView will make use of it if it exists.
    */
   static int CanReadFile(const char *filename);
-
+  
   /**
    * Get information about cell-based arrays.  As is typical with
    * readers this in only valid after the filename is set and
    * UpdateInformation() has been called.
    */
-  //int GetNumberOfCellArrays();
-  //const char* GetCellArrayName(int index);
-
-
- protected:
+    //int GetNumberOfCellArrays();
+    //const char* GetCellArrayName(int index);
+  
+  
+protected:
   vtkLFMReader();
   ~vtkLFMReader();
-
+  
   char *HdfFileName;
   int GridScaleType;
   
-  //THESE VALUES are needed for dealing with Time Steps
-  //  Added TimeStep Variables:
-  //    1) NumberOfTimeSteps
-  //    2) TimeStepValues
-  //
-  //  The BTX and ETX comments must encompase stl calls when in a header file
-  // Added by Joshua Murphy 1 DEC 2011
+    //THESE VALUES are needed for dealing with Time Steps
+    //  Added TimeStep Variables:
+    //    1) NumberOfTimeSteps
+    //    2) TimeStepValues
+    //
+    //  The BTX and ETX comments must encompase stl calls when in a header file
+    // Added by Joshua Murphy 1 DEC 2011
   int NumberOfTimeSteps;
-  //BTX    
+    //BTX    
   vtkstd::vector<double> TimeStepValues;
-  //ETX
-    
+    //ETX
+  
+  /*
+   * Values for selective Reading
+   */
+  int ReadDensityFields;
+  int ReadMagFields;
+  int ReadElecFields;
+  int ReadVelFields;
+  int ReadSoundFields;
+  int ReadAVGMagFields;
+  int ReadAVGElecFields;
+  
+  
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
@@ -110,7 +147,7 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
    */
   int RequestInformation(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
   
-
+  
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_DATA request. It should
@@ -124,8 +161,9 @@ class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
    * class. It should return 1 for success and 0 for failure.
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
-
- private:
+  
+  
+private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
 };

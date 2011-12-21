@@ -24,8 +24,8 @@ vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
   this->NumberOfTimeSteps = 1;
-  // print vtkDebugMacro messages by turning debug mode on:
-  //this->DebugOn();
+    // print vtkDebugMacro messages by turning debug mode on:
+    //this->DebugOn();
 }
 
 vtkLFMReader::~vtkLFMReader()
@@ -49,7 +49,7 @@ int vtkLFMReader::CanReadFile(const char *filename)
   
   f.close();
   
-  // Make sure all the relevant metadata exists
+    // Make sure all the relevant metadata exists
   if ( //(metaDoubles.count(string("mjd")) == 0) ||
       (metaInts.count(string("time_step")) == 0) || 
       (metaFloats.count(string("time")) == 0) ||
@@ -65,7 +65,7 @@ int vtkLFMReader::CanReadFile(const char *filename)
   fprintf(stderr,"Time Step: %d\n", (int)metaInts.count(string("time_step")));
   fprintf(stderr,"Time: %f\n", (double)metaFloats["time"]);
   
-  // If we've made it this far, assume it's a valid file.
+    // If we've made it this far, assume it's a valid file.
   return 1;
 }
 
@@ -73,8 +73,8 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
                                       vtkInformationVector** inputVector,
                                       vtkInformationVector* outputVector)
 { 
-  // Read entire extents from Hdf4 file.  This requires reading an
-  // entire variable.  Let's arbitrarily choose X_grid:
+    // Read entire extents from Hdf4 file.  This requires reading an
+    // entire variable.  Let's arbitrarily choose X_grid:
   Hdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
@@ -108,8 +108,8 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   const int nk = nkp1-1;
   
   int extent[6] = {0, nim1,
-		   0, njp1,
-		   0, nk};
+    0, njp1,
+    0, nk};
   
   vtkDebugMacro(<< "Whole extents: "
                 << extent[0] << ", " << extent[1] << ", "
@@ -121,13 +121,13 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
   
-  //BEGIN TIME SERIES  
-  // Added by Joshua Murphy 1 DEC 2011
+    //BEGIN TIME SERIES  
+    // Added by Joshua Murphy 1 DEC 2011
   
   this->NumberOfTimeSteps = metaInts.count(string("time_step"));
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
   
-  // insert read of Time array here
+    // insert read of Time array here
   this->TimeStepValues[0] = metaDoubles["mjd"];
   
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
@@ -139,7 +139,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   
-  //END TIME SERIES
+    //END TIME SERIES
   
   return 1; 
 }
@@ -159,8 +159,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   vtkDebugMacro(<< "GridScaleFactor is \"" << GRID_SCALE::ScaleFactor[this->GetGridScaleType()] << "\"");
   
   
-  ///////////////////
-  // Set sub extents
+    ///////////////////
+    // Set sub extents
   Hdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
@@ -168,50 +168,92 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   int *dims = NULL;
   
   float *X_grid = NULL;
-  f.readVariable("X_grid", X_grid, rank, dims);   delete []dims;
   float *Y_grid = NULL;
-  f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
   float *Z_grid = NULL;
-  f.readVariable("Z_grid", Z_grid, rank, dims);   delete []dims;
   
   float *rho = NULL;
-  if (f.hasVariable("rho_"))
-      f.readVariable("rho_",   rho,    rank, dims);   delete []dims;
-  
   float *c = NULL;
-  f.readVariable("c_",     c,      rank, dims);   delete []dims; 
   
   float *vx = NULL;
-  f.readVariable("vx_",    vx,     rank, dims);   delete []dims;
   float *vy = NULL;
-  f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
   float *vz = NULL;
-  f.readVariable("vz_",    vz,     rank, dims);   delete []dims;
   
   float *bx = NULL;
-  f.readVariable("bx_",    bx,     rank, dims);   delete []dims;
   float *by = NULL;
-  f.readVariable("by_",    by,     rank, dims);   delete []dims;
   float *bz = NULL;
-  f.readVariable("bz_",    bz,     rank, dims);   
-    
-    
-  //TODO: This will need to be a dynamic system, as to not look for data that isn't there
-  //Disabled untile we can check existence
-  //    delete []dims;
-    
-  //    float *avgbx = NULL;
-  //    f.readVariable("avgBx",    avgbx,     rank, dims);   delete []dims;
-  //    float *avgby = NULL;
-  //    f.readVariable("avgBy",    avgby,     rank, dims);   delete []dims;
-  //    float *avgbz = NULL;
-  //    f.readVariable("avgBz",    avgbz,     rank, dims); 
   
-  //FIXME:  Read bi,bj,bk on cell faces
-  //FIXME:  Read ei,ej,ek on cell edges
-  //FIXME:  Read avgEi, avgEj, avgEk on cell edges
+  
+  f.readVariable("X_grid", X_grid, rank, dims);   delete []dims;
+  f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
+  f.readVariable("Z_grid", Z_grid, rank, dims);   
+  
+  
+    //Density Selective Read
+  if(this->ReadDensityFields)
+    {
+    if (f.hasVariable("rho_"))
+      {
+        //if(dims) delete []dims;
+      f.readVariable("rho_",   rho,    rank, dims);
+      }
+    }
+  
+  
+    //Sound Speed Selective Read
+  if(this->ReadSoundFields)
+    {
+    if(f.hasVariable("c_"))
+      
+      {
+      if(dims) delete []dims;
+      f.readVariable("c_",     c,      rank, dims);  
+      }
+    }
+  
+    //Velocity Selective Read
+  if(this->ReadVelFields)
+    {
+    if(f.hasVariable("vx_") && f.hasVariable("vy_") && f.hasVariable("vz_"))
+      {
+      if(dims) delete []dims;
+      f.readVariable("vx_",    vx,     rank, dims);   delete []dims;
+      f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
+      f.readVariable("vz_",    vz,     rank, dims);   
+      }
+    }
+  
+  
+    //Magnetic Field Selective Read
+  if(this->ReadMagFields)
+    {
+    if(f.hasVariable("bx_") && f.hasVariable("by_") && f.hasVariable("bz_"))
+      {
+      if(dims) delete []dims;
+      f.readVariable("bx_",    bx,     rank, dims);   delete []dims;
+      f.readVariable("by_",    by,     rank, dims);   delete []dims;
+      f.readVariable("bz_",    bz,     rank, dims);   
+      }
+    }
+  
+  
+    //TODO: This will need to be a dynamic system, as to not look for data that isn't there
+    //Disabled untile we can check existence
+    //    delete []dims;
+  
+    //    float *avgbx = NULL;
+    //    f.readVariable("avgBx",    avgbx,     rank, dims);   delete []dims;
+    //    float *avgby = NULL;
+    //    f.readVariable("avgBy",    avgby,     rank, dims);   delete []dims;
+    //    float *avgbz = NULL;
+    //    f.readVariable("avgBz",    avgbz,     rank, dims); 
+  
+    //FIXME:  Read bi,bj,bk on cell faces
+    //FIXME:  Read ei,ej,ek on cell edges
+    //FIXME:  Read avgEi, avgEj, avgEk on cell edges
   
   f.close();
+  
+  /*------------------------------------------*/
   
   const int nip1 = dims[2];
   const int ni = nip1-1;
@@ -224,8 +266,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   const int nk = nkp1-1;
   
   int subext[6] = {0, nim1,
-		   0, njp1,
-		   0, nk};
+    0, njp1,
+    0, nk};
   
   vtkDebugMacro(<< "sub extents: "
                 << subext[0] << ", " << subext[1] << ", "
@@ -233,21 +275,21 @@ int vtkLFMReader::RequestData(vtkInformation* request,
                 << subext[4] << ", " << subext[5]); 
   
   
-  //Start getting file information
+    //Start getting file information
   
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), subext);
   
-  ///////////////////////////////////////////////////////////////////////////
-  //read that part of the data in from the file and put it in the output data
+    ///////////////////////////////////////////////////////////////////////////
+    //read that part of the data in from the file and put it in the output data
   
   vtkStructuredGrid *output = 
-    vtkStructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
+  vtkStructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   
-  //BEGIN UPDATE TIEM STEP
-  //Return the Current Time to the Calling Application
-  //Added by Joshua Murphy 1 DEC 2011
-  //==================================================
+    //BEGIN UPDATE TIEM STEP
+    //Return the Current Time to the Calling Application
+    //Added by Joshua Murphy 1 DEC 2011
+    //==================================================
   int myTime=0;
   
   int numRequestedTimeSteps; 
@@ -257,35 +299,35 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   double lastTime;
   
   
-  //This imports time step data into the system.
-  //TODO: Will Need to be adjusted for files with Multiple Time Steps
+    //This imports time step data into the system.
+    //TODO: Will Need to be adjusted for files with Multiple Time Steps
   if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
     {
     
-      numRequestedTimeSteps = outInfo->Length(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
-      requestedTimeValues = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
+    numRequestedTimeSteps = outInfo->Length(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
+    requestedTimeValues = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
     
-      firstTime = requestedTimeValues[0];
-      lastTime = requestedTimeValues[numRequestedTimeSteps-1]; 
+    firstTime = requestedTimeValues[0];
+    lastTime = requestedTimeValues[numRequestedTimeSteps-1]; 
     
-      double myAnswerTime = this->TimeStepValues[0];
+    double myAnswerTime = this->TimeStepValues[0];
     
-      output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &myAnswerTime, 1);
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &myAnswerTime, 1);
     
     }
   
-  //END UPDATE TIME STEP
-
+    //END UPDATE TIME STEP
   
-  // Fix x-axis caps (nj++ in nose, nj++ in tail)
-  // close off grid (nk++)
+  
+    // Fix x-axis caps (nj++ in nose, nj++ in tail)
+    // close off grid (nk++)
   output->SetDimensions(ni, njp2, nkp1);
   
-  //////////////////////
-  // Point-centered data
+    //////////////////////
+    // Point-centered data
   vtkPoints *points = vtkPoints::New();
-  // Fix x-axis caps (nj++ in nose, nj++ in tail)
-  // close off grid (nk++)
+    // Fix x-axis caps (nj++ in nose, nj++ in tail)
+    // close off grid (nk++)
   points->SetNumberOfPoints(ni*njp2*nkp1);
   
   int offset;
@@ -302,7 +344,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   for (int k=0; k < nk; k++){
     for (int j=0; j < nj; j++){
       for (int i=0; i < ni; i++){
-	// Data is stored in Fortran column-major ordering
+          // Data is stored in Fortran column-major ordering
         offset = i + j*nip1 + k*nip1*njp1;
         oi  = i+1 +     j*nip1 +     k*nip1*njp1;
         oj  = i   + (j+1)*nip1 +     k*nip1*njp1;
@@ -325,10 +367,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         xyz[2] /= GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
         
         
-	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
+          // j+1 because we set data along j=0 in "Fix x-axis singularity", below.
         offset = i + (j+1)*ni + k*ni*njp2;
-        
-        
         points->SetPoint(offset, xyz);
       }
     }
@@ -336,7 +376,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   vtkDebugMacro(<< "NumberOfPoints after mesh read: " << points->GetNumberOfPoints());
   
-  // Fix x-axis singularity at j=0 and j=nj+1
+    // Fix x-axis singularity at j=0 and j=nj+1
   int jAxis = 0;
   double axisCoord[3] = {0.0, 0.0, 0.0};
   xyz[1] = 0.0;
@@ -358,11 +398,11 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   for (int j=0; j < njp2; j++){
     for (int i=0; i < ni; i++){
-      // Close off the grid.
+        // Close off the grid.
       points->SetPoint(i + j*ni +   nk*ni*njp2, points->GetPoint(i+j*ni) );
       
-      // Set periodic boundary
-      //points->SetPoint(i + j*ni + nkp1*ni*njp2, points->GetPoint(i + j*ni + 1*ni*njp2) );
+        // Set periodic boundary
+        //points->SetPoint(i + j*ni + nkp1*ni*njp2, points->GetPoint(i + j*ni + 1*ni*njp2) );
     }
   }
   
@@ -376,83 +416,121 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   /*****************************
    * Cell-centered scalar data *
    ****************************************************************************/
-  vtkFloatArray *cellScalar_rho = vtkFloatArray::New();
-  cellScalar_rho->SetName("Density");
-  cellScalar_rho->SetNumberOfComponents(1);
-  cellScalar_rho->SetNumberOfTuples(ni*njp2*nkp1);
+  vtkFloatArray *cellScalar_rho = NULL;
+  vtkFloatArray *cellScalar_c = NULL;
   
-  vtkFloatArray *cellScalar_c = vtkFloatArray::New();
-  cellScalar_c->SetName("Sound Speed");
-  cellScalar_c->SetNumberOfComponents(1);
-  cellScalar_c->SetNumberOfTuples(ni*njp2*nkp1);
+  
+    //If we don't want to read the variables, DON'T allocate the space!
+  if(rho != NULL)
+    {
+    cellScalar_rho = vtkFloatArray::New();
+    cellScalar_rho->SetName("Density");
+    cellScalar_rho->SetNumberOfComponents(1);
+    cellScalar_rho->SetNumberOfTuples(ni*njp2*nkp1);
+    }
+  
+  if(c != NULL)
+    {
+    cellScalar_c = vtkFloatArray::New();
+    cellScalar_c->SetName("Sound Speed");
+    cellScalar_c->SetNumberOfComponents(1);
+    cellScalar_c->SetNumberOfTuples(ni*njp2*nkp1);
+    }
+  
+  
   
   /*****************************
    * Cell-centered Vector data *
    ****************************************************************************/
-  vtkFloatArray *cellVector_v = vtkFloatArray::New();
-  cellVector_v->SetName("Velocity");
-  cellVector_v->SetNumberOfComponents(3);
-  cellVector_v->SetNumberOfTuples(ni*njp2*nkp1);
+  vtkFloatArray *cellVector_v = NULL;
+  vtkFloatArray *cellVector_b = NULL;
   
-  vtkFloatArray *cellVector_b = vtkFloatArray::New();
-  cellVector_b->SetName("Magnetic Field");
-  cellVector_b->SetNumberOfComponents(3);
-  cellVector_b->SetNumberOfTuples(ni*njp2*nkp1);
+  if(vx != NULL && vy != NULL && vz != NULL)
+    {
+    cellVector_v = vtkFloatArray::New();
+    cellVector_v->SetName("Velocity");
+    cellVector_v->SetNumberOfComponents(3);
+    cellVector_v->SetNumberOfTuples(ni*njp2*nkp1);
+    }
   
-  //TODO: average B values
-  //Disabled until we can check existence
-  //    vtkFloatArray *cellVector_avgb = vtkFloatArray::New();
-  //    cellVector_avgb->SetName("Average Magnetic Field");
-  //    cellVector_avgb->SetNumberOfComponents(3);
-  //    cellVector_avgb->SetNumberOfTuples(ni*njp2*nkp1);
+  if(bx != NULL && by != NULL && bz != NULL)
+    {
+    cellVector_b = vtkFloatArray::New();
+    cellVector_b->SetName("Magnetic Field");
+    cellVector_b->SetNumberOfComponents(3);
+    cellVector_b->SetNumberOfTuples(ni*njp2*nkp1);
+    }
+  
+    //TODO: average B values
+    //Disabled until we can check existence
+    //    vtkFloatArray *cellVector_avgb = vtkFloatArray::New();
+    //    cellVector_avgb->SetName("Average Magnetic Field");
+    //    cellVector_avgb->SetNumberOfComponents(3);
+    //    cellVector_avgb->SetNumberOfTuples(ni*njp2*nkp1);
   
   
   
   
-  // Store values in VTK objects:
+    // Store values in VTK objects:
   int offsetData, offsetCell;
   float tuple[3];
-  for (int k=0; k < nk; k++){
-    for (int j=0; j < nj; j++){
-      for (int i=0; i < ni; i++){
+  for (int k=0; k < nk; k++)
+    {
+    for (int j=0; j < nj; j++)
+      {
+      for (int i=0; i < ni; i++)
+        {
+        
         offsetData = i + j*nip1 + k*nip1*njp1;
         
-	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
+          // j+1 because we set data along j=0 in "Fix x-axis singularity", below.
         offsetCell = i + (j+1)*ni   + k*ni*njp2;
         
-        cellScalar_rho->SetTupleValue(offsetCell, &rho[offsetData]);
-        cellScalar_c->SetTupleValue(offsetCell, &c[offsetData]);
+        if(rho != NULL)
+          cellScalar_rho->SetTupleValue(offsetCell, &rho[offsetData]);
         
-        tuple[0] = vx[offsetData];
-        tuple[1] = vy[offsetData];
-        tuple[2] = vz[offsetData];
-        cellVector_v->SetTupleValue(offsetCell, tuple);
+        if(c != NULL)
+          cellScalar_c->SetTupleValue(offsetCell, &c[offsetData]);
         
-        tuple[0] = bx[offsetData];
-        tuple[1] = by[offsetData];
-        tuple[2] = bz[offsetData];
-        cellVector_b->SetTupleValue(offsetCell, tuple);
+        if(vx != NULL && vy != NULL && vz != NULL)
+          {
+          tuple[0] = vx[offsetData];
+          tuple[1] = vy[offsetData];
+          tuple[2] = vz[offsetData];
+          cellVector_v->SetTupleValue(offsetCell, tuple);
+          }
         
-	//TODO: average B Values
-	//Disabled until we can check existence
-	//                tuple[0] = avgbx[offsetData];
-	//                tuple[1] = avgby[offsetData];
-	//                tuple[2] = avgbz[offsetData];
-	//                cellVector_avgb->SetTupleValue(offsetCell, tuple);
+        if(bx != NULL && by != NULL && bz != NULL)
+          {
+          tuple[0] = bx[offsetData];
+          tuple[1] = by[offsetData];
+          tuple[2] = bz[offsetData];
+          cellVector_b->SetTupleValue(offsetCell, tuple);
+          }
+        
+        
+          //TODO: average B Values
+          //Disabled until we can check existence
+          //                tuple[0] = avgbx[offsetData];
+          //                tuple[1] = avgby[offsetData];
+          //                tuple[2] = avgbz[offsetData];
+          //                cellVector_avgb->SetTupleValue(offsetCell, tuple);
         
         
         
+        }
       }
     }
-  }
   
-  // Fix x-axis singularity at j=0 and j=nj+1
+    // Fix x-axis singularity at j=0 and j=nj+1
   double tupleDbl[3];
   float rhoValue, cValue;
   float vValue[3], bValue[3], avgBvalue[3], avgBvalue_r2[3];
+  
   for (int j=0; j < njp2; j+=njp1){
     jAxis = max(1, min(nj, j));
-    for (int i=0; i < ni; i++){
+    for (int i=0; i < ni; i++)
+      {
       rhoValue = 0.0;
       cValue = 0.0;
       vValue[0] = 0.0;
@@ -462,169 +540,222 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       bValue[1] = 0.0;
       bValue[2] = 0.0;
       
-      //TODO: average B values
-      //disabled until we can check existence
-      //            avgBvalue[0] = 0.0;
-      //            avgBvalue[1] = 0.0;
-      //            avgBvalue[2] = 0.0;
+        //TODO: average B values
+        //disabled until we can check existence
+        //            avgBvalue[0] = 0.0;
+        //            avgBvalue[1] = 0.0;
+        //            avgBvalue[2] = 0.0;
       
       
-      for (int k=0; k < nk; k++){
-        cellScalar_rho->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-        rhoValue += (float) tupleDbl[0];
+      for (int k=0; k < nk; k++)
+        {
         
-        cellScalar_c->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-        cValue += (float) tupleDbl[0];
+        if(rho != NULL)
+          {
+          cellScalar_rho->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
+          rhoValue += (float) tupleDbl[0];
+          }
         
-        cellVector_v->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
-        vValue[0] += (float) tupleDbl[0];
-        vValue[1] += (float) tupleDbl[1];
-        vValue[2] += (float) tupleDbl[2];
+        if(c != NULL)
+          {
+          cellScalar_c->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
+          cValue += (float) tupleDbl[0];
+          }
         
-        cellVector_b->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
-        bValue[0] += (float) tupleDbl[0];
-        bValue[1] += (float) tupleDbl[1];
-        bValue[2] += (float) tupleDbl[2];
+        if(vx != NULL && vy != NULL && vz != NULL)
+          {
+          cellVector_v->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
+          vValue[0] += (float) tupleDbl[0];
+          vValue[1] += (float) tupleDbl[1];
+          vValue[2] += (float) tupleDbl[2];
+          }
         
-	//TODO: average B Values
-	//Disabled until we can check existence
-	//                cellVector_avgb->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
-	//                avgBvalue[0] += (float) tupleDbl[0];
-	//                avgBvalue[1] += (float) tupleDbl[1];
-	//                avgBvalue[2] += (float) tupleDbl[2];
+        if(bx != NULL && by != NULL && bz != NULL)
+          {
+          cellVector_b->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
+          bValue[0] += (float) tupleDbl[0];
+          bValue[1] += (float) tupleDbl[1];
+          bValue[2] += (float) tupleDbl[2];
+          }
+          //TODO: average B Values
+          //Disabled until we can check existence
+          //                cellVector_avgb->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
+          //                avgBvalue[0] += (float) tupleDbl[0];
+          //                avgBvalue[1] += (float) tupleDbl[1];
+          //                avgBvalue[2] += (float) tupleDbl[2];
+        }
+      
+      if(rho != NULL)
+        rhoValue /= float(nk);
+      
+      if(c != NULL)
+        cValue /= float(nk);
+      
+      if(vx != NULL && vy != NULL && vz != NULL)
+        {
+        vValue[0] /= float(nk);
+        vValue[1] /= float(nk);
+        vValue[2] /= float(nk);
+        }
+      
+      if(bx != NULL && by != NULL && bz != NULL)
+        {
+        bValue[0] /= float(nk);
+        bValue[1] /= float(nk);
+        bValue[2] /= float(nk);
+        }
+      
+        //TODO: average B Values
+        //Disabled until we can check existence
+        //            avgBvalue[0] /= float(nk);
+        //            avgBvalue[1] /= float(nk);
+        //            avgBvalue[2] /= float(nk);
+      
+      
+      
+      for (int k=0; k < nk; k++)
+        {
+        if(rho != NULL)
+          cellScalar_rho->SetTupleValue(i + j*ni + k*ni*njp2, &rhoValue);
+        
+        if(c != NULL)
+          cellScalar_c->SetTupleValue(i + j*ni + k*ni*njp2, &cValue);
+        
+        if(vx != NULL && vy != NULL && vz != NULL)
+          cellVector_v->SetTupleValue(i + j*ni + k*ni*njp2, vValue);
+        
+        if(bx != NULL && by != NULL && bz != NULL)
+          cellVector_b->SetTupleValue(i + j*ni + k*ni*njp2, bValue);
+        
+          //TODO: average B Values
+          //until we can check if these values exist, they are disabled
+          //                cellVector_avgb->SetTupleValue(i + j*ni + k*ni*njp2, avgBvalue);
         
         
+        }
       }
-      
-      rhoValue /= float(nk);
-      
-      cValue /= float(nk);
-      
-      vValue[0] /= float(nk);
-      vValue[1] /= float(nk);
-      vValue[2] /= float(nk);
-      
-      bValue[0] /= float(nk);
-      bValue[1] /= float(nk);
-      bValue[2] /= float(nk);
-      
-      
-      //TODO: average B Values
-      //Disabled until we can check existence
-      //            avgBvalue[0] /= float(nk);
-      //            avgBvalue[1] /= float(nk);
-      //            avgBvalue[2] /= float(nk);
-      
-      
-      
-      for (int k=0; k < nk; k++){
-        cellScalar_rho->SetTupleValue(i + j*ni + k*ni*njp2, &rhoValue);
-        cellScalar_c->SetTupleValue(i + j*ni + k*ni*njp2, &cValue);
-        cellVector_v->SetTupleValue(i + j*ni + k*ni*njp2, vValue);
-        cellVector_b->SetTupleValue(i + j*ni + k*ni*njp2, bValue);
-        
-	//TODO: average B Values
-	//until we can check if these values exist, they are disabled
-	//                cellVector_avgb->SetTupleValue(i + j*ni + k*ni*njp2, avgBvalue);
-        
-        
-      }
-    }
   }
   
-  for (int j=0; j < njp2; j++){
-    for (int i=0; i < ni; i++){
-      // Close off the grid
-      cellScalar_rho->GetTuple(i + j*ni, tupleDbl);
-      rhoValue = (float) tupleDbl[0];
-      cellScalar_rho->SetTupleValue(i + j*ni +   nk*ni*njp2, &rhoValue);
+  for (int j=0; j < njp2; j++)
+    {
+    for (int i=0; i < ni; i++)
+      {
+        // Close off the grid
       
-      cellScalar_c->GetTuple(i + j*ni, tupleDbl);
-      cValue = (float) tupleDbl[0];
-      cellScalar_c->SetTupleValue(i + j*ni +   nk*ni*njp2, &cValue);
+      if(rho != NULL)
+        {
+        cellScalar_rho->GetTuple(i + j*ni, tupleDbl);
+        rhoValue = (float) tupleDbl[0];
+        cellScalar_rho->SetTupleValue(i + j*ni +   nk*ni*njp2, &rhoValue);
+        }
       
-      cellVector_v->GetTuple(i + j*ni, tupleDbl);
-      vValue[0] = (float) tupleDbl[0];
-      vValue[1] = (float) tupleDbl[1];
-      vValue[2] = (float) tupleDbl[2];
-      cellVector_v->SetTupleValue(i + j*ni +   nk*ni*njp2, vValue);
+      if(c != NULL)
+        {
+        cellScalar_c->GetTuple(i + j*ni, tupleDbl);
+        cValue = (float) tupleDbl[0];
+        cellScalar_c->SetTupleValue(i + j*ni +   nk*ni*njp2, &cValue);
+        }
       
-      cellVector_b->GetTuple(i + j*ni, tupleDbl);
-      bValue[0] = (float) tupleDbl[0];
-      bValue[1] = (float) tupleDbl[1];
-      bValue[2] = (float) tupleDbl[2];
-      cellVector_b->SetTupleValue(i + j*ni +   nk*ni*njp2, bValue);
+      if(vx != NULL && vy != NULL && vz != NULL)
+        {
+        cellVector_v->GetTuple(i + j*ni, tupleDbl);
+        vValue[0] = (float) tupleDbl[0];
+        vValue[1] = (float) tupleDbl[1];
+        vValue[2] = (float) tupleDbl[2];
+        cellVector_v->SetTupleValue(i + j*ni +   nk*ni*njp2, vValue);
+        }
       
-      //TODO: Average B Values
-      //Until we can check to see if these values exist, they are disabled.
-      //            cellVector_avgb->GetTuple(i + j*ni, tupleDbl);
-      //            avgBvalue[0] = (float) tupleDbl[0];
-      //            avgBvalue[1] = (float) tupleDbl[1];
-      //            avgBvalue[2] = (float) tupleDbl[2];
-      //            cellVector_avgb->SetTupleValue(i + j*ni + nk*ni*njp2, avgBvalue);
-      //            
+      if(bx != NULL && by != NULL && bz != NULL)
+        {
+        cellVector_b->GetTuple(i + j*ni, tupleDbl);
+        bValue[0] = (float) tupleDbl[0];
+        bValue[1] = (float) tupleDbl[1];
+        bValue[2] = (float) tupleDbl[2];
+        cellVector_b->SetTupleValue(i + j*ni +   nk*ni*njp2, bValue);
+        }
+        //TODO: Average B Values
+        //Until we can check to see if these values exist, they are disabled.
+        //            cellVector_avgb->GetTuple(i + j*ni, tupleDbl);
+        //            avgBvalue[0] = (float) tupleDbl[0];
+        //            avgBvalue[1] = (float) tupleDbl[1];
+        //            avgBvalue[2] = (float) tupleDbl[2];
+        //            cellVector_avgb->SetTupleValue(i + j*ni + nk*ni*njp2, avgBvalue);
+        //            
       
-      // FIXME: Set periodic cells:
-      //cellScalar_rho->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //rhoValue = (float) tupleDbl[0];
-      //cellScalar_rho->SetTupleValue(i + j*ni + nkp1*ni*njp2, &rhoValue);
-      //
-      //cellScalar_c->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //cValue = (float) tupleDbl[0];
-      //cellScalar_c->SetTupleValue(i + j*ni + nkp1*ni*njp2, &cValue);
-      //
-      //cellVector_v->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //vValue[0] = (float) tupleDbl[0];
-      //vValue[1] = (float) tupleDbl[1];
-      //vValue[2] = (float) tupleDbl[2];
-      //cellVector_v->SetTupleValue(i + j*ni + nkp1*ni*njp2, vValue);
-      //
-      //cellVector_b->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //bValue[0] = (float) tupleDbl[0];
-      //bValue[1] = (float) tupleDbl[1];
-      //bValue[2] = (float) tupleDbl[2];
-      //cellVector_b->SetTupleValue(i + j*ni + nkp1*ni*njp2, bValue);
+        // FIXME: Set periodic cells:
+        //cellScalar_rho->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
+        //rhoValue = (float) tupleDbl[0];
+        //cellScalar_rho->SetTupleValue(i + j*ni + nkp1*ni*njp2, &rhoValue);
+        //
+        //cellScalar_c->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
+        //cValue = (float) tupleDbl[0];
+        //cellScalar_c->SetTupleValue(i + j*ni + nkp1*ni*njp2, &cValue);
+        //
+        //cellVector_v->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
+        //vValue[0] = (float) tupleDbl[0];
+        //vValue[1] = (float) tupleDbl[1];
+        //vValue[2] = (float) tupleDbl[2];
+        //cellVector_v->SetTupleValue(i + j*ni + nkp1*ni*njp2, vValue);
+        //
+        //cellVector_b->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
+        //bValue[0] = (float) tupleDbl[0];
+        //bValue[1] = (float) tupleDbl[1];
+        //bValue[2] = (float) tupleDbl[2];
+        //cellVector_b->SetTupleValue(i + j*ni + nkp1*ni*njp2, bValue);
+      }
+    }  
+  
+  if(rho != NULL)
+    {
+    output->GetPointData()->AddArray(cellScalar_rho);
+    cellScalar_rho->Delete();
     }
-  }  
   
-  output->GetPointData()->AddArray(cellScalar_rho);
-  cellScalar_rho->Delete();
+  if(c != NULL)
+    {
+    output->GetPointData()->AddArray(cellScalar_c);
+    cellScalar_c->Delete();
+    }
   
-  output->GetPointData()->AddArray(cellScalar_c);
-  cellScalar_c->Delete();
+  if(vx != NULL && vy != NULL && vz != NULL)
+    {
+    output->GetPointData()->AddArray(cellVector_v);
+    cellVector_v->Delete();
+    }
   
-  output->GetPointData()->AddArray(cellVector_v);
-  cellVector_v->Delete();
+  if(bx != NULL && by != NULL && bz != NULL)
+    {
+    output->GetPointData()->AddArray(cellVector_b);
+    cellVector_b->Delete();
+    }
+    //TODO: Average B Values
+    //Disabled until can check existence
+    //    output->GetPointData()->AddArray(cellVector_avgb);
+    //    cellVector_avgb->Delete();
   
-  output->GetPointData()->AddArray(cellVector_b);
-  cellVector_b->Delete();
+  if (dims != NULL)   { delete [] dims;      dims = NULL;  }   
+  if (X_grid != NULL) { delete [] X_grid;    X_grid = NULL;  }
+  if (Y_grid != NULL) { delete [] Y_grid;    Y_grid = NULL;  }
+  if (Z_grid != NULL) { delete [] Z_grid;    Z_grid = NULL;  }
+  if (rho != NULL)    { delete [] rho;       rho = NULL;  }
+  if (c != NULL)      { delete [] c;         c = NULL; }
+  if (vx != NULL)     { delete [] vx;        vx = NULL; }
+  if (vy != NULL)     { delete [] vy;        vy = NULL; }
+  if (vz != NULL)     { delete [] vz;        vz = NULL; }
+  if (bx != NULL)     { delete [] bx;        bx = NULL; }
+  if (by != NULL)     { delete [] by;        by = NULL; }
+  if (bz != NULL)     { delete [] bz;        bz = NULL; }
   
-  //TODO: Average B Values
-  //Disabled until can check existence
-  //    output->GetPointData()->AddArray(cellVector_avgb);
-  //    cellVector_avgb->Delete();
-  
-  if (dims){      delete [] dims;      dims = NULL;  }   
-  if (X_grid){    delete [] X_grid;    X_grid = NULL;  }
-  if (Y_grid){    delete [] Y_grid;    Y_grid = NULL;  }
-  if (Z_grid){    delete [] Z_grid;    Z_grid = NULL;  }
-  if (rho){       delete [] rho;       rho = NULL;  }
-  if (c){         delete [] c;         c = NULL; }
-  if (vx){        delete [] vx;        vx = NULL; }
-  if (vy){        delete [] vy;        vy = NULL; }
-  if (vz){        delete [] vz;        vz = NULL; }
-  if (bx){        delete [] bx;        bx = NULL; }
-  if (by){        delete [] by;        by = NULL; }
-  if (bz){        delete [] bz;        bz = NULL; }
-  
-  //TODO: Average B Values
-  //Disabled until can check existence
-  //    if (avgbx){     delete [] avgbx;     avgbx = NULL; }
-  //    if (avgby){     delete [] avgby;     avgby = NULL; }
-  //    if (avgbz){     delete [] avgbz;     avgbz = NULL; }
+    //TODO: Average B Values
+    //Disabled until can check existence
+    //    if (avgbx){     delete [] avgbx;     avgbx = NULL; }
+    //    if (avgby){     delete [] avgby;     avgby = NULL; }
+    //    if (avgbz){     delete [] avgbz;     avgbz = NULL; }
   
   return 1;
 }
+
+
 
 void vtkLFMReader::PrintSelf(ostream &os, vtkIndent indent)
 {
