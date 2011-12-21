@@ -128,7 +128,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
   
     // insert read of Time array here
-  this->TimeStepValues[0] = metaDoubles["mjd"];
+  this->TimeStepValues[0] = metaDoubles["time"];
   
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
                &this->TimeStepValues[0],
@@ -339,7 +339,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   int oik; // offset(i+1,j,  k+1)
   int oijk;// offset(i+1,j+1,k+1)
   float xyz[3];
-  float r2[ni*nj*nk];
   
   for (int k=0; k < nk; k++){
     for (int j=0; j < nj; j++){
@@ -525,7 +524,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     // Fix x-axis singularity at j=0 and j=nj+1
   double tupleDbl[3];
   float rhoValue, cValue;
-  float vValue[3], bValue[3], avgBvalue[3], avgBvalue_r2[3];
+  float vValue[3], bValue[3], avgBvalue[3];
   
   for (int j=0; j < njp2; j+=njp1){
     jAxis = max(1, min(nj, j));
