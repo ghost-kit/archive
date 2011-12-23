@@ -128,7 +128,9 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
   
     // insert read of Time array here
-  this->TimeStepValues[0] = metaDoubles["time"];
+    // time is a float, mjd was a double.  Need to make sure we look at the correct
+    //  meta data vector.
+  this->TimeStepValues[0] = metaFloats["time"];
   
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
                &this->TimeStepValues[0],
