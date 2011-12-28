@@ -32,107 +32,144 @@
       </IntVectorProperty>
       
       <!-- Selective Read Attributes -->
-      <IntVectorProperty name="ReadPlasmaDesnsity"
-        command="SetReadDensityFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="1">
-        
-        <BooleanDomain name="bool" />
+      
+      <StringVectorProperty
+        name="CellArrayInfo"
+        information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Cell"/>
         
         <Documentation>
-          If On, the Plasma Density Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
+          This is the Cell Array Selectors.
         </Documentation>
-      </IntVectorProperty>
+        
+      </StringVectorProperty>
       
-      <IntVectorProperty name="ReadMagneticFields"
-        command="SetReadMagFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="0">
+      <StringVectorProperty
+        name="CellArrayStatus"
+        command="SetCellArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types = "2 0"
+        Information_property="CellArrayInfo"
+        label="Cell Arrays"
+        default_values = "0">
         
-        <BooleanDomain name="bool" />
-        
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="CellArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
         <Documentation>
-          If On, the Magnetic Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
+          This is the Cell Array Selectors.
         </Documentation>
-      </IntVectorProperty>
-      
-      <IntVectorProperty name="ReadVelocityFields"
-        command="SetReadVelFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="0">
         
-        <BooleanDomain name="bool" />
-        
-        <Documentation>
-          If On, the Velocity Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
-        </Documentation>
-      </IntVectorProperty>  
-      
-      <IntVectorProperty name="ReadSoundSpeedFields"
-        command="SetReadSoundFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="0">
-        
-        <BooleanDomain name="bool" />
-        
-        <Documentation>
-          If On, the Sound Speed Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
-        </Documentation>
-      </IntVectorProperty>
-      
-      <IntVectorProperty name="ReadElectricFields"
-        command="SetReadElecFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="0">
-        
-        <BooleanDomain name="bool" />
-        
-        <Documentation>
-          If On, the Electric Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
-        </Documentation>
-      </IntVectorProperty>
+      </StringVectorProperty>
       
       
-      <IntVectorProperty name="ReadAveragedMagneticFields"
-        command="SetReadAVGMagFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="0">
-        
-        <BooleanDomain name="bool" />
-        
-        <Documentation>
-          If On, the Averaged Magnetic Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
-        </Documentation>
-      </IntVectorProperty>
       
-      
-      <IntVectorProperty name="ReadAveragedElectricFields"
-        command="SetReadAVGElecFields"
-        animateable="0"
-        number_of_elements="1"
-        default_values="0">
-        
-        <BooleanDomain name="bool" />
-        
-        <Documentation>
-          If On, the Averaged Magnetic Fields values will be loaded by the reader.  If it is off, then the 
-          values will NOT be loaded.  This is for selective reading of data sets.
-        </Documentation>
-      </IntVectorProperty>
-      
-
+      <!--
+       <IntVectorProperty name="ReadPlasmaDesnsity"
+       command="SetReadDensityFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="1">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Plasma Density Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>
+       
+       <IntVectorProperty name="ReadMagneticFields"
+       command="SetReadMagFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="0">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Magnetic Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>
+       
+       <IntVectorProperty name="ReadVelocityFields"
+       command="SetReadVelFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="0">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Velocity Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>  
+       
+       <IntVectorProperty name="ReadSoundSpeedFields"
+       command="SetReadSoundFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="0">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Sound Speed Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>
+       
+       <IntVectorProperty name="ReadElectricFields"
+       command="SetReadElecFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="0">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Electric Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>
+       
+       
+       <IntVectorProperty name="ReadAveragedMagneticFields"
+       command="SetReadAVGMagFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="0">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Averaged Magnetic Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>
+       
+       
+       <IntVectorProperty name="ReadAveragedElectricFields"
+       command="SetReadAVGElecFields"
+       animateable="0"
+       number_of_elements="1"
+       default_values="0">
+       
+       <BooleanDomain name="bool" />
+       
+       <Documentation>
+       If On, the Averaged Magnetic Fields values will be loaded by the reader.  If it is off, then the 
+       values will NOT be loaded.  This is for selective reading of data sets.
+       </Documentation>
+       </IntVectorProperty>
+       
+       -->
       
       <Hints>
         <ReaderFactory
@@ -167,14 +204,23 @@
         proxygroup="internal_sources" proxyname="vtkLFMReader" />
         <ExposedProperties>
           <Property name="GridScaleFactor" />
-          <Property name="ReadPlasmaDesnsity"/>
-          <Property name="ReadMagneticFields"/>
-          <Property name="ReadVelocityFields"/>
-          <Property name="ReadSoundSpeedFields"/>
-          <Property name="ReadElectricFields"/>
-          <Property name="ReadAveragedMagneticFields"/>
-          <Property name="ReadAveragedElectricFields"/>
+          <Property name="CellArrayInfo" />
+          <Property name="CellArrayStatus" />
           
+          <!--
+           <Property name="PointArrayInfo" />
+           <Property name="PointArrayStatus" />
+           -->
+          
+          <!--
+           <Property name="ReadPlasmaDesnsity"/>
+           <Property name="ReadMagneticFields"/>
+           <Property name="ReadVelocityFields"/>
+           <Property name="ReadSoundSpeedFields"/>
+           <Property name="ReadElectricFields"/>
+           <Property name="ReadAveragedMagneticFields"/>
+           <Property name="ReadAveragedElectricFields"/>
+           -->
           
         </ExposedProperties>
       </SubProxy>
