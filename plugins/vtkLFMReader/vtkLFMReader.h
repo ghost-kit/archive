@@ -57,32 +57,6 @@ public:
   vtkGetMacro(GridScaleType, int);
   
 
-  
-  /*
-   * Selective Fields
-   */
-  vtkSetMacro(ReadDensityFields, int);
-  vtkGetMacro(ReadDensityFields, int);
-  
-  vtkSetMacro(ReadMagFields, int);
-  vtkGetMacro(ReadMagFields, int);
-  
-  vtkSetMacro(ReadElecFields, int);
-  vtkGetMacro(ReadElecFields, int);
-  
-  vtkSetMacro(ReadVelFields, int);
-  vtkGetMacro(ReadVelFields, int);
-  
-  vtkSetMacro(ReadSoundFields, int);
-  vtkGetMacro(ReadSoundFields, int);
-  
-  vtkSetMacro(ReadAVGMagFields, int);
-  vtkGetMacro(ReadAVGMagFields, int);
-  
-  vtkSetMacro(ReadAVGElecFields, int);
-  vtkGetMacro(ReadAVGElecFields, int);
-  
-  
     /*
      * routines for Cell Array Info
      */
@@ -157,16 +131,6 @@ protected:
   vtkstd::map<vtkstd::string,int> PointArrayStatus;
     //ETX
   
-  /*
-   * Values for selective Reading
-   */
-  int ReadDensityFields;
-  int ReadMagFields;
-  int ReadElecFields;
-  int ReadVelFields;
-  int ReadSoundFields;
-  int ReadAVGMagFields;
-  int ReadAVGElecFields;
   
     // The number of point/cell data arrays in the output.  Valid after
     // SetupOutputData has been called.

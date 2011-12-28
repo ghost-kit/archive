@@ -31,15 +31,7 @@ vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
   this->NumberOfTimeSteps = 1;
-  
-  this->ReadDensityFields = 1;
-  this->ReadElecFields = 0;
-  this->ReadMagFields = 0;
-  this->ReadVelFields = 0;
-  this->ReadSoundFields = 0;
-  this->ReadAVGMagFields = 0;
-  this->ReadAVGElecFields = 0;
-  
+    
   this->NumberOfPointArrays = 0;
   this->NumberOfCellArrays = 0;
   
