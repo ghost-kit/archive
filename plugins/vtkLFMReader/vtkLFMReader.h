@@ -7,6 +7,7 @@
 #include "vtkPolyDataAlgorithm.h"
 #include <vtkstd/string>
 #include <vtkstd/vector>
+#include <vtkstd/map>
 
 namespace GRID_SCALE
 {
@@ -55,6 +56,7 @@ public:
   vtkSetMacro(GridScaleType, int);
   vtkGetMacro(GridScaleType, int);
   
+
   
   /*
    * Selective Fields
@@ -80,6 +82,20 @@ public:
   vtkSetMacro(ReadAVGElecFields, int);
   vtkGetMacro(ReadAVGElecFields, int);
   
+  
+    /*
+     * routines for Cell Array Info
+     */
+  
+  vtkGetMacro(NumberOfPointArrays, int);
+  vtkSetMacro(NumberOfPointArrays, int);
+  
+  vtkGetMacro(NumberOfCellArrays, int);
+  vtkSetMacro(NumberOfCellArrays, int);
+  
+//  vtkSetMacro(CellArrayName, vtkstd::vector<vtkstd::string>);
+//  vtkGetMacro(CellArrayName, vtkstd::vector<vtkstd::string>);
+  
   /**
    * The purpose of this method is to determine whether
    * this reader can read a specified data file. Its input parameter
@@ -98,8 +114,19 @@ public:
    * readers this in only valid after the filename is set and
    * UpdateInformation() has been called.
    */
-    //int GetNumberOfCellArrays();
-    //const char* GetCellArrayName(int index);
+//    int GetNumberOfCellArrays();
+    const char* GetCellArrayName(int index);
+  
+  
+  
+    // Description:
+    // Get/Set whether the point or cell array with the given name is to
+    // be read.
+//  int GetPointArrayStatus(const char* name);
+  int GetCellArrayStatus(const char* name);
+//  void SetPointArrayStatus(const char* name, int status);  
+  void SetCellArrayStatus(const char* name, int status);  
+  
   
   
 protected:
@@ -117,8 +144,17 @@ protected:
     //  The BTX and ETX comments must encompase stl calls when in a header file
     // Added by Joshua Murphy 1 DEC 2011
   int NumberOfTimeSteps;
+  
     //BTX    
   vtkstd::vector<double> TimeStepValues;
+  
+  
+    //Point and Cell Array Status Information
+  vtkstd::vector<vtkstd::string> CellArrayName;
+  vtkstd::vector<vtkstd::string> PointArrayName;
+  
+  vtkstd::map<vtkstd::string,int> CellArrayStatus;
+  vtkstd::map<vtkstd::string,int> PointArrayStatus;
     //ETX
   
   /*
@@ -132,7 +168,12 @@ protected:
   int ReadAVGMagFields;
   int ReadAVGElecFields;
   
+    // The number of point/cell data arrays in the output.  Valid after
+    // SetupOutputData has been called.
+  int NumberOfPointArrays;
+  int NumberOfCellArrays; 
   
+
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
@@ -161,6 +202,7 @@ protected:
    * class. It should return 1 for success and 0 for failure.
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
+  
   
   
 private:
