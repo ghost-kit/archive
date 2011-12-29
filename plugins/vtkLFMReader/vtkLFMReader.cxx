@@ -922,6 +922,7 @@ void vtkLFMReader::SetCellArrayStatus(const char* CellArray, int status)
 {
   
   this->CellArrayStatus[CellArray] = status;
+  this->Modified();
     
 }
 
@@ -930,6 +931,7 @@ void vtkLFMReader::SetCellArrayStatus(const char* CellArray, int status)
 void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 {
   this->PointArrayStatus[PointArray] = status;
+  this->Modified();
 }
 
   //----------------------------------------------------------------
