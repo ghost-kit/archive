@@ -8,6 +8,7 @@
 #include <vtkstd/string>
 #include <vtkstd/vector>
 #include <vtkstd/map>
+#include "Hdf4.h"
 
 namespace GRID_SCALE
 {
@@ -120,6 +121,8 @@ protected:
     //BTX    
   vtkstd::vector<double> TimeStepValues;
   
+    //Map of variable name to Description String
+  vtkstd::map<vtkstd::string, vtkstd::string> ArrayNameLookup;
   
     //Point and Cell Array Status Information
   vtkstd::vector<vtkstd::string> CellArrayName;
@@ -134,7 +137,6 @@ protected:
     // SetupOutputData has been called.
   int NumberOfPointArrays;
   int NumberOfCellArrays; 
-  
   
   /**
    * This method is invoked by the superclass's ProcessRequest
@@ -165,8 +167,21 @@ protected:
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
   
+  /**
+   *  This function will check to see if the variable (VarName) exists, and if it does, set
+   *    associated variables to correct values.
+   *    
+   *    This Method does NOTHING if the variable does not exist.
+   */
   
+    //BTX
+  void SetIfExists(Hdf4 &filePointer, vtkstd::string VarName, vtkstd::string VarDescription);
+  void SetIfExists(Hdf4 &filePointer, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription);
   
+  vtkstd::string GetDesc(vtkstd::string varName)
+  { return this->ArrayNameLookup[varName];}
+  
+    //ETX
 private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented

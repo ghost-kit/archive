@@ -31,11 +31,12 @@ vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
   this->NumberOfTimeSteps = 1;
-    
+  
   this->NumberOfPointArrays = 0;
   this->NumberOfCellArrays = 0;
   
     // print vtkDebugMacro messages by turning debug mode on:
+    // NOTE: This will make things VERY SLOW
     //this->DebugOn();
 }
 
@@ -111,105 +112,32 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   
   f.readMetaData(metaDoubles, metaFloats, metaInts, metaStrings);
   
+  
+    //BEGIN CellArrayInfo
+  
   /**
-   *  BEGIN CellArrayInfo
-   *
    *  This section will check to see if possible variables exist, and if they do, set them
    *    up for readability.  This includes incrementing the number of arrays available (NumberOfCellArrays), 
    *    adding the array name to the Array Name list (CellArrayName), and setting an entry in the 
    *    Status Dictionary (CellArrayStatus)
    */
-  
   if(NumberOfCellArrays == 0)
     {
-    if(f.hasVariable("rho_"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("Plasma Density");
-      this->CellArrayStatus["Plasma Density"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("c_"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("Sound Speed");
-      this->CellArrayStatus["Sound Speed"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("vx_") && f.hasVariable("vy_") && f.hasVariable("vz_"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("Velocity Vector");
-      this->CellArrayStatus["Velocity Vector"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("bx_") && f.hasVariable("by_") && f.hasVariable("bz_"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("Magnetic Field Vector");
-      this->CellArrayStatus["Magnetic Field Vector"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("bi_") && f.hasVariable("bj_") && f.hasVariable("bk_"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("B(ijk) Vector");
-      this->CellArrayStatus["B(ijk) Vector"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("ei_") && f.hasVariable("ej_") && f.hasVariable("ek_"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("E(ijk) Vector");
-      this->CellArrayStatus["E(ijk) Vector"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("avgBx") && f.hasVariable("avgBy") && f.hasVariable("avgBz"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("Averaged Magnetic Field Vector");
-      this->CellArrayStatus["Averaged Magnetic Field Vector"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
-    
-    if(f.hasVariable("avgEi") && f.hasVariable("avgEj") && f.hasVariable("avgEk"))
-      {
-      this->NumberOfCellArrays++;
-      this->CellArrayName.push_back("avgE(ijk) Vector");
-      this->CellArrayStatus["avgE(ijk) Vector"] = 0;
-      
-      cout << this->NumberOfCellArrays << ": " << this->CellArrayName[this->NumberOfCellArrays-1] << endl;
-      
-      }
+      //Set the Variables needed to selectively set Arrays
+    SetIfExists(f, "rho_", "Plasma Density");
+    SetIfExists(f, "c_", "Sound Speed");
+    SetIfExists(f, "vx_", "vy_", "vz_", "Velocity");
+    SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field");
+    SetIfExists(f, "avgBx", "avgBy", "avgBz", "AVG Magnetic Field");
+    SetIfExists(f, "avgEi", "avgEj", "avgEk", "AVG Electric Field");
+    SetIfExists(f, "bi_", "bj_", "bk_", "B(ijk) Vector");
+    SetIfExists(f, "ei_", "ej_", "ek_", "E(ijk) Vector");
     }
-  
     //END CellArrayInfo
-  
   
   f.close();
   
   double timeRange[2];
-  
   
   const int nip1 = dims[2];
   const int ni = nip1-1;
@@ -257,9 +185,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   
     //END TIME SERIES
   
-  
-  
-  
   return 1; 
 }
 
@@ -275,7 +200,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
                               vtkInformationVector** inputVector,
                               vtkInformationVector* outputVector)
 {  
-  vtkDebugMacro(<<"Reading LFM HDF file as a vtkStructuredGrid...");
+  vtkDebugMacro(<< "Reading LFM HDF file as a vtkStructuredGrid...");
   vtkDebugMacro(<< "GridScaleType is \"" << this->GetGridScaleType() << "\".");
   vtkDebugMacro(<< "GridScaleFactor is \"" << GRID_SCALE::ScaleFactor[this->GetGridScaleType()] << "\"");
   
@@ -317,7 +242,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   
     //Density Selective Read
-  if(this->CellArrayStatus["Plasma Density"])
+  if(this->CellArrayStatus[GetDesc("rho_")])
     {
     
     cout << "Plasma Desnity Selected" << endl;
@@ -328,7 +253,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   
     //Sound Speed Selective Read
-  if(this->CellArrayStatus["Sound Speed"])
+  if(this->CellArrayStatus[GetDesc("c_")])
     {
     cout << "Sound Speed Selected" << endl;
     if(dims) delete []dims;
@@ -337,7 +262,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     }
   
     //Velocity Selective Read
-  if(this->CellArrayStatus["Velocity Vector"])
+  if(this->CellArrayStatus[GetDesc("vx_")])
     {
     cout << "Velocity Selected" << endl;
     
@@ -349,7 +274,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   
     //Magnetic Field Selective Read
-  if(this->CellArrayStatus["Magnetic Field Vector"])
+  if(this->CellArrayStatus[GetDesc("bx_")])
     {
     cout << "Magnetic Field Vector Selected" << endl;
     
@@ -361,7 +286,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     }
   
     //Averaged Magnetic Field Selective Read
-  if(this->CellArrayStatus["Averaged Magnetic Field Vector"])
+  if(this->CellArrayStatus[GetDesc("avgBx")])
     {
     cout << "Averaged Magnetic Field Vector Selected" << endl;
     
@@ -553,18 +478,21 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   
     //If we don't want to read the variables, DON'T allocate the space!
+  
+    //Read Desnity
   if(rho != NULL)
     {
     cellScalar_rho = vtkFloatArray::New();
-    cellScalar_rho->SetName("Density");
+    cellScalar_rho->SetName(GetDesc("rho_").c_str());
     cellScalar_rho->SetNumberOfComponents(1);
     cellScalar_rho->SetNumberOfTuples(ni*njp2*nkp1);
     }
   
+    //Read Sound Speed
   if(c != NULL)
     {
     cellScalar_c = vtkFloatArray::New();
-    cellScalar_c->SetName("Sound Speed");
+    cellScalar_c->SetName(GetDesc("c_").c_str());
     cellScalar_c->SetNumberOfComponents(1);
     cellScalar_c->SetNumberOfTuples(ni*njp2*nkp1);
     }
@@ -578,28 +506,31 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   vtkFloatArray *cellVector_b = NULL;
   vtkFloatArray *cellVector_avgb = NULL;
   
+    //Read Velocity
   if(vx != NULL && vy != NULL && vz != NULL)
     {
     cellVector_v = vtkFloatArray::New();
-    cellVector_v->SetName("Velocity");
+    cellVector_v->SetName(GetDesc("vx_").c_str());
     cellVector_v->SetNumberOfComponents(3);
     cellVector_v->SetNumberOfTuples(ni*njp2*nkp1);
     }
   
+    //Read Magnetic Field
   if(bx != NULL && by != NULL && bz != NULL)
     {
     cellVector_b = vtkFloatArray::New();
-    cellVector_b->SetName("Magnetic Field");
+    cellVector_b->SetName(GetDesc("bx_").c_str());
     cellVector_b->SetNumberOfComponents(3);
     cellVector_b->SetNumberOfTuples(ni*njp2*nkp1);
     }
   
+    //Reading Averaged Magnetic Field
   if(avgbx != NULL && avgby != NULL && avgbz != NULL)
     {    
-    cellVector_avgb = vtkFloatArray::New();
-    cellVector_avgb->SetName("Average Magnetic Field");
-    cellVector_avgb->SetNumberOfComponents(3);
-    cellVector_avgb->SetNumberOfTuples(ni*njp2*nkp1);
+      cellVector_avgb = vtkFloatArray::New();
+      cellVector_avgb->SetName(GetDesc("avgBx").c_str());
+      cellVector_avgb->SetNumberOfComponents(3);
+      cellVector_avgb->SetNumberOfTuples(ni*njp2*nkp1);
     }
   
   
@@ -618,12 +549,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           // j+1 because we set data along j=0 in "Fix x-axis singularity", below.
         offsetCell = i + (j+1)*ni   + k*ni*njp2;
         
+          //Store Density Data
         if(rho != NULL)
           cellScalar_rho->SetTupleValue(offsetCell, &rho[offsetData]);
         
+          //Store sound speed data
         if(c != NULL)
           cellScalar_c->SetTupleValue(offsetCell, &c[offsetData]);
         
+          //Store Velocity Data
         if(vx != NULL && vy != NULL && vz != NULL)
           {
           tuple[0] = vx[offsetData];
@@ -632,6 +566,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cellVector_v->SetTupleValue(offsetCell, tuple);
           }
         
+          //Store Magnetic Field data
         if(bx != NULL && by != NULL && bz != NULL)
           {
           tuple[0] = bx[offsetData];
@@ -640,6 +575,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cellVector_b->SetTupleValue(offsetCell, tuple);
           }
         
+          //Store Averaged Magnetic Field Data
         if(avgbx != NULL && avgby != NULL && avgbz != NULL)
           {
           tuple[0] = avgbx[offsetData];
@@ -678,18 +614,21 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       for (int k=0; k < nk; k++)
         {
         
+          //Fix Density
         if(rho != NULL)
           {
           cellScalar_rho->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
           rhoValue += (float) tupleDbl[0];
           }
         
+          //Fix Sound Speed
         if(c != NULL)
           {
           cellScalar_c->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
           cValue += (float) tupleDbl[0];
           }
         
+          //Fix Velocity
         if(vx != NULL && vy != NULL && vz != NULL)
           {
           cellVector_v->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
@@ -698,6 +637,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           vValue[2] += (float) tupleDbl[2];
           }
         
+          //Fix Magnetic Field
         if(bx != NULL && by != NULL && bz != NULL)
           {
           cellVector_b->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
@@ -706,6 +646,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           bValue[2] += (float) tupleDbl[2];
           }
         
+          //Fix Average Magnetic Field
         if(avgbx != NULL && avgby != NULL && avgbz != NULL)
           {
           cellVector_avgb->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
@@ -716,12 +657,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         
         }
       
+        //Adjust Density
       if(rho != NULL)
         rhoValue /= float(nk);
       
+        //Adjust Sound Speed
       if(c != NULL)
         cValue /= float(nk);
       
+        //Adjust Velocity
       if(vx != NULL && vy != NULL && vz != NULL)
         {
         vValue[0] /= float(nk);
@@ -729,6 +673,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         vValue[2] /= float(nk);
         }
       
+        //Adjust Magnetic Field
       if(bx != NULL && by != NULL && bz != NULL)
         {
         bValue[0] /= float(nk);
@@ -736,6 +681,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         bValue[2] /= float(nk);
         }
       
+        //Adjust Averaged Magnetic Field
       if(avgbx != NULL && avgby != NULL && avgbz != NULL)
         {
         avgBvalue[0] /= float(nk);
@@ -747,6 +693,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       
       for (int k=0; k < nk; k++)
         {
+          //Commit Fixes
         if(rho != NULL)
           cellScalar_rho->SetTupleValue(i + j*ni + k*ni*njp2, &rhoValue);
         
@@ -837,36 +784,42 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       }
     }  
   
+    //Commit Density
   if(rho != NULL)
     {
     output->GetPointData()->AddArray(cellScalar_rho);
     cellScalar_rho->Delete();
     }
   
+    //Commit Sound Speed
   if(c != NULL)
     {
     output->GetPointData()->AddArray(cellScalar_c);
     cellScalar_c->Delete();
     }
   
+    //Commit Velocity
   if(vx != NULL && vy != NULL && vz != NULL)
     {
     output->GetPointData()->AddArray(cellVector_v);
     cellVector_v->Delete();
     }
   
+    //Commit Magnetic Field
   if(bx != NULL && by != NULL && bz != NULL)
     {
     output->GetPointData()->AddArray(cellVector_b);
     cellVector_b->Delete();
     }
   
+    //Commit Averaged Magnetic Field
   if(avgbx != NULL && avgby != NULL && avgbz != NULL)
     {
     output->GetPointData()->AddArray(cellVector_avgb);
     cellVector_avgb->Delete();
     }
   
+    //Clean up Memory
   if (dims != NULL)   { delete [] dims;      dims = NULL;  }   
   if (X_grid != NULL) { delete [] X_grid;    X_grid = NULL;  }
   if (Y_grid != NULL) { delete [] Y_grid;    Y_grid = NULL;  }
@@ -923,7 +876,7 @@ void vtkLFMReader::SetCellArrayStatus(const char* CellArray, int status)
   
   this->CellArrayStatus[CellArray] = status;
   this->Modified();
-    
+  
 }
 
   //----------------------------------------------------------------
@@ -932,6 +885,45 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 {
   this->PointArrayStatus[PointArray] = status;
   this->Modified();
+}
+
+  //----------------------------------------------------------------
+
+void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string VarDescription)
+{
+  if(f.hasVariable(VarName))
+    {
+      //Set Variable->description map
+    this->ArrayNameLookup[VarName] = VarDescription;
+    
+      //Set other Array Variables
+    this->NumberOfCellArrays++;
+    this->CellArrayName.push_back(VarDescription);
+    this->CellArrayStatus[VarDescription] = 0;
+    }
+  
+  cout << VarName << ": " << VarDescription << endl;
+}
+
+  //----------------------------------------------------------------
+void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription)
+{
+  if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar))
+    {
+      //Set variable->desciption map
+    this->ArrayNameLookup[xVar] = VarDescription;
+    this->ArrayNameLookup[yVar] = VarDescription;
+    this->ArrayNameLookup[zVar] = VarDescription;
+    
+      //Set other Array Variables
+    this->NumberOfCellArrays++;
+    this->CellArrayName.push_back(VarDescription);
+    this->CellArrayStatus[VarDescription] = 0;
+    
+    
+    }
+  
+  cout << xVar << "," << yVar << "," << zVar << ": " << VarDescription << endl;
 }
 
   //----------------------------------------------------------------
