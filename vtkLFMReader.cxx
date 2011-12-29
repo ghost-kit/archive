@@ -910,14 +910,26 @@ int vtkLFMReader::GetCellArrayStatus(const char *CellArray)
 
   //----------------------------------------------------------------
 
+int vtkLFMReader::GetPointArrayStatus(const char *PointArray)
+{
+  return this->PointArrayStatus[string(PointArray)];
+}
+
+  //----------------------------------------------------------------
+
   //Cell Array Status Set
 void vtkLFMReader::SetCellArrayStatus(const char* CellArray, int status)
 {
   
-  
   this->CellArrayStatus[CellArray] = status;
-  
-  
+    
+}
+
+  //----------------------------------------------------------------
+
+void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
+{
+  this->PointArrayStatus[PointArray] = status;
 }
 
   //----------------------------------------------------------------

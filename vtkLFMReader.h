@@ -56,10 +56,10 @@ public:
   vtkSetMacro(GridScaleType, int);
   vtkGetMacro(GridScaleType, int);
   
-
-    /*
-     * routines for Cell Array Info
-     */
+  
+  /*
+   * routines for Cell Array Info
+   */
   
   vtkGetMacro(NumberOfPointArrays, int);
   vtkSetMacro(NumberOfPointArrays, int);
@@ -67,8 +67,6 @@ public:
   vtkGetMacro(NumberOfCellArrays, int);
   vtkSetMacro(NumberOfCellArrays, int);
   
-//  vtkSetMacro(CellArrayName, vtkstd::vector<vtkstd::string>);
-//  vtkGetMacro(CellArrayName, vtkstd::vector<vtkstd::string>);
   
   /**
    * The purpose of this method is to determine whether
@@ -88,17 +86,17 @@ public:
    * readers this in only valid after the filename is set and
    * UpdateInformation() has been called.
    */
-//    int GetNumberOfCellArrays();
-    const char* GetCellArrayName(int index);
+    //    int GetNumberOfCellArrays();
+  const char* GetCellArrayName(int index);
   
   
   
     // Description:
     // Get/Set whether the point or cell array with the given name is to
     // be read.
-//  int GetPointArrayStatus(const char* name);
+  int GetPointArrayStatus(const char* name);
   int GetCellArrayStatus(const char* name);
-//  void SetPointArrayStatus(const char* name, int status);  
+  void SetPointArrayStatus(const char* name, int status);  
   void SetCellArrayStatus(const char* name, int status);  
   
   
@@ -137,7 +135,7 @@ protected:
   int NumberOfPointArrays;
   int NumberOfCellArrays; 
   
-
+  
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
