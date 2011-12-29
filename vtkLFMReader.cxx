@@ -888,7 +888,7 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 }
 
   //----------------------------------------------------------------
-
+  //This version of SetIfExists is for scalars
 void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string VarDescription)
 {
   if(f.hasVariable(VarName))
@@ -906,6 +906,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string V
 }
 
   //----------------------------------------------------------------
+  //This Version of SetIfExists is for Vectors (3D)
 void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar))
