@@ -20,12 +20,10 @@ using namespace std;
 
   //----------------------------------------------------------------
 
-
 vtkStandardNewMacro(vtkLFMReader);
 
 
   //----------------------------------------------------------------
-
 
 vtkLFMReader::vtkLFMReader()
 {
@@ -42,7 +40,6 @@ vtkLFMReader::vtkLFMReader()
 
   //----------------------------------------------------------------
 
-
 vtkLFMReader::~vtkLFMReader()
 {
   if ( this->HdfFileName ){
@@ -52,7 +49,6 @@ vtkLFMReader::~vtkLFMReader()
 }
 
   //----------------------------------------------------------------
-
 
 int vtkLFMReader::CanReadFile(const char *filename)
 {
@@ -123,18 +119,22 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
    */
   if(NumberOfCellArrays == 0)
     {
-      //Set the Variables needed to selectively set Arrays
+      //Set the Variables needed to selectively set Arrays (Scalar)
     SetIfExists(f, "rho_", "Plasma Density");
     SetIfExists(f, "c_", "Sound Speed");
+    
+      //Set the Variables needed to selectively set Arrays (Vector)
     SetIfExists(f, "vx_", "vy_", "vz_", "Velocity");
     SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field");
     SetIfExists(f, "avgBx", "avgBy", "avgBz", "AVG Magnetic Field");
-    SetIfExists(f, "avgEi", "avgEj", "avgEk", "AVG Electric Field");
     SetIfExists(f, "bi_", "bj_", "bk_", "B(ijk) Vector");
+    
+      //Set the Variables needed to selectively set Arrays (Derived)
     SetIfExists(f, "ei_", "ej_", "ek_", "E(ijk) Vector");
+    SetIfExists(f, "avgEi", "avgEj", "avgEk", "AVG Electric Field");
+
     }
-    //END CellArrayInfo
-  
+
   f.close();
   
   double timeRange[2];
@@ -159,21 +159,12 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
                 << extent[4] << ", " << extent[5]); 
   
   vtkInformation* outInfo = outputVector->GetInformationObject(0); 
-  
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
-  
-    //BEGIN TIME SERIES  
-    // Added by Joshua Murphy 1 DEC 2011
-  
+    //Set Time step Information
   this->NumberOfTimeSteps = metaInts.count(string("time_step"));
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
-  
-    // insert read of Time array here
-    // time is a float, mjd was a double.  Need to make sure we look at the correct
-    //  meta data vector.
   this->TimeStepValues[0] = metaFloats["time"];
-  
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
                &this->TimeStepValues[0],
                static_cast<int>(this->TimeStepValues.size()));
@@ -182,9 +173,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   timeRange[1] = this->TimeStepValues.back();
   
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-  
-    //END TIME SERIES
-  
   return 1; 
 }
 
@@ -240,7 +228,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
   f.readVariable("Z_grid", Z_grid, rank, dims);   
   
-  
     //Density Selective Read
   if(this->CellArrayStatus[GetDesc("rho_")])
     {
@@ -250,7 +237,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     f.readVariable("rho_",   rho,    rank, dims);
     
     }
-  
   
     //Sound Speed Selective Read
   if(this->CellArrayStatus[GetDesc("c_")])
@@ -271,7 +257,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
     f.readVariable("vz_",    vz,     rank, dims);   
     }
-  
   
     //Magnetic Field Selective Read
   if(this->CellArrayStatus[GetDesc("bx_")])
@@ -341,9 +326,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
   /*----------------------------------------------*/
-  
-  
-  
+
     //BEGIN UPDATE TIEM STEP
     //Return the Current Time to the Calling Application
     //Added by Joshua Murphy 1 DEC 2011
@@ -496,8 +479,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellScalar_c->SetNumberOfComponents(1);
     cellScalar_c->SetNumberOfTuples(ni*njp2*nkp1);
     }
-  
-  
   
   /*****************************
    * Cell-centered Vector data *
@@ -689,8 +670,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         avgBvalue[2] /= float(nk);
         }
       
-      
-      
       for (int k=0; k < nk; k++)
         {
           //Commit Fixes
@@ -849,7 +828,6 @@ const char * vtkLFMReader::GetCellArrayName(int index)
   nameSize = this->CellArrayName[index].size();
   name = this->CellArrayName[index].c_str();
   
-  
   return name;
 }
 
@@ -920,8 +898,6 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar
     this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
     this->CellArrayStatus[VarDescription] = 0;
-    
-    
     }
   
   cout << xVar << "," << yVar << "," << zVar << ": " << VarDescription << endl;
