@@ -138,6 +138,12 @@ protected:
   int NumberOfPointArrays;
   int NumberOfCellArrays; 
   
+    // helper values to clean up code
+    //BTX
+    //keep track of the master dimensions of the arrays.
+  vtkstd::map<vtkstd::string, int> dims;
+    //ETX
+  
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
@@ -181,7 +187,13 @@ protected:
   vtkstd::string GetDesc(vtkstd::string varName)
   { return this->ArrayNameLookup[varName];}
   
+  
+  
+    
     //ETX
+
+  
+
 private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
