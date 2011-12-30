@@ -108,6 +108,22 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   
   f.readMetaData(metaDoubles, metaFloats, metaInts, metaStrings);
   
+    //Set Dimension Information in Class
+  if(this->dims.size() == 0)
+    {
+    this->dims["x"] = dims[2];
+    this->dims["y"] = dims[1];
+    this->dims["z"] = dims[0];
+    
+    cout << "x: " << this->dims["x"] << endl;
+    cout << "y: " << this->dims["y"] << endl;
+    cout << "z: " << this->dims["z"] << endl;
+    }
+    //local dims no longer needed
+  delete [] dims;
+  
+  
+  
   
     //BEGIN CellArrayInfo
   
@@ -124,30 +140,32 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
     SetIfExists(f, "c_", "Sound Speed");
     
       //Set the Variables needed to selectively set Arrays (Vector)
-    SetIfExists(f, "vx_", "vy_", "vz_", "Velocity");
-    SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field");
-    SetIfExists(f, "avgBx", "avgBy", "avgBz", "AVG Magnetic Field");
-    SetIfExists(f, "bi_", "bj_", "bk_", "B(ijk) Vector");
+    SetIfExists(f, "vx_", "vy_", "vz_", "Velocity Vector");
+    SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field Vector");
+    SetIfExists(f, "avgBx", "avgBy", "avgBz", "Magnetic Field Vector (avg)");
+    
     
       //Set the Variables needed to selectively set Arrays (Derived)
-    SetIfExists(f, "ei_", "ej_", "ek_", "E(ijk) Vector");
-    SetIfExists(f, "avgEi", "avgEj", "avgEk", "AVG Electric Field");
-
+    SetIfExists(f, "ei_", "ej_", "ek_", "Electric Field Vector");
+    SetIfExists(f, "avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)");
+    SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");
+    
     }
-
+  
   f.close();
   
-  double timeRange[2];
-  
-  const int nip1 = dims[2];
+    //Navigation helpers
+  const int nip1 = this->dims["x"];
   const int ni = nip1-1;
   const int nim1 = ni-1;
-  const int njp1 = dims[1];
+  const int njp1 = this->dims["y"];
   const int njp2 = njp1+1;
   const int nj = njp1-1;
-  const int nkp1 = dims[0];
+  const int nkp1 = this->dims["z"];
   const int nkp2 = nkp1+1;
   const int nk = nkp1-1;
+  
+  double timeRange[2];
   
   int extent[6] = {0, nim1,
     0, njp1,
@@ -158,6 +176,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
                 << extent[2] << ", " << extent[3] << ", "
                 << extent[4] << ", " << extent[5]); 
   
+    //Set extents of grid
   vtkInformation* outInfo = outputVector->GetInformationObject(0); 
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
@@ -169,9 +188,11 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
                &this->TimeStepValues[0],
                static_cast<int>(this->TimeStepValues.size()));
   
+    //Set Time Range for file
   timeRange[0] = this->TimeStepValues.front();
   timeRange[1] = this->TimeStepValues.back();
   
+    //Update Pipeline
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   return 1; 
 }
@@ -204,13 +225,16 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   int rank;
   int *dims = NULL;
   
+    //grid points
   float *X_grid = NULL;
   float *Y_grid = NULL;
   float *Z_grid = NULL;
   
+    //scalar grids
   float *rho = NULL;
   float *c = NULL;
   
+    //Vector Grids
   float *vx = NULL;
   float *vy = NULL;
   float *vz = NULL;
@@ -219,22 +243,33 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   float *by = NULL;
   float *bz = NULL;
   
+  float *ei = NULL;
+  float *ej = NULL;
+  float *ek = NULL;
+  
+  float *bi = NULL;
+  float *bj = NULL;
+  float *bk = NULL;
+  
   float *avgbz = NULL;
   float *avgby = NULL;
   float *avgbx = NULL;
   
+  float *avgei = NULL;
+  float *avgej = NULL;
+  float *avgek = NULL;
+  
   
   f.readVariable("X_grid", X_grid, rank, dims);   delete []dims;
   f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
-  f.readVariable("Z_grid", Z_grid, rank, dims);   
+  f.readVariable("Z_grid", Z_grid, rank, dims);   delete []dims;
   
     //Density Selective Read
   if(this->CellArrayStatus[GetDesc("rho_")])
     {
     
     cout << "Plasma Desnity Selected" << endl;
-      //if(dims) delete []dims;
-    f.readVariable("rho_",   rho,    rank, dims);
+    f.readVariable("rho_",   rho,    rank, dims);  delete []dims;
     
     }
   
@@ -242,8 +277,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   if(this->CellArrayStatus[GetDesc("c_")])
     {
     cout << "Sound Speed Selected" << endl;
-    if(dims) delete []dims;
-    f.readVariable("c_",     c,      rank, dims);  
+    f.readVariable("c_",     c,      rank, dims);  delete []dims;
     
     }
   
@@ -252,10 +286,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     {
     cout << "Velocity Selected" << endl;
     
-    if(dims) delete []dims;
     f.readVariable("vx_",    vx,     rank, dims);   delete []dims;
     f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
-    f.readVariable("vz_",    vz,     rank, dims);   
+    f.readVariable("vz_",    vz,     rank, dims);   delete []dims;
     }
   
     //Magnetic Field Selective Read
@@ -263,10 +296,26 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     {
     cout << "Magnetic Field Vector Selected" << endl;
     
-    if(dims) delete []dims;
     f.readVariable("bx_",    bx,     rank, dims);   delete []dims;
     f.readVariable("by_",    by,     rank, dims);   delete []dims;
-    f.readVariable("bz_",    bz,     rank, dims);   
+    f.readVariable("bz_",    bz,     rank, dims);   delete []dims;
+    
+    }
+  
+    //Electric Field Selective Read
+  if(this->CellArrayStatus[GetDesc("ei_")])
+    {
+    f.readVariable("ei_",   ei,   rank, dims);    delete []dims;
+    f.readVariable("ej_",   ej,   rank, dims);    delete []dims;
+    f.readVariable("ek_",   ek,   rank, dims);    delete []dims;
+    
+    }
+  
+  if(this->CellArrayStatus[GetDesc("bi_")])
+    {
+    f.readVariable("bi_",   bi,   rank, dims);    delete []dims;
+    f.readVariable("bj_",   bj,   rank, dims);    delete []dims;
+    f.readVariable("bk_",   bk,   rank, dims);    delete []dims;
     
     }
   
@@ -275,16 +324,26 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     {
     cout << "Averaged Magnetic Field Vector Selected" << endl;
     
-    if(dims) delete []dims;  
     f.readVariable("avgBx",    avgbx,     rank, dims);   delete []dims;
     f.readVariable("avgBy",    avgby,     rank, dims);   delete []dims;
-    f.readVariable("avgBz",    avgbz,     rank, dims); 
+    f.readVariable("avgBz",    avgbz,     rank, dims);   delete []dims;
     }
+  
+    //Averaged E(ijk) Fields
+  if(this->CellArrayStatus[GetDesc("avgEi")])
+    {
+    cout << "Averaged Electric Field Vector Selected" << endl;
+    
+    f.readVariable("avgEi",   avgei,      rank, dims);  delete []dims;
+    f.readVariable("avgEj",   avgej,      rank, dims);  delete []dims;
+    f.readVariable("avgEk",   avgek,      rank, dims);  delete []dims;
+    }
+  
   
     //FIXME:  Read bi,bj,bk on cell faces
     //FIXME:  Read ei,ej,ek on cell edges
     //FIXME:  Read avgEi, avgEj, avgEk on cell edges
-  
+  dims = NULL;
   f.close();
   
   
@@ -293,13 +352,13 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   /*VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV*/
   
   
-  const int nip1 = dims[2];
+  const int nip1 = this->dims["x"];
   const int ni = nip1-1;
   const int nim1 = ni-1;
-  const int njp1 = dims[1];
+  const int njp1 = this->dims["y"];
   const int njp2 = njp1+1;
   const int nj = njp1-1;
-  const int nkp1 = dims[0];
+  const int nkp1 = this->dims["z"];
   const int nkp2 = nkp1+1;
   const int nk = nkp1-1;
   
@@ -326,7 +385,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
   /*----------------------------------------------*/
-
+  
     //BEGIN UPDATE TIEM STEP
     //Return the Current Time to the Calling Application
     //Added by Joshua Murphy 1 DEC 2011
@@ -485,7 +544,10 @@ int vtkLFMReader::RequestData(vtkInformation* request,
    ****************************************************************************/
   vtkFloatArray *cellVector_v = NULL;
   vtkFloatArray *cellVector_b = NULL;
+  vtkFloatArray *cellVector_e = NULL;
+  vtkFloatArray *cellVector_be = NULL;
   vtkFloatArray *cellVector_avgb = NULL;
+  vtkFloatArray *cellVector_avge = NULL;
   
     //Read Velocity
   if(vx != NULL && vy != NULL && vz != NULL)
@@ -504,6 +566,25 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_b->SetNumberOfComponents(3);
     cellVector_b->SetNumberOfTuples(ni*njp2*nkp1);
     }
+
+    //Read Bijk Magnetic Field
+  if(bi != NULL && bj != NULL && bk != NULL)
+    {
+    cellVector_be = vtkFloatArray::New();
+    cellVector_be->SetName(GetDesc("bi_").c_str());
+    cellVector_be->SetNumberOfComponents(3);
+    cellVector_be->SetNumberOfTuples(ni*njp2*nkp1);
+    }
+  
+    //Read Electric Field
+  if(ei != NULL && ej != NULL && ek != NULL)
+    {
+    cellVector_e = vtkFloatArray::New();
+    cellVector_e->SetName(GetDesc("ei_").c_str());
+    cellVector_e->SetNumberOfComponents(3);
+    cellVector_e->SetNumberOfTuples(ni*njp2*nkp1);
+    }
+  
   
     //Reading Averaged Magnetic Field
   if(avgbx != NULL && avgby != NULL && avgbz != NULL)
@@ -514,6 +595,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       cellVector_avgb->SetNumberOfTuples(ni*njp2*nkp1);
     }
   
+    //Reading Averaged Electric Field
+  if(avgei != NULL && avgej != NULL && avgek != NULL)
+    {
+    cellVector_avge = vtkFloatArray::New();
+    cellVector_avge->SetName(GetDesc("avgEi").c_str());
+    cellVector_avge->SetNumberOfComponents(3);
+    cellVector_avge->SetNumberOfTuples(ni*njp2*nkp1);
+    
+    }
   
     // Store values in VTK objects:
   int offsetData, offsetCell;
@@ -556,6 +646,24 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cellVector_b->SetTupleValue(offsetCell, tuple);
           }
         
+          //Store Electric Field Data
+        if(ei != NULL && ej != NULL && ek != NULL)
+          {
+          tuple[0] = ei[offsetData];
+          tuple[1] = ej[offsetData];
+          tuple[2] = ek[offsetData];
+          cellVector_e->SetTupleValue(offsetCell, tuple);
+          }
+        
+          //Store Bijk Data
+        if(bi != NULL && bj != NULL && bk != NULL)
+          {
+          tuple[0] = bi[offsetData];
+          tuple[1] = bj[offsetData];
+          tuple[2] = bk[offsetData];
+          cellVector_be->SetTupleValue(offsetCell, tuple);
+          }       
+        
           //Store Averaged Magnetic Field Data
         if(avgbx != NULL && avgby != NULL && avgbz != NULL)
           {
@@ -563,6 +671,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           tuple[1] = avgby[offsetData];
           tuple[2] = avgbz[offsetData];
           cellVector_avgb->SetTupleValue(offsetCell, tuple);
+          }
+        
+          //Store Averaged Electric Field Data
+        if(avgei != NULL && avgej != NULL && avgek != NULL)
+          {
+          tuple[0] = avgei[offsetData];
+          tuple[1] = avgej[offsetData];
+          tuple[2] = avgek[offsetData];
+          cellVector_avge->SetTupleValue(offsetCell, tuple);
           }
         
         
@@ -573,7 +690,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     // Fix x-axis singularity at j=0 and j=nj+1
   double tupleDbl[3];
   float rhoValue, cValue;
-  float vValue[3], bValue[3], avgBvalue[3];
+  float vValue[3], bValue[3], eValue[3], beValue[3], avgBvalue[3], avgEvalue[3];
   
   for (int j=0; j < njp2; j+=njp1){
     jAxis = max(1, min(nj, j));
@@ -581,15 +698,30 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       {
       rhoValue = 0.0;
       cValue = 0.0;
+      
       vValue[0] = 0.0;
       vValue[1] = 0.0;
       vValue[2] = 0.0;
+      
       bValue[0] = 0.0;
       bValue[1] = 0.0;
       bValue[2] = 0.0;
+      
+      beValue[0] = 0.0;
+      beValue[1] = 0.0;
+      beValue[2] = 0.0;
+      
+      eValue[0] = 0.0;
+      eValue[1] = 0.0;
+      eValue[2] = 0.0;
+      
       avgBvalue[0] = 0.0;
       avgBvalue[1] = 0.0;
       avgBvalue[2] = 0.0;
+      
+      avgEvalue[0] = 0.0;
+      avgEvalue[1] = 0.0;
+      avgEvalue[2] = 0.0;
       
       
       for (int k=0; k < nk; k++)
@@ -627,6 +759,25 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           bValue[2] += (float) tupleDbl[2];
           }
         
+          //Fix Electric Field
+        if(ei != NULL && ej != NULL && ek != NULL)
+          {
+          cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
+          eValue[0] += (float) tupleDbl[0];
+          eValue[1] += (float) tupleDbl[1];
+          eValue[2] += (float) tupleDbl[2];
+          }
+        
+          //Fix Bijk Field
+        if(bi != NULL && bj != NULL && bk != NULL)
+          {
+          cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
+          beValue[0] += (float) tupleDbl[0];
+          beValue[1] += (float) tupleDbl[1];
+          beValue[2] += (float) tupleDbl[2];
+          }
+        
+        
           //Fix Average Magnetic Field
         if(avgbx != NULL && avgby != NULL && avgbz != NULL)
           {
@@ -636,6 +787,14 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           avgBvalue[2] += (float) tupleDbl[2];
           }
         
+          //Fix Average Electric Field
+        if(avgei != NULL && avgej != NULL && avgek != NULL)
+          {
+          cellVector_avge->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
+          avgEvalue[0] += (float) tupleDbl[0];
+          avgEvalue[1] += (float) tupleDbl[1];
+          avgEvalue[2] += (float) tupleDbl[2];
+          }
         }
       
         //Adjust Density
@@ -670,6 +829,14 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         avgBvalue[2] /= float(nk);
         }
       
+        //Adjust Averaged Electric Field
+      if(avgei != NULL && avgej != NULL && avgek != NULL)
+        {
+        avgEvalue[0] /= float(nk);
+        avgEvalue[1] /= float(nk);
+        avgEvalue[2] /= float(nk);
+        }
+      
       for (int k=0; k < nk; k++)
         {
           //Commit Fixes
@@ -687,6 +854,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         
         if(avgbx != NULL && avgby != NULL && avgbz != NULL)
           cellVector_avgb->SetTupleValue(i + j*ni + k*ni*njp2, avgBvalue);
+        
+        if(avgei != NULL && avgej != NULL && avgek != NULL)
+          cellVector_avge->SetTupleValue(i + j*ni + k*ni*njp2, avgEvalue);
+        
+        if(ei != NULL && ej != NULL && ek != NULL)
+          cellVector_e->SetTupleValue(i + j*ni + k*ni*njp2, eValue);
+        
+        if(bi != NULL && bj != NULL && bk != NULL)
+          cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);          
         
         
         }
@@ -740,6 +916,33 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         cellVector_avgb->SetTupleValue(i + j*ni + nk*ni*njp2, avgBvalue);
         }            
       
+      if(avgei != NULL && avgej != NULL && avgek != NULL)
+        {
+        cellVector_avge->GetTuple(i + j*ni, tupleDbl);
+        avgEvalue[0] = (float) tupleDbl[0];
+        avgEvalue[1] = (float) tupleDbl[1];
+        avgEvalue[2] = (float) tupleDbl[2];
+        cellVector_avge->SetTupleValue(i + j*ni + nk*ni*njp2, avgEvalue);
+        }
+      
+      
+      if(ei != NULL && ej != NULL && ek != NULL)
+        {
+        cellVector_e->GetTuple(i + j*ni, tupleDbl);
+        eValue[0] = (float) tupleDbl[0];
+        eValue[1] = (float) tupleDbl[1];
+        eValue[2] = (float) tupleDbl[2];
+        cellVector_e->SetTupleValue(i + j*ni +   nk*ni*njp2, eValue);
+        }
+      
+      if(bi != NULL && bj!= NULL && bk != NULL)
+        {
+        cellVector_be->GetTuple(i + j*ni, tupleDbl);
+        beValue[0] = (float) tupleDbl[0];
+        beValue[1] = (float) tupleDbl[1];
+        beValue[2] = (float) tupleDbl[2];
+        cellVector_be->SetTupleValue(i + j*ni +   nk*ni*njp2, beValue);
+        }
         // FIXME: Set periodic cells:
         //cellScalar_rho->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
         //rhoValue = (float) tupleDbl[0];
@@ -798,22 +1001,51 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_avgb->Delete();
     }
   
+    //Commit Averaged Electric Field
+  if(avgei != NULL && avgej != NULL && avgek != NULL)
+    {
+    output->GetPointData()->AddArray(cellVector_avge);
+    cellVector_avge->Delete();
+    }
+  
+    //Commit Electric Field Data
+  if(ei != NULL && ej != NULL && ek != NULL)
+    {
+    output->GetPointData()->AddArray(cellVector_e);
+    cellVector_e->Delete();
+    }
+  
+    //Commit Bijk Field Data
+  if(bi != NULL && bj != NULL && bk != NULL)
+    {
+    output->GetPointData()->AddArray(cellVector_be);
+    cellVector_be->Delete();
+    }
+  
     //Clean up Memory
-  if (dims != NULL)   { delete [] dims;      dims = NULL;  }   
-  if (X_grid != NULL) { delete [] X_grid;    X_grid = NULL;  }
-  if (Y_grid != NULL) { delete [] Y_grid;    Y_grid = NULL;  }
-  if (Z_grid != NULL) { delete [] Z_grid;    Z_grid = NULL;  }
-  if (rho != NULL)    { delete [] rho;       rho = NULL;  }
-  if (c != NULL)      { delete [] c;         c = NULL; }
-  if (vx != NULL)     { delete [] vx;        vx = NULL; }
-  if (vy != NULL)     { delete [] vy;        vy = NULL; }
-  if (vz != NULL)     { delete [] vz;        vz = NULL; }
-  if (bx != NULL)     { delete [] bx;        bx = NULL; }
-  if (by != NULL)     { delete [] by;        by = NULL; }
-  if (bz != NULL)     { delete [] bz;        bz = NULL; }
+  if (X_grid){    delete [] X_grid;    X_grid = NULL;  }
+  if (Y_grid){    delete [] Y_grid;    Y_grid = NULL;  }
+  if (Z_grid){    delete [] Z_grid;    Z_grid = NULL;  }
+  if (rho){       delete [] rho;       rho = NULL;  }
+  if (c) {        delete [] c;         c = NULL; }
+  if (vx){        delete [] vx;        vx = NULL; }
+  if (vy){        delete [] vy;        vy = NULL; }
+  if (vz){        delete [] vz;        vz = NULL; }
+  if (bx){        delete [] bx;        bx = NULL; }
+  if (by){        delete [] by;        by = NULL; }
+  if (bz){        delete [] bz;        bz = NULL; }
+  if (bi){        delete [] bi;        bi = NULL;}
+  if (bj){        delete [] bj;        bj = NULL;}
+  if (bk){        delete [] bk;        bk = NULL;}
+  if (ei){        delete [] ei;        ei = NULL;}
+  if (ej){        delete [] ej;        ej = NULL;}
+  if (ek){        delete [] ek;        ek = NULL;}
   if (avgbx){     delete [] avgbx;     avgbx = NULL; }
   if (avgby){     delete [] avgby;     avgby = NULL; }
   if (avgbz){     delete [] avgbz;     avgbz = NULL; }
+  if (avgei){     delete [] avgei;     avgei = NULL; }
+  if (avgej){     delete [] avgej;     avgej = NULL; }
+  if (avgek){     delete [] avgek;     avgek = NULL; }
   
   return 1;
 }
