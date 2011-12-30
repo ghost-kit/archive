@@ -647,6 +647,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           }
         
           //Store Electric Field Data
+          //TODO: Implement Direved Quantities
         if(ei != NULL && ej != NULL && ek != NULL)
           {
           tuple[0] = ei[offsetData];
@@ -656,6 +657,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           }
         
           //Store Bijk Data
+          //TODO: Implement Direved Quantities
         if(bi != NULL && bj != NULL && bk != NULL)
           {
           tuple[0] = bi[offsetData];
@@ -674,6 +676,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           }
         
           //Store Averaged Electric Field Data
+          //TODO: Implement Direved Quantities
         if(avgei != NULL && avgej != NULL && avgek != NULL)
           {
           tuple[0] = avgei[offsetData];
