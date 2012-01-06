@@ -28,7 +28,7 @@
 
   //Electric Field Macros
 #define cellWallAverage(array, o1, o2, o3, o4)\
-           ((array[01] + array[02] + array[o3] + array[o4]))/4.0
+           ((array[o1] + array[o2] + array[o3] + array[o4]))/4.0
 
 #define cell_AxisAverage(array, o1,o2, o3, o4, m1, m2, m3, m4)\
            ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - \
