@@ -245,8 +245,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     //scalar grids
   float *rho = NULL;
   float *c = NULL;
-  float *eVolume = NULL;
-  float *eAVGVolume = NULL;
   
     //Vector Grids
   float *vx = NULL;
@@ -293,20 +291,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     f.readVariable("c_",     c,      rank, dims);  delete []dims;
     
     }
-//  
-//    //electric Field Volume Selective Create
-//  if(this->CellArrayStatus[GetDesc("eVolume")])
-//    {
-//    cout << "eVolume Selected" << endl;
-//    eVolume = new float((NI+1)*(NJ+1)*(NK+1));
-//    }
-//  
-//    //avg electric Field Volume Selective Create
-//  if(this->CellArrayStatus[GetDesc("eAvgVolume")])
-//    {
-//    cout << "eAVGVolume Selected" << endl;
-//    eAVGVolume = new float((NI+1)*(NJ+1)*(NK+1));
-//    }
   
     //Velocity Selective Read
   if(this->CellArrayStatus[GetDesc("vx_")])
@@ -338,6 +322,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     
     }
   
+    //Bijk
   if(this->CellArrayStatus[GetDesc("bi_")])
     {
     f.readVariable("bi_",   bi,   rank, dims);    delete []dims;
@@ -570,24 +555,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellScalar_c->SetNumberOfComponents(1);
     cellScalar_c->SetNumberOfTuples(ni*njp2*nkp1);
     }
-  
-  if(eAVGVolume != NULL)
-    {
-    cellScalar_eAVGv = vtkFloatArray::New();
-    cellScalar_eAVGv->SetName(GetDesc("eAvgVolume").c_str());
-    cellScalar_eAVGv->SetNumberOfComponents(1);
-    cellScalar_eAVGv->SetNumberOfTuples(ni*njp2*nkp1);
     
-    }
-  
-  if(eVolume != NULL)
-    {
-    cellScalar_ev = vtkFloatArray::New();
-    cellScalar_ev->SetName(GetDesc("eVolume").c_str());
-    cellScalar_ev->SetNumberOfComponents(1);
-    cellScalar_ev->SetNumberOfTuples(ni*njp2*nkp1);
-    }
-  
   /*****************************
    * Cell-centered Vector data *
    ****************************************************************************/
@@ -634,6 +602,12 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_e->SetNumberOfComponents(3);
     cellVector_e->SetNumberOfTuples(ni*njp2*nkp1);
     
+    cellScalar_ev = vtkFloatArray::New();
+    cellScalar_ev->SetName("Electric Field Volume");
+    cellScalar_ev->SetNumberOfComponents(1);
+    cellScalar_ev->SetNumberOfTuples(ni*njp2*nkp1);
+    
+    
     }
   
   
@@ -653,6 +627,11 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_avge->SetName(GetDesc("avgEi").c_str());
     cellVector_avge->SetNumberOfComponents(3);
     cellVector_avge->SetNumberOfTuples(ni*njp2*nkp1);
+    
+    cellScalar_eAVGv = vtkFloatArray::New();
+    cellScalar_eAVGv->SetName("Electric Field Volume (avg)");
+    cellScalar_eAVGv->SetNumberOfComponents(1);
+    cellScalar_eAVGv->SetNumberOfTuples(ni*njp2*nkp1);
     
     }
   
@@ -741,15 +720,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
                     
           det = 1.e-6/p_tripple(cx, cy, cz);
                     
-            //Generate Particle Volume
-            //TODO: Check to see if we need this for anything else..
-
-          if(eVolume != NULL)
-            {
-            eVolume[gridOffset(i,j,k)] = fabs(p_tripple(cx, cy, cz));
-            cout << "eVolume" << endl;
-            }
-          
             //set  electric field values
           tuple[0] = p_tripple(et,cy,cz)*det;
           tuple[1] = p_tripple(cx,et,cz)*det;
@@ -759,12 +729,11 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cout << "cellVector_v" << endl;
           
             //set electric field volume values
-//          tuple[0] = eVolume[ijk1(i,j,k)];
-//          tuple[1] = eVolume[ijk1(i,j,k)];
-//          tuple[2] = eVolume[ijk1(i,j,k)];
+          tuple[0] = fabs(p_tripple(cx, cy, cz));
+
           
-            //cellScalar_ev->SetTupleValue(ArrayOffset(i,j,k), tuple);
-            //cout << "cellScalar_ev" << endl;
+          cellScalar_ev->SetTupleValue(gridOffset(i,j,k), &tuple[0]);
+          cout << "cellScalar_ev" << endl;
           }
         
         
@@ -860,20 +829,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cellScalar_c->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
           cValue += (float) tupleDbl[0];
           }
-        
-          //Fix Electric Field Volume
-        if(eVolume != NULL)
-          {
-          cellScalar_ev->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-          evValue += (float) tupleDbl[0];
-          }
-        
-          //Fix Average Electric Field Volume
-        if(eAVGVolume != NULL)
-          {
-          cellScalar_eAVGv->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
-          avgEVvalue += (float) tupleDbl[0];
-          }
+
         
           //Fix Velocity
         if(vx != NULL && vy != NULL && vz != NULL)
@@ -900,6 +856,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           eValue[0] += (float) tupleDbl[0];
           eValue[1] += (float) tupleDbl[1];
           eValue[2] += (float) tupleDbl[2];
+          
+          cellScalar_ev->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
+          evValue += (float) tupleDbl[0];
           }
         
           //Fix Bijk Field
@@ -929,6 +888,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           avgEvalue[1] += (float) tupleDbl[1];
           avgEvalue[2] += (float) tupleDbl[2];
           
+          cellScalar_eAVGv->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
+          avgEVvalue += (float) tupleDbl[0];
+          
           }
         }
       
@@ -940,15 +902,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       if(c != NULL)
         cValue /= float(nk);
       
-        //Adjust eVolume
-      if(eVolume != NULL)
-        evValue /= float(nk);
-      
-        //Adjust Average eVolume
-      if(eAVGVolume != NULL)
-        avgEVvalue /= float(nk);
-      
-      
+            
         //Adjust Velocity
       if(vx != NULL && vy != NULL && vz != NULL)
         {
@@ -971,6 +925,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         eValue[0] /= float(nk);
         eValue[1] /= float(nk);
         eValue[2] /= float(nk);
+        
+        evValue /= float(nk);
         }
       
         //Adjust Averaged Magnetic Field
@@ -987,6 +943,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         avgEvalue[0] /= float(nk);
         avgEvalue[1] /= float(nk);
         avgEvalue[2] /= float(nk);
+        
+        avgEVvalue /= float(nk);
         }
       
       for (int k=0; k < nk; k++)
@@ -999,12 +957,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         if(c != NULL)
           cellScalar_c->SetTupleValue(i + j*ni + k*ni*njp2, &cValue);
         
-        if(eVolume != NULL)
-          cellScalar_ev->SetTupleValue(i + j*ni + k*ni*njp2, &evValue);
-        
-        if(eAVGVolume != NULL)
-          cellScalar_eAVGv->SetTupleValue(i + j*ni + k*ni*njp2, &avgEVvalue);
-        
           //Vectors
         if(vx != NULL && vy != NULL && vz != NULL)
           cellVector_v->SetTupleValue(i + j*ni + k*ni*njp2, vValue);
@@ -1015,12 +967,14 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         if(avgbx != NULL && avgby != NULL && avgbz != NULL)
           cellVector_avgb->SetTupleValue(i + j*ni + k*ni*njp2, avgBvalue);
         
-        if(avgei != NULL && avgej != NULL && avgek != NULL)
+        if(avgei != NULL && avgej != NULL && avgek != NULL){
           cellVector_avge->SetTupleValue(i + j*ni + k*ni*njp2, avgEvalue);
-        
-        if(ei != NULL && ej != NULL && ek != NULL)
+          cellScalar_eAVGv->SetTupleValue(i + j*ni + k*ni*njp2, &avgEVvalue);
+        }
+        if(ei != NULL && ej != NULL && ek != NULL){
           cellVector_e->SetTupleValue(i + j*ni + k*ni*njp2, eValue);
-        
+          cellScalar_ev->SetTupleValue(i + j*ni + k*ni*njp2, &evValue);
+        }
         if(bi != NULL && bj != NULL && bk != NULL)
           cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);          
         
@@ -1049,19 +1003,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         cellScalar_c->SetTupleValue(i + j*ni +   nk*ni*njp2, &cValue);
         }
       
-      if(eVolume != NULL)
-        {
-        cellScalar_ev->GetTuple(i + j*ni, tupleDbl);
-        evValue = (float)tupleDbl[0];
-        cellScalar_ev->SetTupleValue(i + j*ni + nk*ni*njp2, &evValue);
-        }
-      
-      if(eAVGVolume != NULL)
-        {
-        cellScalar_eAVGv->GetTuple(i + j*ni, tupleDbl);
-        avgEVvalue = (float)tupleDbl[0];
-        cellScalar_eAVGv->SetTupleValue(i + j*ni + nk*ni*njp2, &avgEVvalue);
-        }
       
       if(vx != NULL && vy != NULL && vz != NULL)
         {
@@ -1097,6 +1038,10 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         avgEvalue[1] = (float) tupleDbl[1];
         avgEvalue[2] = (float) tupleDbl[2];
         cellVector_avge->SetTupleValue(i + j*ni + nk*ni*njp2, avgEvalue);
+        
+        cellScalar_eAVGv->GetTuple(i + j*ni, tupleDbl);
+        avgEVvalue = (float)tupleDbl[0];
+        cellScalar_eAVGv->SetTupleValue(i + j*ni + nk*ni*njp2, &avgEVvalue);
         }
       
       if(ei != NULL && ej != NULL && ek != NULL)
@@ -1106,6 +1051,10 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         eValue[1] = (float) tupleDbl[1];
         eValue[2] = (float) tupleDbl[2];
         cellVector_e->SetTupleValue(i + j*ni +   nk*ni*njp2, eValue);
+        
+        cellScalar_ev->GetTuple(i + j*ni, tupleDbl);
+        evValue = (float)tupleDbl[0];
+        cellScalar_ev->SetTupleValue(i + j*ni + nk*ni*njp2, &evValue);
         }
       
       if(bi != NULL && bj!= NULL && bk != NULL)
@@ -1154,23 +1103,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellScalar_c->Delete();
     }
   
-  
-    //TODO: fix Volume Arrays to work silently with electric Field arrays
-    //Commit eVolume
-  if(eVolume != NULL)
-    {
-    output->GetPointData()->AddArray(cellScalar_ev);
-    cellScalar_ev->Delete();
-    }
-  
-    //Commit eAVGVolume
-  if(eAVGVolume != NULL)
-    {
-    output ->GetPointData()->AddArray(cellScalar_eAVGv);
-    cellScalar_eAVGv->Delete();
-    }
-    //END TODO
-  
     //Commit Velocity
   if(vx != NULL && vy != NULL && vz != NULL)
     {
@@ -1197,6 +1129,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     {
     output->GetPointData()->AddArray(cellVector_avge);
     cellVector_avge->Delete();    
+    
+    output ->GetPointData()->AddArray(cellScalar_eAVGv);
+    cellScalar_eAVGv->Delete();
     }
   
     //Commit Electric Field Data
@@ -1204,6 +1139,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     {
     output->GetPointData()->AddArray(cellVector_e);
     cellVector_e->Delete();
+    
+    output->GetPointData()->AddArray(cellScalar_ev);
+    cellScalar_ev->Delete();
     }
   
     //Commit Bijk Field Data
@@ -1237,8 +1175,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   if (avgei){     delete [] avgei;     avgei = NULL; }
   if (avgej){     delete [] avgej;     avgej = NULL; }
   if (avgek){     delete [] avgek;     avgek = NULL; }
-  if (eVolume){   delete [] eVolume;   eVolume = NULL; }
-  if (eAVGVolume){delete [] eAVGVolume;eAVGVolume=NULL; }
   
   return 1;
 }
