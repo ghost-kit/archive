@@ -531,7 +531,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
    ****************************************************************************/
   vtkFloatArray *cellScalar_rho = NULL;
   vtkFloatArray *cellScalar_c = NULL;
-  vtkFloatArray *cellScalar_ev = NULL;
+  vtkFloatArray *cellScalar_volume = NULL;
   vtkFloatArray *cellScalar_eAVGv = NULL;
   
   
@@ -602,10 +602,10 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_e->SetNumberOfComponents(3);
     cellVector_e->SetNumberOfTuples(ni*njp2*nkp1);
     
-    cellScalar_ev = vtkFloatArray::New();
-    cellScalar_ev->SetName("Electric Field Volume");
-    cellScalar_ev->SetNumberOfComponents(1);
-    cellScalar_ev->SetNumberOfTuples(ni*njp2*nkp1);
+    cellScalar_volume = vtkFloatArray::New();
+    cellScalar_volume->SetName("Cell Volume");
+    cellScalar_volume->SetNumberOfComponents(1);
+    cellScalar_volume->SetNumberOfTuples(ni*njp2*nkp1);
     
     
     }
@@ -700,12 +700,10 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           {
 
           setFortranCellGridPointOffsetMacro;
-
-          
-          et[0] = cellWallAverage(ei, offset, ok, oj, ojk);
-          et[1] = cellWallAverage(ej, offset, ok, oi, oik);
-          et[2] = cellWallAverage(ek, offset, oi, oj, oij);
-          
+	  
+	  // Get cell center positions
+	  // FIXME: query cell center positions from existing
+	  // vtkStructuredGrid::GetPoints(...) array.
           cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
           cx[1] = cell_AxisAverage(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
           cx[2] = cell_AxisAverage(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
@@ -717,26 +715,33 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cz[0] = cell_AxisAverage(Z_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
           cz[1] = cell_AxisAverage(Z_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
           cz[2] = cell_AxisAverage(Z_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-                    
+
+	  // Calculate Cell Volume. Use parallelpiped vector identity:
+	  // Volume of parallelpiped determined by vectors A,B,C is
+	  // the magnitude of triple scalar product |a.(bxc)|
+          tuple[0] = fabs(p_tripple(cx, cy, cz));
+          
+          cellScalar_volume->SetTupleValue(offsetCell, &tuple[0]);
+          cout << "cellScalar_volume" << endl;
+
+	  // Now calculate electric field through cell centre
+
+	  // <ei,ej,ek> = electric field along edge of cells
+	  // et =  face-centered electric field
+          et[0] = cellWallAverage(ei, offset, ok, oj, ojk);
+          et[1] = cellWallAverage(ej, offset, ok, oi, oik);
+          et[2] = cellWallAverage(ek, offset, oi, oj, oij);
+
+	  //FIXME:  Is this Stoke's Theorem or Green's Theorem at work?
           det = 1.e-6/p_tripple(cx, cy, cz);
-                    
-            //set  electric field values
           tuple[0] = p_tripple(et,cy,cz)*det;
           tuple[1] = p_tripple(cx,et,cz)*det;
           tuple[2] = p_tripple(cx,cy,et)*det;
           
-          cellVector_e->SetTupleValue(ArrayOffset(i,j,k), tuple);
-          cout << "cellVector_v" << endl;
-          
-            //set electric field volume values
-          tuple[0] = fabs(p_tripple(cx, cy, cz));
-
-          
-          cellScalar_ev->SetTupleValue(gridOffset(i,j,k), &tuple[0]);
-          cout << "cellScalar_ev" << endl;
-          }
-        
-        
+          cellVector_e->SetTupleValue(offsetCell, tuple);
+          cout << "cellVector_e" << endl;
+	  }
+                
           //--
         
           //Store Bijk Data
@@ -775,7 +780,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
     // Fix x-axis singularity at j=0 and j=nj+1
   double tupleDbl[3];
-  float rhoValue, cValue, evValue, avgEVvalue;
+  float rhoValue, cValue, volumeValue, avgEVvalue;
   float vValue[3], bValue[3], eValue[3], beValue[3], avgBvalue[3], avgEvalue[3];
   
   for (int j=0; j < njp2; j+=njp1){
@@ -784,7 +789,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       {
       rhoValue = 0.0;
       cValue = 0.0;
-      evValue = 0.0;
+      volumeValue = 0.0;
       avgEVvalue = 0.0;
       
       vValue[0] = 0.0;
@@ -857,8 +862,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           eValue[1] += (float) tupleDbl[1];
           eValue[2] += (float) tupleDbl[2];
           
-          cellScalar_ev->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-          evValue += (float) tupleDbl[0];
+          cellScalar_volume->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
+          volumeValue += (float) tupleDbl[0];
           }
         
           //Fix Bijk Field
@@ -926,7 +931,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         eValue[1] /= float(nk);
         eValue[2] /= float(nk);
         
-        evValue /= float(nk);
+        volumeValue /= float(nk);
         }
       
         //Adjust Averaged Magnetic Field
@@ -973,7 +978,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         }
         if(ei != NULL && ej != NULL && ek != NULL){
           cellVector_e->SetTupleValue(i + j*ni + k*ni*njp2, eValue);
-          cellScalar_ev->SetTupleValue(i + j*ni + k*ni*njp2, &evValue);
+          cellScalar_volume->SetTupleValue(i + j*ni + k*ni*njp2, &volumeValue);
         }
         if(bi != NULL && bj != NULL && bk != NULL)
           cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);          
@@ -1052,9 +1057,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         eValue[2] = (float) tupleDbl[2];
         cellVector_e->SetTupleValue(i + j*ni +   nk*ni*njp2, eValue);
         
-        cellScalar_ev->GetTuple(i + j*ni, tupleDbl);
-        evValue = (float)tupleDbl[0];
-        cellScalar_ev->SetTupleValue(i + j*ni + nk*ni*njp2, &evValue);
+        cellScalar_volume->GetTuple(i + j*ni, tupleDbl);
+        volumeValue = (float)tupleDbl[0];
+        cellScalar_volume->SetTupleValue(i + j*ni + nk*ni*njp2, &volumeValue);
         }
       
       if(bi != NULL && bj!= NULL && bk != NULL)
@@ -1140,8 +1145,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     output->GetPointData()->AddArray(cellVector_e);
     cellVector_e->Delete();
     
-    output->GetPointData()->AddArray(cellScalar_ev);
-    cellScalar_ev->Delete();
+    output->GetPointData()->AddArray(cellScalar_volume);
+    cellScalar_volume->Delete();
     }
   
     //Commit Bijk Field Data
