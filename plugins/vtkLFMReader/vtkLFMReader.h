@@ -10,6 +10,51 @@
 #include <vtkstd/map>
 #include "Hdf4.h"
 
+  //simple macros to point to dimensions
+#define NI this->dims["x"]-1
+#define NJ this->dims["y"]-1
+#define NK this->dims["z"]-1
+
+  //Calculates the FORTRAN offset a grid
+  //WARNING: the Variable ni and nj MUST be defined in the local domain to
+  //    use this macro
+#define gridOffset(i,j,k) i + (j)*(ni+1) + (k)*(ni+1)*(nj+1)
+
+  //Calculates the corrent VTK Array offset
+  //WARNING: the Variable ni and nj MUST be defined in the local domain to
+  //    use this macro
+#define ArrayOffset(i,j,k) (i) + (j)*(ni) + (k)*(ni)*(nj+2)
+
+
+  //Electric Field Macros
+#define cellWallAverage(array, o1, o2, o3, o4)\
+           ((array[01] + array[02] + array[o3] + array[o4]))/4.0
+
+#define cell_AxisAverage(array, o1,o2, o3, o4, m1, m2, m3, m4)\
+           ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - \
+            (array[m1]  +  array[m2] +  array[m3] + array[m4]))/4.0
+
+  //This Macro calculates the cell centered value for the 8 points at the corners
+  //  This macro works with, but does not require the setCellGridPointOffsetMacro.
+  //  Use the offset macro if you are using Fortran Arrays in C/C++
+#define cell8PointAverage(array, o1, o2, o3, o4, o5, o6, o7, o8) \
+        ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  + \
+          array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0)
+
+  //This Macro sets the values of offset, oi, oj, ok, oij, oik, ojk, oijk
+  //  for when you need access to the points at the corners of the cell.
+  //  The Above Mentioned variables MUST exist before calling this macro.
+  //  THIS IS FOR FORTRAN OFFSETS IN C/C++ Code ONLY
+#define setFortranCellGridPointOffsetMacro         \
+      offset  = gridOffset(i,   j,    k);   \
+      oi      = gridOffset(i+1, j,    k);   \
+      oj      = gridOffset(i,   j+1,  k);   \
+      ok      = gridOffset(i,   j,    k+1); \
+      oij     = gridOffset(i+1, j+1,  k);   \
+      oik     = gridOffset(i+1, j,    k+1); \
+      ojk     = gridOffset(i,   j+1,  k+1); \
+      oijk    = gridOffset(i+1, j+1,  k+1); 
+
 namespace GRID_SCALE
 {
   enum ScaleType{
@@ -181,18 +226,48 @@ protected:
    */
   
     //BTX
+    //These methods will add an ARRAY to the available list if the its associated
+    //  variables exist within the file.
+    //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
+    //  Can only be used to add existing variables in the file.
+    //  if existence query fails, NOTHING happens
   void SetIfExists(Hdf4 &filePointer, vtkstd::string VarName, vtkstd::string VarDescription);
   void SetIfExists(Hdf4 &filePointer, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription);
+  
+    //these methods will add an ARRAY to the available list indexed at "ArrayIndexName" with the 
+    //  description value of "VarDescription".  This can be used to add dirived quantities to the system.
+    //  
+    //  If existence querry fails, NOTHING happens.
+  void SetNewIfExists(Hdf4 &filePointer, vtkstd::string VarName, vtkstd::string ArrayIndexName, vtkstd::string VarDescription);
+  void SetNewIfExists(Hdf4 &filePointer, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string ArrayIndexName,  vtkstd::string VarDescription);
   
   vtkstd::string GetDesc(vtkstd::string varName)
   { return this->ArrayNameLookup[varName];}
   
-  
-  
-    
     //ETX
 
+    //Helper Functions  
+    //--------------------------------------------------------------------
   
+  float p_dot(float *x, float *y)  {return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];}
+  
+    //--------------------------------------------------------------------
+  
+  void p_cross3(float *x, float *y, float *z){
+    z[0] = x[1]*y[2] - x[2]*y[1];
+    z[1] = x[2]*y[0] - x[0]*y[2];
+    z[2] = x[0]*y[1] - x[1]*y[0];
+  }
+  
+    //--------------------------------------------------------------------
+  
+  float p_tripple(float *x, float *y, float *z){
+    float dum[3];
+    p_cross3(y,z,dum);
+    return p_dot(x,dum);
+  }
+  
+    //--------------------------------------------------------------------
 
 private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
