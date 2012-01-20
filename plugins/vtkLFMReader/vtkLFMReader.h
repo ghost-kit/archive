@@ -26,34 +26,21 @@
 #define ArrayOffset(i,j,k) (i) + (j)*(ni) + (k)*(ni)*(nj+2)
 
 
-  //Electric Field Macros
-#define cellWallAverage(array, o1, o2, o3, o4)\
-           ((array[o1] + array[o2] + array[o3] + array[o4]))/4.0
 
-#define cell_AxisAverage(array, o1,o2, o3, o4, m1, m2, m3, m4)\
-           ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - \
-            (array[m1]  +  array[m2] +  array[m3] + array[m4]))/4.0
-
-  //This Macro calculates the cell centered value for the 8 points at the corners
-  //  This macro works with, but does not require the setCellGridPointOffsetMacro.
-  //  Use the offset macro if you are using Fortran Arrays in C/C++
-#define cell8PointAverage(array, o1, o2, o3, o4, o5, o6, o7, o8) \
-        ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  + \
-          array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0)
 
   //This Macro sets the values of offset, oi, oj, ok, oij, oik, ojk, oijk
   //  for when you need access to the points at the corners of the cell.
   //  The Above Mentioned variables MUST exist before calling this macro.
   //  THIS IS FOR FORTRAN OFFSETS IN C/C++ Code ONLY
 #define setFortranCellGridPointOffsetMacro         \
-      offset  = gridOffset(i,   j,    k);   \
-      oi      = gridOffset(i+1, j,    k);   \
-      oj      = gridOffset(i,   j+1,  k);   \
-      ok      = gridOffset(i,   j,    k+1); \
-      oij     = gridOffset(i+1, j+1,  k);   \
-      oik     = gridOffset(i+1, j,    k+1); \
-      ojk     = gridOffset(i,   j+1,  k+1); \
-      oijk    = gridOffset(i+1, j+1,  k+1); 
+offset  = gridOffset(i,   j,    k);   \
+oi      = gridOffset(i+1, j,    k);   \
+oj      = gridOffset(i,   j+1,  k);   \
+ok      = gridOffset(i,   j,    k+1); \
+oij     = gridOffset(i+1, j+1,  k);   \
+oik     = gridOffset(i+1, j,    k+1); \
+ojk     = gridOffset(i,   j+1,  k+1); \
+oijk    = gridOffset(i+1, j+1,  k+1); 
 
 namespace GRID_SCALE
 {
@@ -245,7 +232,7 @@ protected:
   { return this->ArrayNameLookup[varName];}
   
     //ETX
-
+  
     //Helper Functions  
     //--------------------------------------------------------------------
   
@@ -268,7 +255,30 @@ protected:
   }
   
     //--------------------------------------------------------------------
-
+  
+  
+    //This method calculates the cell centered value for the 8 points at the corners
+    //  This macro works with, but does not require the setCellGridPointOffsetMacro.
+    //  Use the offset macro if you are using Fortran Arrays in C/C++
+  inline float cell8PointAverage(float *array, int o1, int o2, int o3, int o4, int o5, int o6, int o7, int o8) 
+  {
+  return ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  +
+           array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0);
+  }
+  
+    //Electric Field methods
+  inline float cellWallAverage(float *array, int o1, int o2, int o3, int o4)
+  {
+  return ((array[o1] + array[o2] + array[o3] + array[o4]))/4.0;
+  }
+  
+  inline float cell_AxisAverage(float *array, int o1,int o2, int o3, int o4, int m1, int m2, int m3, int m4)
+  {
+  return ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - 
+          (array[m1]  +  array[m2] +  array[m3] + array[m4]))/4.0;
+  }
+  
+  
 private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
