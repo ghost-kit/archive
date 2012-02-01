@@ -82,10 +82,10 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
 
   char *EnlilFileName;
   int GridScaleType;
-  int64_t numberOfPoints;
-  int64_t dimR;
-  int64_t dimTheta;
-  int64_t dimPhi;
+  int numberOfPoints;
+  int dimR;
+  int dimTheta;
+  int dimPhi;
 
   /**
    * This method is invoked by the superclass's ProcessRequest

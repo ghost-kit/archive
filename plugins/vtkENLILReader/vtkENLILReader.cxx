@@ -34,7 +34,7 @@ vtkENLILReader::vtkENLILReader()
 {
   this->EnlilFileName = NULL;
   // print vtkDebugMacro messages by turning debug mode on:
-  //this->DebugOn();
+  this->DebugOn();
 }
 
 vtkENLILReader::~vtkENLILReader()
@@ -61,6 +61,10 @@ int vtkENLILReader::CanReadFile(const char *filename)
   int numVars = dataFile.num_vars();
   int numDims = dataFile.num_dims();
   int numAtts = dataFile.num_atts();
+
+vtkDebugMacro(<< __FILE__ << " " << __FUNCTION__ << " (L" <<  __LINE__ << "): "
+              <<  numVars << " " << numDims << " "  << numAtts
+              << endl);
 
   // TODO: Make sure all the relevant meta data exists
   //    We need a valid test to confirm the files
@@ -91,9 +95,9 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   //get sample data
   NcVar *B1 = dataFile.get_var("B1");
 
-  int64_t dimR = B1->get_dim(3)->size();
-  int64_t dimTheta = B1->get_dim(2)->size();
-  int64_t dimPhi = B1->get_dim(1)->size();
+  int dimR = B1->get_dim(3)->size();
+  int dimTheta = B1->get_dim(2)->size();
+  int dimPhi = B1->get_dim(1)->size();
 
   this->dimR = dimR;
   this->dimTheta = dimTheta;
@@ -151,9 +155,13 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   int ncDimID_theta=0;
   int ncDimID_phi=0;
 
-  uint64_t i=0;
-  uint64_t j=0;
-  uint64_t k=0;
+  int i=0;
+  int j=0;
+  int k=0;
+
+  int nk=0;
+  int nj=0;
+  int ni=0;
 
   size_t dimR=0;
   size_t dimTheta=0;
@@ -190,9 +198,9 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   X1 = (double*)calloc(this->dimR, sizeof(double));
   X2 = (double*)calloc(this->dimTheta, sizeof(double));
   X3 = (double*)calloc(this->dimPhi, sizeof(double));
-  fprintf(logFile, "X1 Allocated: %lld\n", this->dimR);
-  fprintf(logFile, "X2 Allocated: %lld\n", this->dimTheta);
-  fprintf(logFile, "X3 Allocated: %lld\n", this->dimPhi);
+  fprintf(logFile, "X1 Allocated: %d\n", this->dimR);
+  fprintf(logFile, "X2 Allocated: %d\n", this->dimTheta);
+  fprintf(logFile, "X3 Allocated: %d\n", this->dimPhi);
   fflush(logFile);
 
 
@@ -274,11 +282,11 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 
   float xyz[3] =
       { 0, 0, 0 };
-  int64_t gridIndex = 0;
-  int64_t oldOffset = -1;
-  int64_t count = 0;
+  int gridIndex = 0;
+  int oldOffset = -1;
+  int count = 0;
 
-  fprintf(logFile, "Total Count: %lld\n\n", this->numberOfPoints);
+  fprintf(logFile, "Total Count: %d\n\n", this->numberOfPoints);
   fflush(logFile);
 
 /*
