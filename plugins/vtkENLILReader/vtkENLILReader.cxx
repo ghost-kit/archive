@@ -34,7 +34,7 @@ vtkENLILReader::vtkENLILReader()
 {
   this->EnlilFileName = NULL;
   // print vtkDebugMacro messages by turning debug mode on:
-  this->DebugOn();
+  //this->DebugOn();
 }
 
 vtkENLILReader::~vtkENLILReader()
@@ -62,10 +62,6 @@ int vtkENLILReader::CanReadFile(const char *filename)
   int numDims = dataFile.num_dims();
   int numAtts = dataFile.num_atts();
 
-vtkDebugMacro(<< __FILE__ << " " << __FUNCTION__ << " (L" <<  __LINE__ << "): "
-              <<  numVars << " " << numDims << " "  << numAtts
-              << endl);
-
   // TODO: Make sure all the relevant meta data exists
   //    We need a valid test to confirm the files
   if (numVars != 16)
@@ -84,6 +80,9 @@ vtkDebugMacro(<< __FILE__ << " " << __FUNCTION__ << " (L" <<  __LINE__ << "): "
 int vtkENLILReader::RequestInformation(vtkInformation* request,
     vtkInformationVector** inputVector, vtkInformationVector* outputVector)
 {
+  vtkDebugMacro(<< __FILE__ << " " << __FUNCTION__ << " (L" <<  __LINE__ << "): "
+		<<  "Hello world!" 
+		<< endl);
 
   NcFile dataFile(this->EnlilFileName);
 
@@ -140,11 +139,6 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   vtkDebugMacro(<< "GridScaleType is \"" << this->GetGridScaleType() << "\".");
   vtkDebugMacro(<< "GridScaleFactor is \"" << GRID_SCALE::ScaleFactor[this->GetGridScaleType()] << "\"");
 
-  //logfile
-  FILE *logFile = fopen("/Users/jjm390/logfile.txt", "w");
-  fprintf(logFile, ":::Starting RequestData:::\n\n");
-  fflush(logFile);
-
   ///////////////////
   // Set sub extents
   int ncStatus=0;
@@ -194,15 +188,9 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       return 0;
     }
 
-
   X1 = (double*)calloc(this->dimR, sizeof(double));
   X2 = (double*)calloc(this->dimTheta, sizeof(double));
   X3 = (double*)calloc(this->dimPhi, sizeof(double));
-  fprintf(logFile, "X1 Allocated: %d\n", this->dimR);
-  fprintf(logFile, "X2 Allocated: %d\n", this->dimTheta);
-  fprintf(logFile, "X3 Allocated: %d\n", this->dimPhi);
-  fflush(logFile);
-
 
   //Get Coordinate Array and Sizes
   //TODO: Separate these items into own functions
@@ -210,41 +198,13 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   ncStatus = nc_inq_varid(ncFileID, "X1", &ncSDSID);
   ncStatus = nc_get_var_double(ncFileID,ncSDSID, X1);
 
-  fprintf(logFile, "X1 Retrieved\n");
-  fflush(logFile);
-
   ncStatus = nc_inq_varid(ncFileID, "X2", &ncSDSID);
   ncStatus = nc_get_var_double(ncFileID,ncSDSID, X2);
-
-  fprintf(logFile, "X2 Retrieved\n");
-  fflush(logFile);
 
   ncStatus = nc_inq_varid(ncFileID, "X3", &ncSDSID);
   ncStatus = nc_get_var_double(ncFileID,ncSDSID, X3);
 
-  fprintf(logFile, "X3 Retrieved\n");
-  fflush(logFile);
-
-
-
-
   nc_close(ncFileID);
-
-  for(i = 0; i < this->dimR; i++)
-    {
-      fprintf(logFile, "Radial: %f\n", X1[i]);
-      fflush(logFile);
-    }
-  for(j=0; j < this->dimTheta; j++)
-    {
-      fprintf(logFile, "Theta: %f\n", X2[j]);
-      fflush(logFile);
-    }
-  for(k=0; k < this->dimPhi; k++)
-    {
-      fprintf(logFile, "Phi: %f\n", X3[k]);
-      fflush(logFile);
-    }
 
   vtkDebugMacro(<< "NcFile Opened");
 
@@ -286,9 +246,6 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   int oldOffset = -1;
   int count = 0;
 
-  fprintf(logFile, "Total Count: %d\n\n", this->numberOfPoints);
-  fflush(logFile);
-
 /*
  * GRID read section
  */
@@ -307,13 +264,16 @@ for (k = 0; k < this->dimPhi; k++)
               xyz[1] = X1[i]*sin(X2[j])*sin(X3[k]) / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
               xyz[2] = X1[i]*cos(X2[j]) / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
 
+	      //xyz[0] = i;
+	      //xyz[1] = j;
+	      //xyz[2] = k;
+
               //insert point information into the grid
               points->InsertNextPoint(xyz);
             }
         }
 
     }
-
   //Close off the gap in the grid (make sphere continuous
   for (j=0; j < this->dimTheta; j++)
     {
@@ -322,12 +282,14 @@ for (k = 0; k < this->dimPhi; k++)
           xyz[0] = X1[i]*sin(X2[j])*cos(X3[0]) / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
           xyz[1] = X1[i]*sin(X2[j])*sin(X3[0]) / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
           xyz[2] = X1[i]*cos(X2[j]) / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
+	  //xyz[0] = i;
+	  //xyz[1] = j;
+	  //xyz[2] = 0;
 
           //Fix the Gap... insert the contiguous points
           points->InsertNextPoint(xyz);
         }
     }
-
   vtkDebugMacro(<< "NumberOfPoints after mesh read: " << points->GetNumberOfPoints());
 
   output->SetPoints(points);
@@ -337,6 +299,27 @@ for (k = 0; k < this->dimPhi; k++)
    * Data Read Section
    */
 
+  vtkDoubleArray *cellScalar_Density = vtkDoubleArray::New();
+  cellScalar_Density->SetName("Density");
+  cellScalar_Density->SetNumberOfComponents(1);
+  //cellScalar_Density->SetNumberOfTuples(this->dimR*this->dimTheta*this->dimPhi);
+
+  double scalar;
+  for (int k = 0; k < this->dimR; k++)
+    {
+      for (int j = 0; j < this->dimTheta; j++)
+        {
+          for (int i = 0; i < this->dimPhi; i++)
+            {
+	      scalar = i + 100 * j + 10000*k;
+	      cellScalar_Density->InsertNextValue(scalar);
+	    }
+	}
+    }
+  output->GetPointData()->AddArray(cellScalar_Density);
+  cellScalar_Density->Delete();
+
+#if 0
   /*****************************************************************************
    * Cell-centered scalar data
    * ==========================
@@ -441,7 +424,7 @@ for (k = 0; k < this->dimPhi; k++)
   if(B3) free(B3);
   if(BP) free(BP);
 
-
+#endif
   return 1;
 }
 
