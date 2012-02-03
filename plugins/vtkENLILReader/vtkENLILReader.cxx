@@ -169,9 +169,9 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 		return 0;
 	}
 
-	X1 = (double*) calloc(this->dimR, sizeof(double));
-	X2 = (double*) calloc(this->dimTheta, sizeof(double));
-	X3 = (double*) calloc(this->dimPhi, sizeof(double));
+	X1 = new double[this->dimR];
+	X2 = new double[this->dimTheta];
+	X3 = new double[this->dimPhi];
 
 	//Get Coordinate Array and Sizes
 	//TODO: Separate these items into own functions
@@ -299,7 +299,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 	for (j = 0; j < this->dimTheta; j++) {
 		for (i = 0; i < this->dimR; i++) {
 
-			scalar = i + 100 * j + 10000 * k;
+			scalar = i + 100 * j + 10000;
 			cellScalar_Density->InsertNextValue(scalar);
 			
 			//Fix the Gap... insert the contiguous points
