@@ -3,7 +3,20 @@
 
 #include "vtkStructuredGridReader.h"
 #include "vtkDelimitedTextReader.h"
+#include "vtkInformationVector.h"
+#include "vtkPoints.h"
+
+#include "vtkPointData.h"
 #include <sys/types.h>
+#include <vtkstd/string>
+#include <vtkstd/vector>
+#include <vtkstd/map>
+
+//Calculates the corrent VTK Array offset
+//WARNING: the Variable ni and nj MUST be defined in the local domain to
+//    use this macro
+#define ArrayOffset(i,j,k) i+ni*(j+nj*k)
+#define gridOffset(i,j,k) i+ni*(j+nj*k)
 
 
 namespace GRID_SCALE
@@ -51,9 +64,30 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
   vtkGetStringMacro(EnlilFileName);
   virtual char *GetFileName() { return this->GetEnlilFileName(); }
 
-  vtkSetMacro(GridScaleType, int);
+//  vtkSetMacro(GridScaleType, int);
+  void SetGridScaleType(int set)
+  {
+      //set the value
+      this->GridScaleType = set;
+
+      //need to reload the grid
+      this->gridSet=false;
+
+      //need to mark as modified
+      this->Modified();
+  }
+
   vtkGetMacro(GridScaleType, int);
 
+  /*
+   * routines for Cell Array Info
+   */
+
+  vtkGetMacro(NumberOfPointArrays, int);
+  vtkSetMacro(NumberOfPointArrays, int);
+
+  vtkGetMacro(NumberOfCellArrays, int);
+  vtkSetMacro(NumberOfCellArrays, int);
   /**
    * The purpose of this method is to determine whether
    * this reader can read a specified data file. Its input parameter
@@ -73,7 +107,16 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
    * UpdateInformation() has been called.
    */
   //int GetNumberOfCellArrays();
-  //const char* GetCellArrayName(int index);
+   const char* GetCellArrayName(int index);
+   const char* GetPointArrayName(int index);
+
+  // Description:
+  // Get/Set whether the point or cell array with the given name is to
+  // be read.
+int GetPointArrayStatus(const char* name);
+int GetCellArrayStatus(const char* name);
+void SetPointArrayStatus(const char* name, int status);
+void SetCellArrayStatus(const char* name, int status);
 
 
  protected:
@@ -82,10 +125,42 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
 
   char *EnlilFileName;
   int GridScaleType;
-  int numberOfPoints;
-  int dimR;
-  int dimTheta;
-  int dimPhi;
+  int64_t numberOfPoints;
+  int64_t dimR;
+  int64_t dimTheta;
+  int64_t dimPhi;
+
+  //THESE VALUES are needed for dealing with Time Steps
+  //  Added TimeStep Variables:
+  //    1) NumberOfTimeSteps
+  //    2) TimeStepValues
+  //
+  //  The BTX and ETX comments must encompase stl calls when in a header file
+  // Added by Joshua Murphy 1 DEC 2011
+int NumberOfTimeSteps;
+
+  //BTX
+vtkstd::vector<double> TimeStepValues;
+
+  //Map of variable name to Description String
+vtkstd::map<vtkstd::string, vtkstd::string> ArrayNameLookup;
+
+  //Point and Cell Array Status Information
+vtkstd::vector<vtkstd::string> CellArrayName;
+vtkstd::vector<vtkstd::string> PointArrayName;
+
+vtkstd::map<vtkstd::string,int> CellArrayStatus;
+vtkstd::map<vtkstd::string,int> PointArrayStatus;
+  //ETX
+
+bool      gridSet;
+vtkPoints *gridPoints;
+vtkDoubleArray *Radius;
+
+  // The number of point/cell data arrays in the output.  Valid after
+  // SetupOutputData has been called.
+int NumberOfPointArrays;
+int NumberOfCellArrays;
 
   /**
    * This method is invoked by the superclass's ProcessRequest

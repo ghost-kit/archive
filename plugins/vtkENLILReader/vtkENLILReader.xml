@@ -1,5 +1,7 @@
 <ServerManagerConfiguration>
-  <ProxyGroup name="sources">
+
+
+  <ProxyGroup name="internal_sources">
     <SourceProxy 
        name="vtkENLILReader"
        class="vtkENLILReader">
@@ -30,14 +32,146 @@
 
         
 
+    <StringVectorProperty
+        name="CellArrayInfo"
+        information_only="1">
+
+        <ArraySelectionInformationHelper attribute_name="Cell"/>
+
+        <Documentation>
+            This is the Cell Array Selector.
+        </Documentation>
         
+    </StringVectorProperty>
+
+    <StringVectorProperty
+        name="CellArrayStatus"
+        command="SetCellArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types = "2 0"
+        information_property="CellArrayInfo"
+        label="Fields Available"
+        default_values = "0">
+
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="CellArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="PointArrayInfo"
+        information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Point"/>
+
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="PointArrayStatus"
+        command="SetCellArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types = "2 0"
+        information_property="PointArrayInfo"
+        label="Fields Available"
+        default_values = "0">
+
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
       <Hints>
         <ReaderFactory
-	   extensions="enc"
+           extensions="enc nc"
 	   file_description="ENLIL Data File"/>
       </Hints>
 
     </SourceProxy>
       
   </ProxyGroup>
+
+
+  <ProxyGroup name="sources">
+    <SourceProxy name="vtkENLILReader"
+      si_class="vtkSIFileSeriesReaderProxy"
+      class="vtkFileSeriesReader"
+      file_name_method="SetFileName">
+
+      <Documentation>
+        This Property makes it possible to open a series of files based on the integered input files.
+      </Documentation>
+
+      <Hints>
+        <ReaderFactory
+        extensions="enc nc"
+        file_description="ENLIL Data File"/>
+      </Hints>
+
+      <SubProxy>
+        <Proxy name="Reader"
+        proxygroup="internal_sources" proxyname="vtkENLILReader" />
+        <ExposedProperties>
+          <Property name="GridScaleFactor" />
+
+          <Property name="CellArrayInfo" />
+          <Property name="CellArrayStatus" />
+
+          <Property name="PointArrayInfo" />
+          <Property name="PointArrayStatus" />
+
+
+        </ExposedProperties>
+      </SubProxy>
+
+      <StringVectorProperty name="FileNameInfo"
+        command="GetCurrentFileName"
+        information_only="1">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
+
+      <StringVectorProperty name="FileNames"
+        clean_command="RemoveAllFileNames"
+        command="AddFileName"
+        animateable="1"
+        number_of_elements="0"
+        repeat_command="1">
+        <FileListDomain name="files" />
+        <Documentation>
+          The file or list of files to be read by the reader.
+          A list of files will be sequenced over time.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- This exposes the Timestep Values to the ParaView UI.  Must be implemented in reader to get the time step values -->
+
+      <DoubleVectorProperty name="TimestepValues"
+        repeatable="1"
+        information_only="1">
+        <TimeStepsInformationHelper />
+        <Documentation>
+          Available timestep values.
+        </Documentation>
+      </DoubleVectorProperty>
+    </SourceProxy>
+  </ProxyGroup>
+
 </ServerManagerConfiguration>
