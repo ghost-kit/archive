@@ -88,15 +88,10 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
 
   double TIME = 0;
   double timeRange[2];
-  double timeStep=0;
 
   size_t dim_r = 0;
   size_t dim_theta = 0;
   size_t dim_phi = 0;
-
-  vtkDebugMacro(<< __FILE__ << " " << __FUNCTION__ << " (L" << __LINE__ << "): "
-                << "Hello world!"
-                << endl);
 
   ncStatus = nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID);
 
@@ -187,10 +182,6 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   int ncFileID = 0;
   int ncSDSID = 0;
 
-  int ncDimID_r = 0;
-  int ncDimID_theta = 0;
-  int ncDimID_phi = 0;
-
   int i = 0;
   int j = 0;
   int k = 0;
@@ -246,13 +237,6 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   ncStatus = nc_get_var_double(ncFileID, ncSDSID, BP);
   nc_close(ncFileID);
 
-
-  vtkDebugMacro(<< "NcFile Opened");
-
-  vtkDebugMacro(<< "NcVar's Declared");
-
-  vtkDebugMacro(<< "line 188");
-
   int subext[6] = { 0, (this->dimR - 1), 0, (this->dimTheta - 1), 0,
                     (this->dimPhi) };
 
@@ -264,8 +248,6 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), subext);
 
-  vtkDebugMacro(<< "Line 193");
-
   ///////////////////////////////////////////////////////////////////////////
   //read that part of the data in from the file and put it in the output data
 
@@ -273,18 +255,13 @@ int vtkENLILReader::RequestData(vtkInformation* request,
         outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   output->SetDimensions(this->dimR, this->dimTheta, (this->dimPhi + 1));
-  this->numberOfPoints = (this->dimR * this->dimTheta * (this->dimPhi + 1));
-
-  vtkDebugMacro(<< "Line 203");
 
   //////////////////////
   // Point-centered data
 
 
   double xyz[3] = { 0, 0, 0 };
-  int64_t gridIndex = 0;
-  int64_t oldOffset = -1;
-  int64_t count = 0;
+
 
   double radiusValue;
   const int GridScale = this->GetGridScaleType();
@@ -298,6 +275,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   * Read in the grid, and construct it in the output file
   */
 
+  //Grid Configuration
   vtkPoints *gridPoints = vtkPoints::New();
 
   //Radius Configuration
@@ -360,7 +338,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   /*
      * Data Read Section
      */
-
+#if 0
   vtkDoubleArray *cellScalar_Density = vtkDoubleArray::New();
   cellScalar_Density->SetName("Density");
   cellScalar_Density->SetNumberOfComponents(1);
@@ -369,15 +347,15 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     {
       cellScalar_Density->InsertNextValue(BP[x]);
     }
-  for(int x = 0; x < this->dimTheta*this->dimR; x++)
-    {
-      cellScalar_Density->InsertNextValue(BP[x]);
-    }
+//  for(int x = 0; x < this->dimTheta*this->dimR; x++)
+//    {
+//      cellScalar_Density->InsertNextValue(BP[x]);
+//    }
 
   output->GetPointData()->AddArray(cellScalar_Density);
   cellScalar_Density->Delete();
 
-#if 0
+
   /*****************************************************************************
      * Cell-centered scalar data
      * ==========================
