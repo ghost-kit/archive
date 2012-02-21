@@ -70,9 +70,6 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
       //set the value
       this->GridScaleType = set;
 
-      //need to reload the grid
-      this->gridSet=false;
-
       //need to mark as modified
       this->Modified();
   }
@@ -152,10 +149,6 @@ vtkstd::vector<vtkstd::string> PointArrayName;
 vtkstd::map<vtkstd::string,int> CellArrayStatus;
 vtkstd::map<vtkstd::string,int> PointArrayStatus;
   //ETX
-
-bool      gridSet;
-vtkPoints *gridPoints;
-vtkDoubleArray *Radius;
 
   // The number of point/cell data arrays in the output.  Valid after
   // SetupOutputData has been called.
