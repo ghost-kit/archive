@@ -258,22 +258,14 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 
   //////////////////////
   // Point-centered data
-
-
   double xyz[3] = { 0, 0, 0 };
-
 
   double radiusValue;
   const int GridScale = this->GetGridScaleType();
 
-
   /*
      * GRID read section
      */
-
-  /*
-  * Read in the grid, and construct it in the output file
-  */
 
   //Grid Configuration
   vtkPoints *gridPoints = vtkPoints::New();
@@ -299,9 +291,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
               //calculate the radius at this point
               radiusValue = sqrt(xyz[0]*xyz[0]+xyz[1]*xyz[1]+xyz[2]*xyz[2]);
 
-
               //insert point information into the grid
-
               gridPoints->InsertNextPoint(xyz);
               Radius->InsertNextValue(radiusValue);
             }
@@ -331,14 +321,15 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     }
 
   output->GetPointData()->AddArray(Radius);
-  Radius->Delete();
   output->SetPoints(gridPoints);
   gridPoints->Delete();
+  Radius->Delete();
+
 
   /*
      * Data Read Section
      */
-#if 0
+
   vtkDoubleArray *cellScalar_Density = vtkDoubleArray::New();
   cellScalar_Density->SetName("Density");
   cellScalar_Density->SetNumberOfComponents(1);
@@ -347,15 +338,15 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     {
       cellScalar_Density->InsertNextValue(BP[x]);
     }
-//  for(int x = 0; x < this->dimTheta*this->dimR; x++)
-//    {
-//      cellScalar_Density->InsertNextValue(BP[x]);
-//    }
+  for(int x = 0; x < this->dimTheta*this->dimR; x++)
+    {
+      cellScalar_Density->InsertNextValue(BP[x]);
+    }
 
   output->GetPointData()->AddArray(cellScalar_Density);
   cellScalar_Density->Delete();
 
-
+#if 0
   /*****************************************************************************
      * Cell-centered scalar data
      * ==========================
@@ -420,11 +411,11 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 const char * vtkENLILReader::GetCellArrayName(int index)
 {
   const char* name;
-  int nameSize;
 
   //name = this->CellArrayName[index].c_str();
+  name = "Density";
 
-  return "name";
+  return name;
 }
 
 //----------------------------------------------------------------
@@ -435,9 +426,9 @@ const char * vtkENLILReader::GetPointArrayName(int index)
   int nameSize;
 
   //name = this->PointArrayName[index].c_str();
+  name = "Density";
 
-
-  return "name";
+  return name;
 }
 
 
@@ -446,14 +437,16 @@ const char * vtkENLILReader::GetPointArrayName(int index)
 //Cell Array Status Retrieval
 int vtkENLILReader::GetCellArrayStatus(const char *CellArray)
 {
-  return this->CellArrayStatus[string(CellArray)];
+  //return this->CellArrayStatus[string(CellArray)];
+  return 1;
 }
 
 //----------------------------------------------------------------
 
 int vtkENLILReader::GetPointArrayStatus(const char *PointArray)
 {
-  return this->PointArrayStatus[string(PointArray)];
+  //return this->PointArrayStatus[string(PointArray)];
+  return 1;
 }
 
 //----------------------------------------------------------------
@@ -462,7 +455,7 @@ int vtkENLILReader::GetPointArrayStatus(const char *PointArray)
 void vtkENLILReader::SetCellArrayStatus(const char* CellArray, int status)
 {
 
-  this->CellArrayStatus[CellArray] = status;
+//  this->CellArrayStatus[CellArray] = status;
   this->Modified();
 
 }
@@ -471,7 +464,7 @@ void vtkENLILReader::SetCellArrayStatus(const char* CellArray, int status)
 
 void vtkENLILReader::SetPointArrayStatus(const char* PointArray, int status)
 {
-  this->PointArrayStatus[PointArray] = status;
+//  this->PointArrayStatus[PointArray] = status;
   this->Modified();
 }
 
