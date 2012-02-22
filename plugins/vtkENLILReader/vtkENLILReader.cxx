@@ -308,92 +308,92 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 
   if(GetCellArrayStatus(GetDesc("D")))
     {
-  clearString(long_name, 256);
+      clearString(long_name, 256);
 
-  ncStatus = nc_inq_varid(ncFileID, "D", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, D);
-}
+      ncStatus = nc_inq_varid(ncFileID, "D", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, D);
+    }
 
   if(GetCellArrayStatus(GetDesc("DP")))
     {
-  clearString(long_name, 256);
+      clearString(long_name, 256);
 
-  ncStatus = nc_inq_varid(ncFileID, "DP", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, DP);
-}
+      ncStatus = nc_inq_varid(ncFileID, "DP", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, DP);
+    }
 
   if(GetCellArrayStatus(GetDesc("T")))
     {
-  clearString(long_name, 256);
+      clearString(long_name, 256);
 
-  ncStatus = nc_inq_varid(ncFileID, "T", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, T);
-}
-
-  if(GetCellArrayStatus(GetDesc("B1")))
-    {
-  clearString(long_name, 256);
-
-  ncStatus = nc_inq_varid(ncFileID, "B1", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, B1);
-}
-  if(GetCellArrayStatus(GetDesc("B1")))
-    {
-  clearString(long_name, 256);
-
-  ncStatus = nc_inq_varid(ncFileID, "B2", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, B2);
-}
+      ncStatus = nc_inq_varid(ncFileID, "T", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, T);
+    }
 
   if(GetCellArrayStatus(GetDesc("B1")))
     {
-  clearString(long_name, 256);
+      clearString(long_name, 256);
 
-  ncStatus = nc_inq_varid(ncFileID, "B3", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, B3);
-}
+      ncStatus = nc_inq_varid(ncFileID, "B1", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, B1);
+    }
+  if(GetCellArrayStatus(GetDesc("B1")))
+    {
+      clearString(long_name, 256);
+
+      ncStatus = nc_inq_varid(ncFileID, "B2", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, B2);
+    }
+
+  if(GetCellArrayStatus(GetDesc("B1")))
+    {
+      clearString(long_name, 256);
+
+      ncStatus = nc_inq_varid(ncFileID, "B3", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, B3);
+    }
 
   if(GetCellArrayStatus(GetDesc("V1")))
     {
-  clearString(long_name, 256);
+      clearString(long_name, 256);
 
-  ncStatus = nc_inq_varid(ncFileID, "V1", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, V1);
-}
-
-  if(GetCellArrayStatus(GetDesc("V1")))
-    {
-  clearString(long_name, 256);
-
-  ncStatus = nc_inq_varid(ncFileID, "V2", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, V2);
-}
+      ncStatus = nc_inq_varid(ncFileID, "V1", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, V1);
+    }
 
   if(GetCellArrayStatus(GetDesc("V1")))
     {
-  clearString(long_name, 256);
+      clearString(long_name, 256);
 
-  ncStatus = nc_inq_varid(ncFileID, "V3", &ncSDSID);
-  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
-  cout << "long name: " << long_name << endl;
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, V3);
-}
+      ncStatus = nc_inq_varid(ncFileID, "V2", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, V2);
+    }
+
+  if(GetCellArrayStatus(GetDesc("V1")))
+    {
+      clearString(long_name, 256);
+
+      ncStatus = nc_inq_varid(ncFileID, "V3", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, V3);
+    }
 
   nc_close(ncFileID);
 
@@ -661,7 +661,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 
 const char * vtkENLILReader::GetCellArrayName(int index)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   const char* name;
 
@@ -674,7 +674,7 @@ const char * vtkENLILReader::GetCellArrayName(int index)
 
 const char * vtkENLILReader::GetPointArrayName(int index)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   const char* name;
 
@@ -689,7 +689,7 @@ const char * vtkENLILReader::GetPointArrayName(int index)
 //Cell Array Status Retrieval
 int vtkENLILReader::GetCellArrayStatus(const char *CellArray)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   return this->CellArrayStatus[string(CellArray)];
 }
@@ -697,7 +697,7 @@ int vtkENLILReader::GetCellArrayStatus(const char *CellArray)
 //Cell Array Status Retrieval
 int vtkENLILReader::GetCellArrayStatus(vtkstd::string CellArray)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   return this->CellArrayStatus[CellArray];
 }
@@ -707,7 +707,7 @@ int vtkENLILReader::GetCellArrayStatus(vtkstd::string CellArray)
 
 int vtkENLILReader::GetPointArrayStatus(const char *PointArray)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   return this->PointArrayStatus[string(PointArray)];
 
@@ -715,7 +715,7 @@ int vtkENLILReader::GetPointArrayStatus(const char *PointArray)
 
 int vtkENLILReader::GetPointArrayStatus(vtkstd::string PointArray)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   return this->PointArrayStatus[PointArray];
 }
@@ -726,7 +726,7 @@ int vtkENLILReader::GetPointArrayStatus(vtkstd::string PointArray)
 //Cell Array Status Set
 void vtkENLILReader::SetCellArrayStatus(const char* CellArray, int status)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   this->CellArrayStatus[CellArray] = status;
   this->Modified();
@@ -737,7 +737,7 @@ void vtkENLILReader::SetCellArrayStatus(const char* CellArray, int status)
 
 void vtkENLILReader::SetPointArrayStatus(const char* PointArray, int status)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   this->PointArrayStatus[PointArray] = status;
   this->Modified();
@@ -747,7 +747,7 @@ void vtkENLILReader::SetPointArrayStatus(const char* PointArray, int status)
 //This version of SetIfExists is for scalars
 void vtkENLILReader::SetArrayName(vtkstd::string VarName, vtkstd::string VarDescription)
 {
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
 
   //Set Variable->description map
@@ -766,7 +766,7 @@ void vtkENLILReader::SetArrayName(vtkstd::string VarName, vtkstd::string VarDesc
 void vtkENLILReader::SetArrayName(vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription)
 {
 
-//  cout << __FUNCTION__ << endl;
+  //  cout << __FUNCTION__ << endl;
 
   //Set variable->desciption map
   this->ArrayNameLookup[xVar] = VarDescription;
