@@ -184,6 +184,14 @@ int NumberOfCellArrays;
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
 
+  void clearString(char* string, int size)
+  {
+    for(int x = 0; x < size; x++)
+      {
+        string[x] = '\0';
+      }
+  }
+
 private:
   vtkENLILReader(const vtkENLILReader&); // Not implemented
   void operator=(const vtkENLILReader&); // Not implemented

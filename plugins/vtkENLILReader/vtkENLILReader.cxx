@@ -53,6 +53,9 @@ vtkENLILReader::~vtkENLILReader()
 
 int vtkENLILReader::CanReadFile(const char *filename)
 {
+  cout << __FUNCTION__ << endl;
+
+
   int ncStatus = 0;
   int ncFileID = 0;
   int status = 0;
@@ -81,6 +84,9 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
                                        vtkInformationVector* outputVector)
 
 {
+
+  cout << __FUNCTION__ << endl;
+
 
   int ncStatus = 0;
   int ncFileID = 0;
@@ -114,6 +120,10 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
 
   ncStatus = nc_inq_varid(ncFileID, "TIME", &ncSDSID);
   ncStatus = nc_get_var_double(ncFileID, ncSDSID, &TIME);
+
+  //Need to get Long Names to add to arrays
+
+
 
   nc_close(ncFileID);
 
@@ -160,7 +170,7 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
 
-
+  cout << "END " << __FUNCTION__ << endl;
 
   return 1;
 }
@@ -171,10 +181,10 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
  */
 int vtkENLILReader::RequestData(vtkInformation* request,
                                 vtkInformationVector** inputVector,
-                                vtkInformationVector* outputVector) {
-  vtkDebugMacro(<<"Reading ENLIL NETCDF file as a vtkStructuredGrid...");
-  vtkDebugMacro(<< "GridScaleType is \"" << this->GetGridScaleType() << "\".");
-  vtkDebugMacro(<< "GridScaleFactor is \"" << GRID_SCALE::ScaleFactor[this->GetGridScaleType()] << "\"");
+                                vtkInformationVector* outputVector)
+{
+
+  cout << __FUNCTION__ << endl;
 
   ///////////////////
   // Set sub extents
@@ -190,15 +200,12 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   double *B2 = NULL;
   double *B3 = NULL;
   double *BP = NULL;
-  //	double *D = NULL;
-  //	double *DP = NULL;
-  //	double *DT = NULL;
-  //	double *T = NULL;
-  //	double *NSTEP = NULL;
-  //	double *TIME = NULL;
-  //	double *V1 = NULL;
-  //	double *V2 = NULL;
-  //	double *V3 = NULL;
+  double *D = NULL;
+  double *DP = NULL;
+  double *T = NULL;
+  double *V1 = NULL;
+  double *V2 = NULL;
+  double *V3 = NULL;
   double *X1 = NULL;
   double *X2 = NULL;
   double *X3 = NULL;
@@ -211,10 +218,21 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       return 0;
     }
 
+  int64_t arraySize = this->dimPhi*this->dimR*this->dimTheta;
+  char long_name[256];
+
   X1 = new double[this->dimR];
   X2 = new double[this->dimTheta];
   X3 = new double[this->dimPhi];
-  BP = new double[this->dimR * this->dimTheta * this->dimPhi];
+  D = new double[arraySize];
+  DP = new double[arraySize];
+  T = new double[arraySize];
+  B1 = new double[arraySize];
+  B2 = new double[arraySize];
+  B3 = new double[arraySize];
+  V1 = new double[arraySize];
+  V2 = new double[arraySize];
+  V3 = new double[arraySize];
 
   int64_t     ni = this->dimR-1,
       nj = this->dimTheta-1,
@@ -233,8 +251,69 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   ncStatus = nc_inq_varid(ncFileID, "X3", &ncSDSID);
   ncStatus = nc_get_var_double(ncFileID, ncSDSID, X3);
 
-  ncStatus = nc_inq_varid(ncFileID, "BP", &ncSDSID);
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, BP);
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "D", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, D);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "DP", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, DP);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "T", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, T);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "B1", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, B1);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "B2", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, B2);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "B3", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, B3);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "V1", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, V1);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "V2", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, V2);
+
+  clearString(long_name, 256);
+
+  ncStatus = nc_inq_varid(ncFileID, "V3", &ncSDSID);
+  ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+  cout << "long name: " << long_name << endl;
+  ncStatus = nc_get_var_double(ncFileID, ncSDSID, V3);
+
   nc_close(ncFileID);
 
   int subext[6] = { 0, (this->dimR - 1), 0, (this->dimTheta - 1), 0,
@@ -334,17 +413,72 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   cellScalar_Density->SetName("Density");
   cellScalar_Density->SetNumberOfComponents(1);
 
-  for (int x = 0; x < ((this->dimPhi)*this->dimTheta*this->dimR); x++ )
+  vtkDoubleArray *cellScalar_PlasmaCloudDensity = vtkDoubleArray::New();
+  cellScalar_PlasmaCloudDensity->SetName("Plasma Cloud Density");
+  cellScalar_PlasmaCloudDensity->SetNumberOfComponents(1);
+
+  vtkDoubleArray *cellScalar_Temperature = vtkDoubleArray::New();
+  cellScalar_Temperature->SetName("Temperature");
+  cellScalar_Temperature->SetNumberOfComponents(1);
+
+  vtkDoubleArray *cellVector_MagneticField = vtkDoubleArray::New();
+  cellVector_MagneticField->SetName("Magnetic Field");
+  cellVector_MagneticField->SetNumberOfComponents(3);
+
+  vtkDoubleArray *cellVector_Velocity = vtkDoubleArray::New();
+  cellVector_Velocity->SetName("Velocity");
+  cellVector_Velocity->SetNumberOfComponents(3);
+
+  for (int x = 0; x < (this->dimPhi*this->dimTheta*this->dimR); x++ )
     {
-      cellScalar_Density->InsertNextValue(BP[x]);
+      cellScalar_Density->InsertNextValue(D[x]);
+      cellScalar_PlasmaCloudDensity->InsertNextValue(DP[x]);
+      cellScalar_Temperature->InsertNextValue(T[x]);
+
+      //Magnetic Field
+      xyz[0] = B1[x];
+      xyz[1] = B2[x];
+      xyz[2] = B3[x];
+      cellVector_MagneticField->InsertNextTuple(xyz);
+
+      //Velocity
+      xyz[0] = V1[x];
+      xyz[0] = V2[x];
+      xyz[0] = V3[x];
+      cellVector_Velocity->InsertNextTuple(xyz);
+
     }
   for(int x = 0; x < this->dimTheta*this->dimR; x++)
     {
-      cellScalar_Density->InsertNextValue(BP[x]);
+      cellScalar_Density->InsertNextValue(D[x]);
+      cellScalar_PlasmaCloudDensity->InsertNextValue(DP[x]);
+      cellScalar_Temperature->InsertNextValue(T[x]);
+
+      //Magnetic Field
+      xyz[0] = B1[x];
+      xyz[1] = B2[x];
+      xyz[2] = B3[x];
+      cellVector_MagneticField->InsertNextTuple(xyz);
+
+      //Velocity
+      xyz[0] = V1[x];
+      xyz[0] = V2[x];
+      xyz[0] = V3[x];
+      cellVector_Velocity->InsertNextTuple(xyz);
     }
 
   output->GetPointData()->AddArray(cellScalar_Density);
+  output->GetPointData()->AddArray(cellScalar_PlasmaCloudDensity);
+  output->GetPointData()->AddArray(cellScalar_Temperature);
+
+  output->GetPointData()->AddArray(cellVector_MagneticField);
+  output->GetPointData()->AddArray(cellVector_Velocity);
+
   cellScalar_Density->Delete();
+  cellScalar_PlasmaCloudDensity->Delete();
+  cellScalar_Temperature->Delete();
+  cellVector_MagneticField->Delete();
+  cellVector_Velocity->Delete();
 
 #if 0
   /*****************************************************************************
@@ -394,13 +528,22 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 #endif
 
 
-  if(X1) free(X1);
-  if(X2) free(X2);
-  if(X3) free(X3);
-  if(B1) free(B1);
-  if(B2) free(B2);
-  if(B3) free(B3);
-  if(BP) free(BP);
+  if(X1){ delete[] X1; X1 = NULL;}
+  if(X2){ delete[] X2; X2 = NULL;}
+  if(X3){ delete[] X3; X3 = NULL;}
+  if(B1){ delete[] B1; B1 = NULL;}
+  if(B2){ delete[] B2; B2 = NULL;}
+  if(B3){ delete[] B3; B3 = NULL;}
+  if(V1){ delete[] V1; V1 = NULL;}
+  if(V2){ delete[] V2; V2 = NULL;}
+  if(V3){ delete[] V3; V3 = NULL;}
+  if(BP){ delete[] BP; BP = NULL;}
+  if(DP){ delete[] DP; DP = NULL;}
+  if(D) { delete[] D;  D  = NULL;}
+  if(T) { delete[] T;  T  = NULL;}
+
+
+  cout << "END " << __FUNCTION__ << endl;
 
 
   return 1;
