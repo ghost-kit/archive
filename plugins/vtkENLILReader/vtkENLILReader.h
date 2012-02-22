@@ -112,6 +112,13 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
   // be read.
 int GetPointArrayStatus(const char* name);
 int GetCellArrayStatus(const char* name);
+
+//BTX
+int GetCellArrayStatus(vtkstd::string);
+int GetPointArrayStatus(vtkstd::string);
+
+
+//ETX
 void SetPointArrayStatus(const char* name, int status);
 void SetCellArrayStatus(const char* name, int status);
 
@@ -184,6 +191,29 @@ int NumberOfCellArrays;
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
 
+  /**
+   *  This function will check to see if the variable (VarName) exists, and if it does, set
+   *    associated variables to correct values.
+   *
+   *    This Method does NOTHING if the variable does not exist.
+   */
+
+    //BTX
+    //These methods will add an ARRAY to the available list if the its associated
+    //  variables exist within the file.
+    //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
+    //  Can only be used to add existing variables in the file.
+    //  if existence query fails, NOTHING happens
+  void SetArrayName(vtkstd::string VarName, vtkstd::string VarDescription);
+  void SetArrayName(vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription);
+
+
+    //ETX
+
+
+
+
+
   void clearString(char* string, int size)
   {
     for(int x = 0; x < size; x++)
@@ -191,6 +221,11 @@ int NumberOfCellArrays;
         string[x] = '\0';
       }
   }
+
+
+  vtkstd::string GetDesc(vtkstd::string varName)
+  { return this->ArrayNameLookup[varName];}
+
 
 private:
   vtkENLILReader(const vtkENLILReader&); // Not implemented
