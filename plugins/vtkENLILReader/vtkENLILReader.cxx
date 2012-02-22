@@ -280,6 +280,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   X3 = new double[this->dimPhi];
   D = new double[arraySize];
   DP = new double[arraySize];
+  BP = new double[arraySize];
   T = new double[arraySize];
   B1 = new double[arraySize];
   B2 = new double[arraySize];
@@ -291,6 +292,13 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   int64_t     ni = this->dimR-1,
       nj = this->dimTheta-1,
       nk = this->dimPhi-1;
+
+  int readD = GetCellArrayStatus(GetDesc("D"));
+  int readDP = GetCellArrayStatus(GetDesc("DP"));
+  int readBP = GetCellArrayStatus(GetDesc("BP"));
+  int readT = GetCellArrayStatus(GetDesc("T"));
+  int readB = GetCellArrayStatus(GetDesc("B1"));
+  int readV = GetCellArrayStatus(GetDesc("V1"));
 
 
   //Get Coordinate Array and Sizes
@@ -306,7 +314,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   ncStatus = nc_get_var_double(ncFileID, ncSDSID, X3);
 
 
-  if(GetCellArrayStatus(GetDesc("D")))
+  if(readD)
     {
       clearString(long_name, 256);
 
@@ -316,7 +324,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, D);
     }
 
-  if(GetCellArrayStatus(GetDesc("DP")))
+  if(readDP)
     {
       clearString(long_name, 256);
 
@@ -326,7 +334,17 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, DP);
     }
 
-  if(GetCellArrayStatus(GetDesc("T")))
+  if(readBP)
+    {
+      clearString(long_name, 256);
+
+      ncStatus = nc_inq_varid(ncFileID, "BP", &ncSDSID);
+      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      cout << "long name: " << long_name << endl;
+      ncStatus = nc_get_var_double(ncFileID, ncSDSID, BP);
+    }
+
+  if(readT)
     {
       clearString(long_name, 256);
 
@@ -336,7 +354,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, T);
     }
 
-  if(GetCellArrayStatus(GetDesc("B1")))
+  if(readB)
     {
       clearString(long_name, 256);
 
@@ -345,7 +363,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       cout << "long name: " << long_name << endl;
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, B1);
     }
-  if(GetCellArrayStatus(GetDesc("B1")))
+  if(readB)
     {
       clearString(long_name, 256);
 
@@ -355,7 +373,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, B2);
     }
 
-  if(GetCellArrayStatus(GetDesc("B1")))
+  if(readB)
     {
       clearString(long_name, 256);
 
@@ -365,7 +383,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, B3);
     }
 
-  if(GetCellArrayStatus(GetDesc("V1")))
+  if(readV)
     {
       clearString(long_name, 256);
 
@@ -375,7 +393,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, V1);
     }
 
-  if(GetCellArrayStatus(GetDesc("V1")))
+  if(readV)
     {
       clearString(long_name, 256);
 
@@ -385,7 +403,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, V2);
     }
 
-  if(GetCellArrayStatus(GetDesc("V1")))
+  if(readV)
     {
       clearString(long_name, 256);
 
@@ -488,40 +506,50 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   vtkDoubleArray *cellScalar_Density = NULL;
   vtkDoubleArray *cellScalar_PlasmaCloudDensity = NULL;
   vtkDoubleArray *cellScalar_Temperature = NULL;
+  vtkDoubleArray *cellScalar_MagneticPolarity = NULL;
   vtkDoubleArray *cellVector_MagneticField = NULL;
   vtkDoubleArray *cellVector_Velocity = NULL;
+
+
   /*
      * Data Read Section
      */
-  if(GetCellArrayStatus(GetDesc("D")))
+  if(readD)
     {
       cellScalar_Density = vtkDoubleArray::New();
       cellScalar_Density->SetName("Density");
       cellScalar_Density->SetNumberOfComponents(1);
     }
 
-  if(GetCellArrayStatus(GetDesc("DP")))
+  if(readDP)
     {
       cellScalar_PlasmaCloudDensity = vtkDoubleArray::New();
       cellScalar_PlasmaCloudDensity->SetName("Plasma Cloud Density");
       cellScalar_PlasmaCloudDensity->SetNumberOfComponents(1);
     }
 
-  if(GetCellArrayStatus(GetDesc("T")))
+  if(readBP)
+    {
+      cellScalar_MagneticPolarity = vtkDoubleArray::New();
+      cellScalar_MagneticPolarity->SetName("Magnetic Polarity");
+      cellScalar_MagneticPolarity->SetNumberOfComponents(1);
+    }
+
+  if(readT)
     {
       cellScalar_Temperature = vtkDoubleArray::New();
       cellScalar_Temperature->SetName("Temperature");
       cellScalar_Temperature->SetNumberOfComponents(1);
     }
 
-  if(GetCellArrayStatus(GetDesc("B1")))
+  if(readB)
     {
       cellVector_MagneticField = vtkDoubleArray::New();
       cellVector_MagneticField->SetName("Magnetic Field");
       cellVector_MagneticField->SetNumberOfComponents(3);
     }
 
-  if(GetCellArrayStatus(GetDesc("V1")))
+  if(readV)
     {
       cellVector_Velocity = vtkDoubleArray::New();
       cellVector_Velocity->SetName("Velocity");
@@ -531,36 +559,41 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   for (int x = 0; x < (this->dimPhi*this->dimTheta*this->dimR); x++ )
     {
 
-      if(GetCellArrayStatus(GetDesc("D")))
+      if(readD)
         {
           cellScalar_Density->InsertNextValue(D[x]);
         }
 
-      if(GetCellArrayStatus(GetDesc("DP")))
+      if(readDP)
         {
           cellScalar_PlasmaCloudDensity->InsertNextValue(DP[x]);
         }
 
-      if(GetCellArrayStatus(GetDesc("T")))
+      if(readBP)
+        {
+          cellScalar_MagneticPolarity->InsertNextValue(BP[x]);
+        }
+
+      if(readT)
         {
           cellScalar_Temperature->InsertNextValue(T[x]);
         }
 
-      if(GetCellArrayStatus(GetDesc("B1")))
+      if(readB)
         {
           //Magnetic Field
-          xyz[0] = B1[x];
-          xyz[1] = B2[x];
-          xyz[2] = B3[x];
+          xyz[0] = B1[x] * sin(B2[x]) * cos(B3[x]);
+          xyz[1] = B1[x] * sin(B2[x]) * sin(B3[x]);
+          xyz[2] = B1[x] * cos(B2[x]);
           cellVector_MagneticField->InsertNextTuple(xyz);
         }
 
-      if(GetCellArrayStatus(GetDesc("V1")))
+      if(readV)
         {
           //Velocity
-          xyz[0] = V1[x];
-          xyz[0] = V2[x];
-          xyz[0] = V3[x];
+          xyz[0] = V1[x] * sin(V2[x]) * cos(V3[x]);
+          xyz[1] = V1[x] * sin(V2[x]) * sin(V3[x]);
+          xyz[2] = V1[x] * cos(V2[x]);
           cellVector_Velocity->InsertNextTuple(xyz);
 
         }
@@ -568,66 +601,81 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     }
   for(int x = 0; x < this->dimTheta*this->dimR; x++)
     {
-      if(GetCellArrayStatus(GetDesc("D")))
+      if(readD)
         {
           cellScalar_Density->InsertNextValue(D[x]);
         }
 
-      if(GetCellArrayStatus(GetDesc("DP")))
+      if(readDP)
         {
           cellScalar_PlasmaCloudDensity->InsertNextValue(DP[x]);
         }
 
-      if(GetCellArrayStatus(GetDesc("T")))
+      if(readBP)
+        {
+          cellScalar_MagneticPolarity->InsertNextValue(BP[x]);
+        }
+
+      if(readT)
         {
           cellScalar_Temperature->InsertNextValue(T[x]);
         }
 
-      if(GetCellArrayStatus(GetDesc("B1")))
+      if(readB)
         {
           //Magnetic Field
-          xyz[0] = B1[x];
-          xyz[1] = B2[x];
-          xyz[2] = B3[x];
+
+          xyz[0] = B1[x] * sin(B2[x]) * cos(B3[x]);
+          xyz[1] = B1[x] * sin(B2[x]) * sin(B3[x]);
+          xyz[2] = B1[x] * cos(B2[x]);
+
           cellVector_MagneticField->InsertNextTuple(xyz);
         }
-      if(GetCellArrayStatus(GetDesc("V1")))
+      if(readV)
         {
           //Velocity
-          xyz[0] = V1[x];
-          xyz[0] = V2[x];
-          xyz[0] = V3[x];
+          xyz[0] = V1[x] * sin(V2[x]) * cos(V3[x]);
+          xyz[1] = V1[x] * sin(V2[x]) * sin(V3[x]);
+          xyz[2] = V1[x] * cos(V2[x]);
+
           cellVector_Velocity->InsertNextTuple(xyz);
         }
     }
 
-  if(GetCellArrayStatus(GetDesc("D")))
+  if(readD)
     {
       output->GetPointData()->AddArray(cellScalar_Density);
       cellScalar_Density->Delete();
 
     }
 
-  if(GetCellArrayStatus(GetDesc("DP")))
+  if(readDP)
     {
       output->GetPointData()->AddArray(cellScalar_PlasmaCloudDensity);
       cellScalar_PlasmaCloudDensity->Delete();
 
     }
 
-  if(GetCellArrayStatus(GetDesc("T")))
+  if(readBP)
+    {
+      output->GetPointData()->AddArray(cellScalar_MagneticPolarity);
+      cellScalar_MagneticPolarity->Delete();
+
+    }
+
+  if(readT)
     {
       output->GetPointData()->AddArray(cellScalar_Temperature);
       cellScalar_Temperature->Delete();
 
     }
-  if(GetCellArrayStatus(GetDesc("B1")))
+  if(readB)
     {
       output->GetPointData()->AddArray(cellVector_MagneticField);
       cellVector_MagneticField->Delete();
 
     }
-  if(GetCellArrayStatus(GetDesc("V1")))
+  if(readV)
     {
       output->GetPointData()->AddArray(cellVector_Velocity);
       cellVector_Velocity->Delete();
