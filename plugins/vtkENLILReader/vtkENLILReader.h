@@ -227,6 +227,9 @@ int NumberOfCellArrays;
   { return this->ArrayNameLookup[varName];}
 
 
+  void convertSphericalCartesian3DsingleArray(double *grid, double *X1, double *X2, double *X3, const int dims[]);
+  void convertSphericalCartesian3DmultipleArray(double *dimR, double *dimPhi, double *dimTheta, const int dims[]);
+
 private:
   vtkENLILReader(const vtkENLILReader&); // Not implemented
   void operator=(const vtkENLILReader&); // Not implemented

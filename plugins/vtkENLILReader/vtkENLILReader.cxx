@@ -373,6 +373,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       ncStatus = nc_get_var_double(ncFileID, ncSDSID, B2);
     }
 
+
   if(readB)
     {
       clearString(long_name, 256);
@@ -453,6 +454,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   Radius->SetName("Radius");
   Radius->SetNumberOfComponents(1);
 
+
   for (k = 0; k < this->dimPhi; k++)
     {
       for (j = 0; j < this->dimTheta; j++)
@@ -482,11 +484,11 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       for (i = 0; i < this->dimR; i++)
         {
           xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0])
-              / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
+              / GRID_SCALE::ScaleFactor[GridScale];
           xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0])
-              / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
+              / GRID_SCALE::ScaleFactor[GridScale];
           xyz[2] = X1[i] * cos(X2[j])
-              / GRID_SCALE::ScaleFactor[this->GetGridScaleType()];
+              / GRID_SCALE::ScaleFactor[GridScale];
 
 
           radiusValue = sqrt(xyz[0]*xyz[0]+xyz[1]*xyz[1]+xyz[2]*xyz[2]);
@@ -582,9 +584,14 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       if(readB)
         {
           //Magnetic Field
+
           xyz[0] = B1[x] * sin(B2[x]) * cos(B3[x]);
           xyz[1] = B1[x] * sin(B2[x]) * sin(B3[x]);
           xyz[2] = B1[x] * cos(B2[x]);
+
+//          xyz[0] = B1[x];
+//          xyz[1] = B2[x];
+//          xyz[2] = B3[x];
           cellVector_MagneticField->InsertNextTuple(xyz);
         }
 
@@ -594,6 +601,10 @@ int vtkENLILReader::RequestData(vtkInformation* request,
           xyz[0] = V1[x] * sin(V2[x]) * cos(V3[x]);
           xyz[1] = V1[x] * sin(V2[x]) * sin(V3[x]);
           xyz[2] = V1[x] * cos(V2[x]);
+
+//          xyz[0] = V1[x];
+//          xyz[1] = V2[x];
+//          xyz[2] = V3[x];
           cellVector_Velocity->InsertNextTuple(xyz);
 
         }
@@ -629,6 +640,10 @@ int vtkENLILReader::RequestData(vtkInformation* request,
           xyz[1] = B1[x] * sin(B2[x]) * sin(B3[x]);
           xyz[2] = B1[x] * cos(B2[x]);
 
+//          xyz[0] = B1[x];
+//          xyz[1] = B2[x];
+//          xyz[2] = B3[x];
+
           cellVector_MagneticField->InsertNextTuple(xyz);
         }
       if(readV)
@@ -637,6 +652,10 @@ int vtkENLILReader::RequestData(vtkInformation* request,
           xyz[0] = V1[x] * sin(V2[x]) * cos(V3[x]);
           xyz[1] = V1[x] * sin(V2[x]) * sin(V3[x]);
           xyz[2] = V1[x] * cos(V2[x]);
+
+//          xyz[0] = V1[x];
+//          xyz[1] = V2[x];
+//          xyz[2] = V3[x];
 
           cellVector_Velocity->InsertNextTuple(xyz);
         }
@@ -830,7 +849,46 @@ void vtkENLILReader::SetArrayName(vtkstd::string xVar, vtkstd::string yVar, vtks
   cout << xVar << "," << yVar << "," << zVar << ": " << VarDescription << endl;
 }
 
+//--------------------------------------------------------------
+//Convert coordinates from an 3-dimension grid (single array)
+//  from spherical coordinates to Cartesian coordinates
 
+void vtkENLILReader::convertSphericalCartesian3DsingleArray(double *grid,
+                                                            double *X1,
+                                                            double *X2,
+                                                            double *X3,
+                                                            const int dims[])
+{
+  int r=0;
+  int t=0;
+  int p=0;
+
+  for(p=0; p<dims[2]; p++)
+    {
+      for(t=0; t<dims[1]; t++)
+        {
+          for(r=0; r<dims[0]; r++)
+            {
+                //TODO: unwrap me
+              /* For Vr use r = i sin(Th)cos(Phi)+j sin(Th)sin(Phi)+k cos(Th) */
+              grid[(r+dims[0]*(t+dims[1]*p))]=grid[r+dims[0]*(t+dims[1]*p)]*sin(X2[t])*cos(X3[p]);
+              grid[(r+dims[0]*(t+dims[1]*p))]=grid[r+dims[0]*(t+dims[1]*p)]*sin(X2[t])*sin(X3[p]);
+              grid[(r+dims[0]*(t+dims[1]*p))]=grid[r+dims[0]*(t+dims[1]*p)]*cos(X2[t]);
+            }
+        }
+    }
+}
+
+//--------------------------------------------------------------
+//Convert coordinates from an 3-dimension grid (multiple arrays)
+//  from spherical coordinates to Cartesian coordinates
+
+void convertSphericalCartesian3DmultipleArray(double *dimR, double *dimPhi, double *dimTheta, const int dims[])
+{
+
+
+
+}
 
 
 void vtkENLILReader::PrintSelf(ostream &os, vtkIndent indent) {
