@@ -17,7 +17,7 @@
          name="GridScaleFactor"
          command="SetGridScaleType"
          number_of_elements="1"
-         default_values="0">
+         default_values="3">
 	<!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkENLILReader.h! -->
         <EnumerationDomain name="enum">
 	  <Entry value="0" text="No scaling: 1.0"/>

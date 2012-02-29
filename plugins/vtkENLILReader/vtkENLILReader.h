@@ -155,6 +155,9 @@ vtkstd::vector<vtkstd::string> PointArrayName;
 
 vtkstd::map<vtkstd::string,int> CellArrayStatus;
 vtkstd::map<vtkstd::string,int> PointArrayStatus;
+
+  //Need to save the original spherical grid coordinates
+vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
   //ETX
 
   // The number of point/cell data arrays in the output.  Valid after
@@ -227,8 +230,8 @@ int NumberOfCellArrays;
   { return this->ArrayNameLookup[varName];}
 
 
-  void convertSphericalCartesian3DsingleArray(double *grid, double *X1, double *X2, double *X3, const int dims[]);
-  void convertSphericalCartesian3DmultipleArray(double *dimR, double *dimPhi, double *dimTheta, const int dims[]);
+  void convertSphericalCartesian(double *grid, const int dims[]);
+  void constructSphericalGrid(double *grid, const int dims[]);
 
 private:
   vtkENLILReader(const vtkENLILReader&); // Not implemented
