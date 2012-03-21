@@ -19,26 +19,45 @@
 #define gridOffset(i,j,k) i+ni*(j+nj*k)
 
 
+#define CALL_NETCDF(call)\
+{\
+  int errorcode = call;\
+  if(errorcode != NC_NOERR)\
+  {\
+    vtkErrorMacro(<< "netCDF Error: " << nc_strerror(errorcode));\
+    return 0;\
+  }\
+}
+
+#define CALL_NETCDF_NO_FEEDBACK(call)\
+{\
+  int errorcode = call;\
+  if(errorcode != NC_NOERR)\
+  {\
+    return 0;\
+  }\
+}
+
+
 namespace GRID_SCALE
 {
   enum ScaleType{
     NONE   = 0,
     REARTH = 1,
     RSOLAR = 2,
-    AU     = 3   
+    AU     = 3
   };
   static const float ScaleFactor[4] = { 1.0,
-					6.5e6,
-					6.955e8,
-					1.5e11 };
+                                        6.5e6,
+                                        6.955e8,
+                                        1.5e11 };
 }
 
 class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
 {
- public:
+public:
   static vtkENLILReader *New();
   vtkTypeMacro(vtkENLILReader, vtkStructuredGridReader);
-
   void PrintSelf(ostream& os, vtkIndent indent);
 
   /**
@@ -64,14 +83,14 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
   vtkGetStringMacro(EnlilFileName);
   virtual char *GetFileName() { return this->GetEnlilFileName(); }
 
-//  vtkSetMacro(GridScaleType, int);
+  //  vtkSetMacro(GridScaleType, int);
   void SetGridScaleType(int set)
   {
-      //set the value
-      this->GridScaleType = set;
+    //set the value
+    this->GridScaleType = set;
 
-      //need to mark as modified
-      this->Modified();
+    //need to mark as modified
+    this->Modified();
   }
 
   vtkGetMacro(GridScaleType, int);
@@ -104,26 +123,26 @@ class VTK_EXPORT vtkENLILReader : public vtkStructuredGridReader
    * UpdateInformation() has been called.
    */
   //int GetNumberOfCellArrays();
-   const char* GetCellArrayName(int index);
-   const char* GetPointArrayName(int index);
+  const char* GetCellArrayName(int index);
+  const char* GetPointArrayName(int index);
 
   // Description:
   // Get/Set whether the point or cell array with the given name is to
   // be read.
-int GetPointArrayStatus(const char* name);
-int GetCellArrayStatus(const char* name);
+  int GetPointArrayStatus(const char* name);
+  int GetCellArrayStatus(const char* name);
 
-//BTX
-int GetCellArrayStatus(vtkstd::string);
-int GetPointArrayStatus(vtkstd::string);
-
-
-//ETX
-void SetPointArrayStatus(const char* name, int status);
-void SetCellArrayStatus(const char* name, int status);
+  //BTX
+  int GetCellArrayStatus(vtkstd::string);
+  int GetPointArrayStatus(vtkstd::string);
 
 
- protected:
+  //ETX
+  void SetPointArrayStatus(const char* name, int status);
+  void SetCellArrayStatus(const char* name, int status);
+
+
+protected:
   vtkENLILReader();
   ~vtkENLILReader();
 
@@ -141,29 +160,29 @@ void SetCellArrayStatus(const char* name, int status);
   //
   //  The BTX and ETX comments must encompase stl calls when in a header file
   // Added by Joshua Murphy 1 DEC 2011
-int NumberOfTimeSteps;
+  int NumberOfTimeSteps;
 
   //BTX
-vtkstd::vector<double> TimeStepValues;
+  vtkstd::vector<double> TimeStepValues;
 
   //Map of variable name to Description String
-vtkstd::map<vtkstd::string, vtkstd::string> ArrayNameLookup;
+  vtkstd::map<vtkstd::string, vtkstd::string> ArrayNameLookup;
 
   //Point and Cell Array Status Information
-vtkstd::vector<vtkstd::string> CellArrayName;
-vtkstd::vector<vtkstd::string> PointArrayName;
+  vtkstd::vector<vtkstd::string> CellArrayName;
+  vtkstd::vector<vtkstd::string> PointArrayName;
 
-vtkstd::map<vtkstd::string,int> CellArrayStatus;
-vtkstd::map<vtkstd::string,int> PointArrayStatus;
+  vtkstd::map<vtkstd::string,int> CellArrayStatus;
+  vtkstd::map<vtkstd::string,int> PointArrayStatus;
 
   //Need to save the original spherical grid coordinates
-vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
+  vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
   //ETX
 
   // The number of point/cell data arrays in the output.  Valid after
   // SetupOutputData has been called.
-int NumberOfPointArrays;
-int NumberOfCellArrays;
+  int NumberOfPointArrays;
+  int NumberOfCellArrays;
 
   /**
    * This method is invoked by the superclass's ProcessRequest
@@ -187,7 +206,7 @@ int NumberOfCellArrays;
    * object in the output port. The output data object will have already
    * been created by the pipeline before this request is made. The
    * amount of data to read may be specified by keys in the output port
-   * information. 
+   * information.
    *
    * The method should be placed in the protected section of the reader
    * class. It should return 1 for success and 0 for failure.
@@ -201,17 +220,17 @@ int NumberOfCellArrays;
    *    This Method does NOTHING if the variable does not exist.
    */
 
-    //BTX
-    //These methods will add an ARRAY to the available list if the its associated
-    //  variables exist within the file.
-    //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
-    //  Can only be used to add existing variables in the file.
-    //  if existence query fails, NOTHING happens
+  //BTX
+  //These methods will add an ARRAY to the available list if the its associated
+  //  variables exist within the file.
+  //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
+  //  Can only be used to add existing variables in the file.
+  //  if existence query fails, NOTHING happens
   void SetArrayName(vtkstd::string VarName, vtkstd::string VarDescription);
   void SetArrayName(vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription);
 
 
-    //ETX
+  //ETX
 
 
 
@@ -238,4 +257,8 @@ private:
   void operator=(const vtkENLILReader&); // Not implemented
 };
 
+
+
 #endif
+
+

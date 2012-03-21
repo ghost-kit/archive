@@ -14,6 +14,7 @@
 
 
 #include "vtkENLILReader.h"
+#include "vtkENLILReaderMetaDataKeys.h"
 
 #include "vtkPointData.h"
 #include "vtkInformation.h"
@@ -58,15 +59,14 @@ int vtkENLILReader::CanReadFile(const char *filename)
   cout << __FUNCTION__ << endl;
 
 
-  int ncStatus = 0;
   int ncFileID = 0;
   int status = 0;
 
   int ndims=0, nvars=0, ngatts=0, unlimdimid=0;
 
-  ncStatus = nc_open(filename, NC_NOWRITE, &ncFileID);
-  status = nc_inq(ncFileID, &ndims, &nvars, &ngatts, &unlimdimid);
-  nc_close(ncFileID);
+  CALL_NETCDF_NO_FEEDBACK(nc_open(filename, NC_NOWRITE, &ncFileID));
+  CALL_NETCDF_NO_FEEDBACK(nc_inq(ncFileID, &ndims, &nvars, &ngatts, &unlimdimid));
+  CALL_NETCDF_NO_FEEDBACK(nc_close(ncFileID));
 
 
   // TODO: Make sure all the relevant meta data exists
@@ -90,9 +90,10 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   cout << __FUNCTION__ << endl;
 
 
-  int ncStatus = 0;
   int ncFileID = 0;
   int ncSDSID = 0;
+  int idp = 0;
+  nc_type xtype;
 
   double TIME = 0;
   double timeRange[2];
@@ -102,75 +103,89 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   size_t dim_phi = 0;
 
   char long_name[256];
+  char temp[256];
 
-  ncStatus = nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID);
+   vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
-  if (ncStatus != NC_NOERR)
-    {
-      vtkDebugMacro(<<"ERROR Opening File " << this->EnlilFileName);
-      return 0;
-    }
 
+  CALL_NETCDF(nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID));
+
+
+  //TEMP
+  int ncid, ndims, nvars, ngatts, unlimdimid;
+  CALL_NETCDF(nc_inq(ncFileID, &ndims, &nvars, &ngatts, &unlimdimid));
+
+  CALL_NETCDF(nc_get_att_text(ncFileID, NC_GLOBAL, "refdate_cal", temp));
+
+  vtkENLILMetaDataKeys::add_global_attributes(outInfo);
+  vtkENLILMetaDataKeys::populate_meta_data(outInfo, vtkENLILMetaDataKeys::REFDATE_CAL(), temp);
+
+  cout << "Reference Data: " << outInfo->Get(vtkENLILMetaDataKeys::REFDATE_CAL()) << endl;
+
+  cout << "ndims: " << ndims << " nvars: " << nvars << " ngatts: " << ngatts
+       << " unlimdimid: " << unlimdimid << endl;
+
+  //END TEMP
   std::cout << "File Opened: " << this->EnlilFileName << std::endl;
 
   //get dimension data
-  ncStatus = nc_inq_dimid(ncFileID, "n1", &ncSDSID);
-  ncStatus = nc_inq_dimlen(ncFileID, ncSDSID, &dim_r);
+  CALL_NETCDF(nc_inq_dimid(ncFileID, "n1", &ncSDSID));
+  CALL_NETCDF(nc_inq_dimlen(ncFileID, ncSDSID, &dim_r));
 
-  ncStatus = nc_inq_dimid(ncFileID, "n2", &ncSDSID);
-  ncStatus = nc_inq_dimlen(ncFileID, ncSDSID, &dim_theta);
+  CALL_NETCDF(nc_inq_dimid(ncFileID, "n2", &ncSDSID));
+  CALL_NETCDF(nc_inq_dimlen(ncFileID, ncSDSID, &dim_theta));
 
-  ncStatus = nc_inq_dimid(ncFileID, "n3", &ncSDSID);
-  ncStatus = nc_inq_dimlen(ncFileID, ncSDSID, &dim_phi);
+  CALL_NETCDF(nc_inq_dimid(ncFileID, "n3", &ncSDSID));
+  CALL_NETCDF(nc_inq_dimlen(ncFileID, ncSDSID, &dim_phi));
 
-  ncStatus = nc_inq_varid(ncFileID, "TIME", &ncSDSID);
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, &TIME);
+  CALL_NETCDF(nc_inq_varid(ncFileID, "TIME", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, &TIME));
 
   //Need to be a one-up lookup
 
   if(NumberOfCellArrays == 0)
     {
       this->clearString(long_name,256);
-      ncStatus = nc_inq_varid(ncFileID, "D", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "D", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
 
       this->SetArrayName("D", string(long_name));
 
       this->clearString(long_name,256);
-      ncStatus = nc_inq_varid(ncFileID, "DP", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "DP", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
 
       this->SetArrayName("DP", string(long_name));
 
       this->clearString(long_name,256);
-      ncStatus = nc_inq_varid(ncFileID, "T", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "T", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
 
       this->SetArrayName("T", string(long_name));
 
 
       this->clearString(long_name,256);
-      ncStatus = nc_inq_varid(ncFileID, "BP", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "BP", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
 
       this->SetArrayName("BP", string(long_name));
 
 
       this->clearString(long_name,256);
-      ncStatus = nc_inq_varid(ncFileID, "B1", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "B1", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
 
       this->SetArrayName("B1", "B2", "B3", string(long_name));
 
 
       this->clearString(long_name,256);
-      ncStatus = nc_inq_varid(ncFileID, "V1", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "V1", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
 
       this->SetArrayName("V1", "V2", "V3", string(long_name));
@@ -181,7 +196,7 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
 
 
 
-  nc_close(ncFileID);
+  CALL_NETCDF(nc_close(ncFileID));
 
   cout << __FUNCTION__ << " nc_close" << endl;
 
@@ -205,7 +220,7 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
 
   vtkDebugMacro(<< "DIMS: " << dimR << ", " << dimTheta << ", " << dimPhi);
 
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), extent, 6);
 
   //Set Time step Information
@@ -267,12 +282,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   double *X3 = NULL;
 
   //TODO: Convert to C++ libraries
-  ncStatus = nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID);
-
-  if (ncStatus != NC_NOERR) {
-      vtkDebugMacro(<<"ERROR Opening File " << this->EnlilFileName);
-      return 0;
-    }
+  CALL_NETCDF(nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID));
 
   int64_t arraySize = this->dimPhi*this->dimR*this->dimTheta;
   char long_name[256];
@@ -303,18 +313,55 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   int readV = GetCellArrayStatus(GetDesc("V1"));
   int readVR = GetCellArrayStatus(GetDesc("VR"));
 
+  vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  vtkStructuredGrid *output = vtkStructuredGrid::SafeDownCast(
+        outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  vtkStructuredGrid *structOutput = vtkStructuredGrid::SafeDownCast(output);
+
+  int *updateExtents = NULL;
+  int updateNumberPieces = 0;
+  int *extents = NULL;
+  int parts = 0;
+
+  updateExtents = structOutput->GetUpdateExtent();
+  updateNumberPieces = structOutput->GetUpdateNumberOfPieces();
+  parts = structOutput->GetUpdatePiece();
+
+
+  std::cout << "Piece: " << parts << std::endl;
+
+
+
+  //get extents
+  std::cout << "Number of Parts: "
+            << updateNumberPieces
+            << "\nExtents Requested: "
+            << updateExtents[0]
+            << ":"
+            << updateExtents[1]
+            << ":"
+            << updateExtents[2]
+            << ":"
+            << updateExtents[3]
+            << ":"
+            << updateExtents[4]
+            << ":"
+            << updateExtents[5]
+            << std::endl;
+
 
   //Get Coordinate Array and Sizes
   //TODO: Separate these items into own functions
 
-  ncStatus = nc_inq_varid(ncFileID, "X1", &ncSDSID);
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, X1);
+  CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
 
-  ncStatus = nc_inq_varid(ncFileID, "X2", &ncSDSID);
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, X2);
+  CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X2));
 
-  ncStatus = nc_inq_varid(ncFileID, "X3", &ncSDSID);
-  ncStatus = nc_get_var_double(ncFileID, ncSDSID, X3);
+  CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X3));
 
   if(this->sphericalGridCoords.size() == 0)
     {
@@ -328,74 +375,65 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       this->sphericalGridCoords.push_back(T);
       this->sphericalGridCoords.push_back(P);
 
-      //      std::cout << "Size of R: " << this->sphericalGridCoords[0].size() << std::endl;
-      //      std::cout << "Size of T: " << this->sphericalGridCoords[1].size() << std::endl;
-      //      std::cout << "Size of P: " << this->sphericalGridCoords[2].size() << std::endl;
-
-      //      std::cout << "SGC-R[45]: " << this->sphericalGridCoords[0][45] << " X1[45]: " << X1[45] << std::endl;
-      //      std::cout << "SGC-T[45]: " << this->sphericalGridCoords[1][45] << " X2[45]: " << X2[45] << std::endl;
-      //      std::cout << "SGC-P[45]: " << this->sphericalGridCoords[2][45] << " X3[45]: " << X3[45] << std::endl;
-
-
     }
 
   if(readD)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "D", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "D", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, D);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, D));
     }
 
   if(readDP)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "DP", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "DP", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, DP);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, DP));
     }
 
   if(readBP)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "BP", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "BP", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, BP);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, BP));
     }
 
   if(readT)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "T", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "T", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, T);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, T));
     }
 
   if(readB)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "B1", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "B1", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, B1);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, B1));
     }
   if(readB)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "B2", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "B2", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, B2);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, B2));
     }
 
 
@@ -403,10 +441,10 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "B3", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "B3", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, B3);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, B3));
     }
 
   //either read the V vector or the V-R array
@@ -414,33 +452,34 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "V1", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "V1", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, V1);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, V1));
     }
 
   if(readV)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "V2", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "V2", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, V2);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, V2));
     }
 
   if(readV)
     {
       clearString(long_name, 256);
 
-      ncStatus = nc_inq_varid(ncFileID, "V3", &ncSDSID);
-      ncStatus = nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name);
+      CALL_NETCDF(nc_inq_varid(ncFileID, "V3", &ncSDSID));
+      CALL_NETCDF(nc_get_att_text(ncFileID, ncSDSID, "long_name", long_name));
       cout << "long name: " << long_name << endl;
-      ncStatus = nc_get_var_double(ncFileID, ncSDSID, V3);
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, V3));
     }
 
-  nc_close(ncFileID);
+  CALL_NETCDF(nc_close(ncFileID));
+
 
   int subext[6] = { 0, (this->dimR - 1), 0, (this->dimTheta - 1), 0,
                     (this->dimPhi) };
@@ -450,14 +489,11 @@ int vtkENLILReader::RequestData(vtkInformation* request,
                 << subext[2] << ", " << subext[3] << ", "
                 << subext[4] << ", " << subext[5]);
 
-  vtkInformation *outInfo = outputVector->GetInformationObject(0);
   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), subext);
+
 
   ///////////////////////////////////////////////////////////////////////////
   //read that part of the data in from the file and put it in the output data
-
-  vtkStructuredGrid *output = vtkStructuredGrid::SafeDownCast(
-        outInfo->Get(vtkDataObject::DATA_OBJECT()));
 
   output->SetDimensions(this->dimR, this->dimTheta, (this->dimPhi + 1));
 
@@ -495,7 +531,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
                   / GRID_SCALE::ScaleFactor[GridScale];
 
               //calculate the radius at this point
-              radiusValue = sqrt(xyz[0]*xyz[0]+xyz[1]*xyz[1]+xyz[2]*xyz[2]);
+              radiusValue = X1[i];
 
               //insert point information into the grid
               gridPoints->InsertNextPoint(xyz);
@@ -517,7 +553,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
               / GRID_SCALE::ScaleFactor[GridScale];
 
 
-          radiusValue = sqrt(xyz[0]*xyz[0]+xyz[1]*xyz[1]+xyz[2]*xyz[2]);
+          radiusValue = X1[i];
           //Fix the Gap... insert the contiguous points
 
           gridPoints->InsertNextPoint(xyz);
@@ -595,7 +631,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
       cellVector_RadialVelocity->SetNumberOfComponents(3);
     }
 
-
+  //load Scalar Grids
   for (int x = 0; x < (this->dimPhi*this->dimTheta*this->dimR); x++ )
     {
 
@@ -619,22 +655,10 @@ int vtkENLILReader::RequestData(vtkInformation* request,
           cellScalar_Temperature->InsertNextValue(T[x]);
         }
 
-
-
-
-
-//      //exprimental VR
-//      if(readVR)
-//        {
-//          cellVector_RadialVelocity->InsertNextValue(V1[x]);
-//        }
-
     }
 
 
-  //expermental VR
-
-
+  //Load Vector Grids
   int loc=0;
   for(k=0; k<this->dimPhi; k++)
     {
@@ -666,8 +690,8 @@ int vtkENLILReader::RequestData(vtkInformation* request,
                   xyz[1] += B2[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
                   xyz[2] += -1.0*B2[loc]*sin(this->sphericalGridCoords[1][j]);
 
-		  xyz[0] += -1.0*B3[loc]*sin(this->sphericalGridCoords[2][k]);
-		  xyz[1] += B3[loc]*cos(this->sphericalGridCoords[2][k]);
+                  xyz[0] += -1.0*B3[loc]*sin(this->sphericalGridCoords[2][k]);
+                  xyz[1] += B3[loc]*cos(this->sphericalGridCoords[2][k]);
 
                   cellVector_MagneticField->InsertNextTuple(xyz);
                 }
@@ -683,12 +707,12 @@ int vtkENLILReader::RequestData(vtkInformation* request,
                   xyz[1] += V2[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
                   xyz[2] += -1.0*V2[loc]*sin(this->sphericalGridCoords[1][j]);
 
-		  xyz[0] += -1.0*V3[loc]*sin(this->sphericalGridCoords[2][k]);
-		  xyz[1] += V3[loc]*cos(this->sphericalGridCoords[2][k]);
+                  xyz[0] += -1.0*V3[loc]*sin(this->sphericalGridCoords[2][k]);
+                  xyz[1] += V3[loc]*cos(this->sphericalGridCoords[2][k]);
 
-		  cellVector_Velocity->InsertNextTuple(xyz);
+                  cellVector_Velocity->InsertNextTuple(xyz);
 
-		}
+                }
 
 
               loc++;
@@ -727,15 +751,13 @@ int vtkENLILReader::RequestData(vtkInformation* request,
 
 
   //close off Vector Grids
+  //TODO #341: copy out of already computed instead of re-calculating
   loc=0;
   for(j=0; j<this->dimTheta; j++)
     {
       for(i=0; i<this->dimR; i++)
 
         {
-
-          //TODO: copy out of already computed instead of re-calculating
-
           if(readVR)
             {
 
@@ -759,8 +781,8 @@ int vtkENLILReader::RequestData(vtkInformation* request,
               xyz[1] += B2[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][0]);
               xyz[2] += -1.0*B2[loc]*sin(this->sphericalGridCoords[1][j]);
 
-	      xyz[0] += -1.0*B3[loc]*sin(this->sphericalGridCoords[2][0]);
-	      xyz[1] += B3[loc]*cos(this->sphericalGridCoords[2][0]);
+              xyz[0] += -1.0*B3[loc]*sin(this->sphericalGridCoords[2][0]);
+              xyz[1] += B3[loc]*cos(this->sphericalGridCoords[2][0]);
 
               cellVector_MagneticField->InsertNextTuple(xyz);
             }
@@ -776,20 +798,21 @@ int vtkENLILReader::RequestData(vtkInformation* request,
               xyz[1] += V2[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][0]);
               xyz[2] += -1.0*V2[loc]*sin(this->sphericalGridCoords[1][j]);
 
-	      xyz[0] += -1.0*V3[loc]*sin(this->sphericalGridCoords[2][0]);
-	      xyz[1] += V3[loc]*cos(this->sphericalGridCoords[2][0]);
+              xyz[0] += -1.0*V3[loc]*sin(this->sphericalGridCoords[2][0]);
+              xyz[1] += V3[loc]*cos(this->sphericalGridCoords[2][0]);
 
-	      cellVector_Velocity->InsertNextTuple(xyz);
+              cellVector_Velocity->InsertNextTuple(xyz);
 
-	    }
+            }
 
-	  loc++;
+          loc++;
 
         }
     }
 
 
 
+  // Commit grids to ParaView
   if(readD)
     {
       output->GetPointData()->AddArray(cellScalar_Density);
@@ -837,7 +860,7 @@ int vtkENLILReader::RequestData(vtkInformation* request,
     }
 
 
-
+  // Clean up memory
   if(X1){ delete[] X1; X1 = NULL;}
   if(X2){ delete[] X2; X2 = NULL;}
   if(X3){ delete[] X3; X3 = NULL;}
@@ -1007,3 +1030,5 @@ void vtkENLILReader::PrintSelf(ostream &os, vtkIndent indent) {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "vtkENLILReader says \"Hello, World!\" " << "\n";
 }
+
+

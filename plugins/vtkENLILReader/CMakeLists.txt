@@ -5,11 +5,21 @@ SET(ParaView_DIR /Users/jjm390/LASP/release/build_312/ParaView-build)
 FIND_PACKAGE(ParaView REQUIRED)
 
 
-
 INCLUDE(${PARAVIEW_USE_FILE})
+
+QT4_WRAP_CPP(MOC_SRCS ConePanel.h)
+ADD_PARAVIEW_OBJECT_PANEL(IFACES IFACE_SRCS
+                         CLASS_NAME ConePanel
+                         XML_NAME vtkENLILReader XML_GROUP sources)
+
+ADD_PARAVIEW_PLUGIN(GUIConePanel "1.0"
+                    GUI_INTERFACES ${IFACES}
+                    SOURCES ${MOC_SRCS} ${IFACE_SRCS})
+
 ADD_PARAVIEW_PLUGIN(vtkENLILReader "1.0"
   SERVER_MANAGER_XML vtkENLILReader.xml
-  SERVER_MANAGER_SOURCES vtkENLILReader.cxx 
+  SERVER_MANAGER_SOURCES vtkENLILReader.cxx
+  SOURCES vtkENLILReaderMetaDataKeys.cxx
   GUI_RESOURCE_FILES vtkENLILGUI.xml)
 
 INCLUDE_DIRECTORIES(${VTKNETCDF_BINARY_DIR})
