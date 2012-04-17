@@ -57,7 +57,7 @@ public:
 private:
   void errorCheck(const int &status, const char *file, const int &line, const char *func, const char *command);
 
-  int32 fileId;
+  int32_t fileId;
 };
 
 #endif
