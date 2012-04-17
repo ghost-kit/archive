@@ -525,7 +525,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   output->SetPoints(points);
   points->Delete();
-  
+
   /*****************************
    * Cell-centered scalar data *
    ****************************************************************************/
@@ -705,6 +705,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
             // Get cell center positions
             // FIXME: query cell center positions from existing
             // vtkStructuredGrid::GetPoints(...) array.
+          // output->GetPoints()->GetPoint(offsetCell);
           cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
           cx[1] = cell_AxisAverage(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
           cx[2] = cell_AxisAverage(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
@@ -1295,7 +1296,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string V
       //Set other Array Variables
     this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 0;
+    this->CellArrayStatus[VarDescription] = 1;
     }
   
   cout << VarName << ": " << VarDescription << endl;
@@ -1315,7 +1316,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar
       //Set other Array Variables
     this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 0;
+    this->CellArrayStatus[VarDescription] = 1;
     }
   
   cout << xVar << "," << yVar << "," << zVar << ": " << VarDescription << endl;
@@ -1333,7 +1334,7 @@ void vtkLFMReader::SetNewIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::strin
       //Set other Array Variables
     this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 0;
+    this->CellArrayStatus[VarDescription] = 1;
     }
   
   cout << ArrayIndexName << ": " << VarDescription << endl;
@@ -1353,7 +1354,7 @@ void vtkLFMReader::SetNewIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string y
       //Set other Array Variables
     this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 0;
+    this->CellArrayStatus[VarDescription] = 1;
     }
   
   cout << ArrayIndexName << ":  " << VarDescription << endl;
