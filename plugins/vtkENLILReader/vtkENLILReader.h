@@ -232,9 +232,8 @@ protected:
 
   //ETX
 
-
-
-
+  int FillOutputPortInformation(int port, vtkInformation *info);
+//  int FillInputPortInformation(int port, vtkInformation *info);
 
   void clearString(char* string, int size)
   {

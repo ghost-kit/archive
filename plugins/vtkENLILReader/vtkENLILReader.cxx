@@ -23,6 +23,8 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredGrid.h"
+#include "vtkStringArray.h"
+#include "vtkTable.h"
 
 #include <vtkstd/map>
 #include <vtkstd/string>
@@ -38,6 +40,8 @@ vtkENLILReader::vtkENLILReader()
   this->EnlilFileName = NULL;
   this->NumberOfCellArrays = 0;
   this->NumberOfPointArrays = 0;
+  this->SetNumberOfOutputPorts(2);
+  this->SetNumberOfInputPorts(0);
 
 
   //this->DebugOn();
@@ -105,7 +109,7 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   char long_name[256];
   char temp[256];
 
-   vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
 
   CALL_NETCDF(nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID));
@@ -115,12 +119,12 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   int ncid, ndims, nvars, ngatts, unlimdimid;
   CALL_NETCDF(nc_inq(ncFileID, &ndims, &nvars, &ngatts, &unlimdimid));
 
-  CALL_NETCDF(nc_get_att_text(ncFileID, NC_GLOBAL, "refdate_cal", temp));
+  //  CALL_NETCDF(nc_get_att_text(ncFileID, NC_GLOBAL, "refdate_cal", temp));
 
-  vtkENLILMetaDataKeys::add_global_attributes(outInfo);
-  vtkENLILMetaDataKeys::populate_meta_data(outInfo, vtkENLILMetaDataKeys::REFDATE_CAL(), temp);
+  //  vtkENLILMetaDataKeys::add_global_attributes(outInfo);
+  //  vtkENLILMetaDataKeys::populate_meta_data(outInfo, vtkENLILMetaDataKeys::REFDATE_CAL(), temp);
 
-  cout << "Reference Data: " << outInfo->Get(vtkENLILMetaDataKeys::REFDATE_CAL()) << endl;
+  //  cout << "Reference Data: " << outInfo->Get(vtkENLILMetaDataKeys::REFDATE_CAL()) << endl;
 
   cout << "ndims: " << ndims << " nvars: " << nvars << " ngatts: " << ngatts
        << " unlimdimid: " << unlimdimid << endl;
@@ -246,6 +250,39 @@ int vtkENLILReader::RequestInformation(vtkInformation* request,
   return 1;
 }
 
+
+int vtkENLILReader::FillOutputPortInformation(int port, vtkInformation *info)
+{
+  switch(port)
+    {
+    case 0:
+    return this->Superclass::FillOutputPortInformation(port, info);
+      break;
+
+    case 1:
+      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
+      break;
+    }
+
+  return 1;
+}
+
+//int vtkENLILReader::FillInputPortInformation(int port, vtkInformation *info)
+//{
+//  switch(port)
+//    {
+//    case 0:
+//       info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkStructuredGrid");
+//      break;
+
+//    case 1:
+//      info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkTable");
+//      break;
+//    }
+
+//  return 1;
+//}
+
 /**
  * Callback that gets the actual data
  * TODO: look to see if we are doing it correctly by reading everything.
@@ -284,6 +321,8 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   //TODO: Convert to C++ libraries
   CALL_NETCDF(nc_open(this->EnlilFileName, NC_NOWRITE, &ncFileID));
 
+// END META DATA
+
   int64_t arraySize = this->dimPhi*this->dimR*this->dimTheta;
   char long_name[256];
 
@@ -314,8 +353,40 @@ int vtkENLILReader::RequestData(vtkInformation* request,
   int readVR = GetCellArrayStatus(GetDesc("VR"));
 
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
+  cout << "Got InfoObject 0" << endl;
+  vtkInformation *outInfo2 = outputVector->GetInformationObject(1);
+  cout << "Got InfoObject 1" << endl;
+
+  if(outInfo2 == NULL)
+    {
+      cout << "NULL OUTPUT VECTOR" << endl;
+      return 0;
+    }
+
   vtkStructuredGrid *output = vtkStructuredGrid::SafeDownCast(
         outInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  cout << "Configured Output for structured grid" << endl;
+
+  //output port for table data
+  vtkTable *MetaDataOutput = dynamic_cast<vtkTable*>(outInfo2->Get(vtkDataObject::DATA_OBJECT()));
+cout << "configured Output for Table"  << endl;
+
+vtkStringArray *MetaString = vtkStringArray::New();
+MetaString->SetName("Meta Data");
+MetaString->SetNumberOfComponents(1);
+MetaString->InsertNextValue("This is a Test");
+
+cout << "Configured Table Column" << endl;
+
+MetaDataOutput->AddColumn(MetaString);
+
+cout << "Added column to Table" << endl;
+
+MetaString->Delete();
+
+
+//structured grid below here....
 
   vtkStructuredGrid *structOutput = vtkStructuredGrid::SafeDownCast(output);
 
