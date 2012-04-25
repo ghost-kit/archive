@@ -3,6 +3,13 @@
 
 #include "Io.h"
 
+#ifndef MAX_VAR_DIMS
+#define MAX_VAR_DIMS H4_MAX_VAR_DIMS
+#endif
+#ifndef MAX_NC_NAME
+#define MAX_NC_NAME H4_MAX_NC_NAME
+#endif
+
 #if defined(APLUSPLUS) || defined(PPLUSPLUS)
 #include <A++.h>
 #endif
