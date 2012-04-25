@@ -152,8 +152,8 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
     SetIfExists(f, "avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)");
     //    SetNewIfExists(f, "avgEi", "avgEj", "avgEk", "eAvgVolume", "Electric Field Volume (avg)");
     
-    SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");
-    
+    // placeholder for calculating the Current vector.  See Pjcalc2.F from CISM_DX reader.
+    //SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");    
   }
   
   f.close();
