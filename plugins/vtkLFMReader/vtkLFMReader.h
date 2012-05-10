@@ -51,7 +51,7 @@ namespace GRID_SCALE
     AU     = 3   
   };
   static const float ScaleFactor[4] = { 1.0,
-    6.5e8,
+    6.38e8,
     6.955e10,
     1.5e13 };
 }
