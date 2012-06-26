@@ -42,7 +42,11 @@ vtkStandardNewMacro(vtkGenericReader)
 //--
 vtkGenericReader::vtkGenericReader()
 {
+    //set the number of output ports you will need
+    this->SetNumberOfOutputPorts(2);
 
+    //set the number of input ports (Default 0)
+    this->SetNumberOfInputPorts(0);
 }
 
 //--
@@ -91,8 +95,16 @@ vtkTable* vtkGenericReader::GetMetaDataOutput()
 int vtkGenericReader::GetNumberOfPointArrays()
 {
 
-  return 0;
+  return 1;
 }
+
+//--
+int vtkGenericReader::GetNumberOfCellArrays()
+{
+
+  return 1;
+}
+
 
 //--
 const char* vtkGenericReader::GetPointArrayName(int index)
@@ -102,14 +114,36 @@ const char* vtkGenericReader::GetPointArrayName(int index)
 }
 
 //--
-int vtkGenericReader::GetPointArrayStatus(const char *name)
+const char* vtkGenericReader::GetCellArrayName(int index)
 {
 
-  return 0;
+  return NULL;
 }
 
 //--
+int vtkGenericReader::GetPointArrayStatus(const char *name)
+{
+
+  return 1;
+}
+
+//--
+int vtkGenericReader::GetCellArrayStatus(const char *name)
+{
+
+  return 1;
+}
+
+
+//--
 void vtkGenericReader::SetPointArrayStatus(const char *name, int status)
+{
+
+
+}
+
+//--
+void vtkGenericReader::SetCellArrayStatus(const char *name, int status)
 {
 
 
@@ -123,7 +157,21 @@ void vtkGenericReader::DisableAllPointArrays()
 }
 
 //--
+void vtkGenericReader::DisableAllCellArrays()
+{
+
+
+}
+
+//--
 void vtkGenericReader::EnableAllPointArrays()
+{
+
+
+}
+
+//--
+void vtkGenericReader::EnableAllCellArrays()
 {
 
 
@@ -142,7 +190,7 @@ int vtkGenericReader::ProcessRequest(vtkInformation *request,
                            vtkInformationVector *outInfo)
 {
 
-  return 0;
+  return 1;
 }
 
 
@@ -153,7 +201,7 @@ int vtkGenericReader::RequestData(
     vtkInformationVector* outputVector)
 {
 
-  return 0;
+  return 1;
 }
 
 //--
@@ -163,7 +211,7 @@ int vtkGenericReader::RequestInformation(
     vtkInformationVector* outputVector)
 {
 
-  return 0;
+  return 1;
 }
 
 //--
@@ -188,8 +236,18 @@ void vtkGenericReader::EventCallback(
 }
 
 //--
-int vtkGenericReader::FillOutputPortInformation(int, vtkInformation*)
+int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
+    switch(port)
+      {
+      case 0:
+      return this->Superclass::FillOutputPortInformation(port, info);
+        break;
 
-  return 0;
+      case 1:
+        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
+        break;
+      }
+
+    return 1;
 }

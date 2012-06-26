@@ -88,13 +88,22 @@ public:
   // By default, ALL data fields on the nodes are read, but this can
   // be modified.
   int GetNumberOfPointArrays();
+  int GetNumberOfCellArrays();
+
   const char* GetPointArrayName(int index);
+  const char* GetCellArrayName(int index);
 
   int  GetPointArrayStatus(const char* name);
+  int  GetCellArrayStatus(const char* name);
+
   void SetPointArrayStatus(const char* name, int status);
+  void SetCellArrayStatus(const char* name, int status);
 
   void DisableAllPointArrays();
+  void DisableAllCellArrays();
+
   void EnableAllPointArrays();
+  void EnableAllCellArrays();
 
   // Description:
   // We intercept the requests to check for which port

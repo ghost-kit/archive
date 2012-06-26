@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-SET(ParaView_DIR /Users/jjm390/LASP/release/build_312/ParaView-build)
+SET(ParaView_DIR /Users/jomu9721/LASP/paraview/build/ParaView-build)
 
 FIND_PACKAGE(ParaView REQUIRED)
 
