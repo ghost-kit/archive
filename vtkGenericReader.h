@@ -146,6 +146,7 @@ protected:
 
   // Selected field of interest
   vtkDataArraySelection* PointDataArraySelection;
+  vtkDataArraySelection* CellDataArraySelection;
 
   // Observer to modify this object when array selections are modified
   vtkCallbackCommand* SelectionObserver;

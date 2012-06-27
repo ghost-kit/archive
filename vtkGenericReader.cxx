@@ -47,6 +47,15 @@ vtkGenericReader::vtkGenericReader()
 
     //set the number of input ports (Default 0)
     this->SetNumberOfInputPorts(0);
+
+    //configure array status selectors
+    this->PointDataArraySelection = vtkDataArraySelection::New();
+    this->CellDataArraySelection  = vtkDataArraySelection::New();
+
+    //Add test data array
+    this->CellDataArraySelection->AddArray("test");
+
+
 }
 
 //--
@@ -95,14 +104,14 @@ vtkTable* vtkGenericReader::GetMetaDataOutput()
 int vtkGenericReader::GetNumberOfPointArrays()
 {
 
-  return 1;
+  return 0;
 }
 
 //--
 int vtkGenericReader::GetNumberOfCellArrays()
 {
 
-  return 1;
+  return 0;
 }
 
 
