@@ -137,6 +137,8 @@ protected:
 
   vtkFloatArray** Data;     // Actual data arrays
 
+  vtkTable* MetaData;       // Meta Data
+
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
   int TimeStepFirst;        // First time step

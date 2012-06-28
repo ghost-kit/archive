@@ -7,6 +7,7 @@
 #include "vtkDataArraySelection.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
+#include "vtkTable.h"
 #include "vtkIdList.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -52,6 +53,10 @@ vtkGenericReader::vtkGenericReader()
     this->PointDataArraySelection = vtkDataArraySelection::New();
     this->CellDataArraySelection  = vtkDataArraySelection::New();
 
+    //Configure metadata arrays
+  this->MetaData = vtkTable::New();
+
+
     //Add test data array
     this->CellDataArraySelection->AddArray("Test 1");
     this->PointDataArraySelection->AddArray("Test 2");
@@ -65,6 +70,7 @@ vtkGenericReader::~vtkGenericReader()
 {
   this->PointDataArraySelection->Delete();
   this->CellDataArraySelection->Delete();
+  this->MetaData->Delete();
 }
 
 //--
@@ -259,7 +265,7 @@ int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
     switch(port)
       {
       case 0:
-      return this->Superclass::FillOutputPortInformation(port, info);
+        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
         break;
 
       case 1:
