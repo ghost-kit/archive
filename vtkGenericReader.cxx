@@ -205,7 +205,7 @@ void vtkGenericReader::EnableAllCellArrays()
 
 int vtkGenericReader::CanReadFile(const char *filename)
 {
-
+  //This doesn't really do anything right now...
   return 0;
 }
 
@@ -251,8 +251,8 @@ void vtkGenericReader::SelectionCallback(
     void *clientdata,
     void *calldata)
 {
-
-
+  caller->Modified();
+  std::cout << "Selection Callback Activated" << std::endl;
 }
 
 //--
@@ -261,8 +261,8 @@ void vtkGenericReader::EventCallback(
     unsigned long eid,
     void* clientdata, void* calldata)
 {
-
-
+  caller->Modified();
+  std::cout << "Event Callback Activated" << std::endl;
 }
 //====================== END CALLBACKS =======================
 
