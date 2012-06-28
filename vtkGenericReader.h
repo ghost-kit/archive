@@ -154,7 +154,8 @@ protected:
   vtkCallbackCommand* SelectionObserver;
 
   // Load a variable from data file
-  void LoadVariableData(int var);
+  void LoadVariableData(char* name);
+  void LoadVariableData(int index);
 
 
   // Required Paraview Functions
@@ -186,18 +187,6 @@ private:
   vtkGenericReader(const vtkGenericReader&);  // Not implemented.
   void operator=(const vtkGenericReader&);  // Not implemented.
 };
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
