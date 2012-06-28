@@ -98,7 +98,6 @@ int vtkGenericReader::GetNumberOfCellArrays()
   return this->CellDataArraySelection->GetNumberOfArrays();
 }
 
-
 /*
  *Return the NAME (characters) of the Point array at index
  *   This is an internal function
@@ -134,7 +133,6 @@ int vtkGenericReader::GetCellArrayStatus(const char *name)
 {
   return this->CellDataArraySelection->GetArraySetting(name);
 }
-
 
 /*
  *Set the status of the Point Array of "name"
@@ -265,6 +263,8 @@ void vtkGenericReader::EventCallback(
 //    These methods to load the requested variables.
 //  These are provided so that we can abstract out the reading
 //  of the data from the rest of the reader.
+//
+//  Override these methods for your reader
 //------------------------------------------------------------
 vtkStructuredGrid* vtkGenericReader::GetFieldOutput()
 {
