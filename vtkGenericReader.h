@@ -159,6 +159,8 @@ protected:
 
 
   // Required Paraview Functions
+  virtual int CanReadFile(const char* filename);
+
   virtual int RequestData(
       vtkInformation* request,
       vtkInformationVector** inputVector,

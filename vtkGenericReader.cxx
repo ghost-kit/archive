@@ -36,11 +36,12 @@
 #include "vtkToolkits.h"
 
 
-
 vtkStandardNewMacro(vtkGenericReader)
 
 
-//--
+//---------------------------------------------------------------
+//    Constructors and Destructors
+//---------------------------------------------------------------
 vtkGenericReader::vtkGenericReader()
 {
     //set the number of output ports you will need
@@ -201,6 +202,14 @@ void vtkGenericReader::EnableAllCellArrays()
 //  your data source.   This is where the logic of the reader
 //  is implemented.
 //------------------------------------------------------------
+
+int vtkGenericReader::CanReadFile(const char *filename)
+{
+
+  return 0;
+}
+
+//--
 int vtkGenericReader::ProcessRequest(
     vtkInformation *request,
     vtkInformationVector **inInfo,
@@ -209,7 +218,6 @@ int vtkGenericReader::ProcessRequest(
 
   return 1;
 }
-
 
 //--
 int vtkGenericReader::RequestData(
@@ -256,7 +264,6 @@ void vtkGenericReader::EventCallback(
 
 
 }
-
 //====================== END CALLBACKS =======================
 
 //------------------------------------------------------------
@@ -292,9 +299,11 @@ void vtkGenericReader::LoadVariableData(int index)
 
 
 }
+//=================== END USER METHODS =========================
+
 
 //--------------------------------------------------------------
-//    Function sets up what the types the output ports are
+//    Output Port Configuration
 //--------------------------------------------------------------
 int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
