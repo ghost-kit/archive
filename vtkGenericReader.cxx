@@ -53,7 +53,9 @@ vtkGenericReader::vtkGenericReader()
     this->CellDataArraySelection  = vtkDataArraySelection::New();
 
     //Add test data array
-    this->CellDataArraySelection->AddArray("test");
+    //this->CellDataArraySelection->AddArray("Test 1");
+    this->PointDataArraySelection->AddArray("Test 2");
+    this->PointDataArraySelection->AddArray("Test 3");
 
 
 }
@@ -104,14 +106,14 @@ vtkTable* vtkGenericReader::GetMetaDataOutput()
 int vtkGenericReader::GetNumberOfPointArrays()
 {
 
-  return 0;
+  return this->PointDataArraySelection->GetNumberOfArrays();
 }
 
 //--
 int vtkGenericReader::GetNumberOfCellArrays()
 {
 
-  return 0;
+  return this->CellDataArraySelection->GetNumberOfArrays();
 }
 
 
@@ -119,70 +121,76 @@ int vtkGenericReader::GetNumberOfCellArrays()
 const char* vtkGenericReader::GetPointArrayName(int index)
 {
 
-  return NULL;
+  return this->PointDataArraySelection->GetArrayName(index);
 }
 
 //--
 const char* vtkGenericReader::GetCellArrayName(int index)
 {
 
-  return NULL;
+  return this->CellDataArraySelection->GetArrayName(index);
 }
 
 //--
 int vtkGenericReader::GetPointArrayStatus(const char *name)
 {
 
-  return 1;
+  return this->PointDataArraySelection->GetArraySetting(name);
 }
 
 //--
 int vtkGenericReader::GetCellArrayStatus(const char *name)
 {
 
-  return 1;
+  return this->CellDataArraySelection->GetArraySetting(name);
 }
 
 
 //--
 void vtkGenericReader::SetPointArrayStatus(const char *name, int status)
 {
-
+  if(status == 1)
+    this->PointDataArraySelection->EnableArray(name);
+  else
+    this->PointDataArraySelection->DisableArray(name);
 
 }
 
 //--
 void vtkGenericReader::SetCellArrayStatus(const char *name, int status)
 {
-
+  if(status == 1)
+    this->CellDataArraySelection->EnableArray(name);
+  else
+    this->CellDataArraySelection->DisableArray(name);
 
 }
 
 //--
 void vtkGenericReader::DisableAllPointArrays()
 {
-
+  this->PointDataArraySelection->DisableAllArrays();
 
 }
 
 //--
 void vtkGenericReader::DisableAllCellArrays()
 {
-
+  this->CellDataArraySelection->DisableAllArrays();
 
 }
 
 //--
 void vtkGenericReader::EnableAllPointArrays()
 {
-
+  this->PointDataArraySelection->EnableAllArrays();
 
 }
 
 //--
 void vtkGenericReader::EnableAllCellArrays()
 {
-
+  this->CellDataArraySelection->EnableAllArrays();
 
 }
 
