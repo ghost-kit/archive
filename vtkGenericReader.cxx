@@ -53,7 +53,7 @@ vtkGenericReader::vtkGenericReader()
     this->CellDataArraySelection  = vtkDataArraySelection::New();
 
     //Add test data array
-    //this->CellDataArraySelection->AddArray("Test 1");
+    this->CellDataArraySelection->AddArray("Test 1");
     this->PointDataArraySelection->AddArray("Test 2");
     this->PointDataArraySelection->AddArray("Test 3");
 
@@ -63,7 +63,8 @@ vtkGenericReader::vtkGenericReader()
 //--
 vtkGenericReader::~vtkGenericReader()
 {
-
+  this->PointDataArraySelection->Delete();
+  this->CellDataArraySelection->Delete();
 }
 
 //--
