@@ -44,23 +44,22 @@ vtkStandardNewMacro(vtkGenericReader)
 //---------------------------------------------------------------
 vtkGenericReader::vtkGenericReader()
 {
-    //set the number of output ports you will need
-    this->SetNumberOfOutputPorts(2);
+  //set the number of output ports you will need
+  this->SetNumberOfOutputPorts(2);
 
-    //set the number of input ports (Default 0)
-    this->SetNumberOfInputPorts(0);
+  //set the number of input ports (Default 0)
+  this->SetNumberOfInputPorts(0);
 
-    //configure array status selectors
-    this->PointDataArraySelection = vtkDataArraySelection::New();
-    this->CellDataArraySelection  = vtkDataArraySelection::New();
+  //configure array status selectors
+  this->PointDataArraySelection = vtkDataArraySelection::New();
+  this->CellDataArraySelection  = vtkDataArraySelection::New();
 
-    //Configure metadata arrays
-    this->MetaData = vtkTable::New();
+  //Configure sytem array interfaces
+  this->MetaData = vtkTable::New();
+  this->Data = vtkStructuredGrid::New();
+  this->Points = vtkPoints::New();
 
-    /* Add Test Arrays */
-    this->CellDataArraySelection->AddArray("Test 1");
-    this->PointDataArraySelection->AddArray("Test 2");
-    this->PointDataArraySelection->AddArray("Test 3");
+
 }
 
 //--
@@ -69,6 +68,8 @@ vtkGenericReader::~vtkGenericReader()
   this->PointDataArraySelection->Delete();
   this->CellDataArraySelection->Delete();
   this->MetaData->Delete();
+  this->Data->Delete();
+  this->Points->Delete();
 }
 
 //-------------------------------------------------------------
@@ -206,15 +207,119 @@ void vtkGenericReader::EnableAllCellArrays()
 int vtkGenericReader::CanReadFile(const char *filename)
 {
   //This doesn't really do anything right now...
-  return 0;
+  return 1;
 }
 
 //--
 int vtkGenericReader::ProcessRequest(
-    vtkInformation *request,
+    vtkInformation *reqInfo,
     vtkInformationVector **inInfo,
     vtkInformationVector *outInfo)
 {
+  if(reqInfo->Has(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED()))
+    {
+      int port = reqInfo->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+
+      std::cout << "REQUEST DATA NOT GENERATED Activated" << std::endl;
+
+      if(port != 0)
+        {
+          vtkInformation* DataInfo = outInfo->GetInformationObject(0);
+          DataInfo->Set(vtkDemandDrivenPipeline::DATA_NOT_GENERATED(), 1);
+        }
+      if(port != 1)
+        {
+          std::cout << "Meta Data Setup..." << std::endl;
+
+          vtkInformation* MetaInfo = outInfo->GetInformationObject(1);
+
+          if(MetaInfo != NULL)
+            MetaInfo->Set(vtkDemandDrivenPipeline::DATA_NOT_GENERATED(), 1);
+          else
+            std::cerr << "ERROR: MetaInfo not retreived." << std::endl;
+        }
+      return 1;
+    }
+
+  return this->Superclass::ProcessRequest(reqInfo, inInfo, outInfo);
+
+}
+
+//--
+int vtkGenericReader::RequestInformation(
+    vtkInformation* request,
+    vtkInformationVector** inputVector,
+    vtkInformationVector* outputVector)
+{
+
+  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+  if(port == 0)
+    {
+    vtkInformation* OtherInfo = outputVector->GetInformationObject(1);
+    if(OtherInfo != NULL)
+       OtherInfo->Set(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED());
+    else
+      std::cerr << "ERROR: Information Object not retreived." << std::endl;
+
+    }
+  else if(port == 1)
+    {
+    vtkInformation* OtherInfo = outputVector->GetInformationObject(0);
+    if(OtherInfo != NULL)
+       OtherInfo->Set(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED());
+    else
+      std::cerr << "ERROR: Information Object not retreived." << std::endl;
+
+    }
+
+
+
+
+  //TODO: Finish Error Managment for this section
+
+  //get Data output port information
+  this->DataOutInfo = outputVector->GetInformationObject(0);
+
+  //get MetaData output port information
+  this->MetaDataOutInfo = outputVector->GetInformationObject(1);
+
+  //make sure MetaDataOutInfo is set
+  if(this->MetaDataOutInfo == NULL)
+    {
+      std::cerr << "ERROR: MetaDataOutInfo is not Populated" << std::endl;
+      return 0;
+    }
+
+  //make sure DataOutInfo is set
+  if(this->DataOutInfo == NULL)
+    {
+      std::cerr << "ERROR: DataOutInfo is not Populated" << std::endl;
+      return 0;
+    }
+
+
+  // Array names and extents
+  if(this->CellDataArraySelection->GetNumberOfArrays() == 0 &&
+     this->PointDataArraySelection->GetNumberOfArrays() == 0)
+    {
+      this->PopulateArrays();
+      this->PopulateWholeExtents();
+    }
+
+  // Time Step Data
+  if(this->NumberOfTimeSteps == 0)
+    {
+      this->PopulateTimeStepInfo();
+    }
+
+  //Set Whole Extents for data
+  this->printWholeExtents();
+
+  this->DataOutInfo->Set(
+        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+        this->WholeExtent,
+        6);
+
 
   return 1;
 }
@@ -225,16 +330,9 @@ int vtkGenericReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
+  // configure the grid
+  this->GenerateGrid();
 
-  return 1;
-}
-
-//--
-int vtkGenericReader::RequestInformation(
-    vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector)
-{
 
   return 1;
 }
@@ -246,14 +344,13 @@ int vtkGenericReader::RequestInformation(
 //  Selections and Events.
 //------------------------------------------------------------
 void vtkGenericReader::SelectionCallback(
-    vtkObject *caller,
-    unsigned long eid,
-    void *clientdata,
-    void *calldata)
-{
-  caller->Modified();
-  std::cout << "Selection Callback Activated" << std::endl;
-}
+    vtkObject*,
+    unsigned long vtkNotUsed(eventid),
+    void* clientdata,
+    void* vtkNotUsed(calldata))
+  {
+    static_cast<vtkGenericReader*>(clientdata)->Modified();
+  }
 
 //--
 void vtkGenericReader::EventCallback(
@@ -273,32 +370,73 @@ void vtkGenericReader::EventCallback(
 //
 //  Override these methods for your reader
 //------------------------------------------------------------
-vtkStructuredGrid* vtkGenericReader::GetFieldOutput()
+
+
+//-- Return 0 for failure, 1 for success --//
+int vtkGenericReader::LoadVariableData(char* name)
 {
 
-  return NULL;
+  return 1;
 }
 
-//--
-vtkTable* vtkGenericReader::GetMetaDataOutput()
+//-- Return 0 for failure, 1 for success --//
+/* You will want to over-ride this method to
+ * Populate the system with your own arrays */
+int vtkGenericReader::PopulateArrays()
 {
 
-  return NULL;
+  /* Add Test Arrays */
+  this->CellDataArraySelection->AddArray("Test Array 1");
+  this->PointDataArraySelection->AddArray("Test Array 2");
+
+  return 1;
 }
 
-//--
-void vtkGenericReader::LoadVariableData(char* name)
+//-- Return 0 for failure, 1 for success --//
+/* You will want to over-ride this method
+ * to provide time-step information for your own
+ * data */
+int vtkGenericReader::PopulateTimeStepInfo()
+{
+  return 1;
+}
+
+//-- Return 0 for failure, 1 for success --//
+/* Over-ride this method to provide the
+ * extents of your data */
+int vtkGenericReader::PopulateWholeExtents()
 {
 
+  this->WholeExtent[0] = 0;
+  this->WholeExtent[1] = 2;
+  this->WholeExtent[2] = 0;
+  this->WholeExtent[3] = 2;
+  this->WholeExtent[4] = 0;
+  this->WholeExtent[5] = 2;
 
+  return 1;
 }
 
-//--
-void vtkGenericReader::LoadVariableData(int index)
+//-- print whole extents --//
+void vtkGenericReader::printWholeExtents()
+{
+  std::cout << this->WholeExtent[0] << " " <<
+               this->WholeExtent[1] << " " <<
+               this->WholeExtent[2] << " " <<
+               this->WholeExtent[3] << " " <<
+               this->WholeExtent[4] << " " <<
+               this->WholeExtent[5] << std::endl;
+}
+
+//-- Return 0 for failure, 1 for success --//
+/* You will need to over-ride this method to provide
+ * your own grid-information */
+int vtkGenericReader::GenerateGrid()
 {
 
-
+  return 1;
 }
+
 //=================== END USER METHODS =========================
 
 
@@ -307,19 +445,21 @@ void vtkGenericReader::LoadVariableData(int index)
 //--------------------------------------------------------------
 int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
-    switch(port)
-      {
-      case 0:
-        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
-        break;
+  switch(port)
+    {
+    case 0:
+      return this->Superclass::FillOutputPortInformation(port, info);
+      break;
 
-      case 1:
-        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
-        break;
-      }
+    case 1:
+      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
+      break;
+    }
 
-    return 1;
+  return 1;
 }
+
+//================= END PORT CONFIGURATION ===================
 
 //------------------------------------------------------------
 //    Internal functions -- required for system to work

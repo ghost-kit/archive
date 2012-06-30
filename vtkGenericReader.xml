@@ -5,6 +5,10 @@
     <SourceProxy
        name="vtkGenericReader"
        class="vtkGenericReader">
+
+      <OutputPort name="Fields" index="0" />
+      <OutputPort name="MetaData" index="1" />
+
       <StringVectorProperty
          name="FileName"
          animateable="0"

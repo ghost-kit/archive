@@ -77,12 +77,6 @@ public:
   vtkSetVector6Macro(SubExtent, int)
   vtkGetVector6Macro(SubExtent, int)
 
-
-  // Description:
-  // Get the reader's output
-  vtkStructuredGrid* GetFieldOutput();        // Output port 0
-  vtkTable* GetMetaDataOutput();   // Output port 1
-
   // Description:
   // The following methods allow selective reading of solutions fields.
   // By default, ALL data fields on the nodes are read, but this can
@@ -110,7 +104,7 @@ public:
   // information is being requested for and if there is
   // a REQUEST_DATA_NOT_GENERATED request then we mark
   // which ports won't have data generated for that request.
-  virtual int ProcessRequest(vtkInformation *request,
+  virtual int ProcessRequest(vtkInformation *reqInfo,
                              vtkInformationVector **inInfo,
                              vtkInformationVector *outInfo);
 
@@ -132,11 +126,13 @@ protected:
   int Dimension[3];         // Size of entire grid
   int SubDimension[3];      // Size of processor grid
 
+  //VTK Information objects
+  vtkInformation* DataOutInfo;
+  vtkInformation* MetaDataOutInfo;
 
+  //Data interface information
   vtkPoints* Points;        // Structured grid geometry
-
-  vtkFloatArray** Data;     // Actual data arrays
-
+  vtkStructuredGrid* Data;  // Structured grid Data Interface
   vtkTable* MetaData;       // Meta Data
 
   // Time step information
@@ -154,12 +150,17 @@ protected:
   vtkCallbackCommand* SelectionObserver;
 
   // Load a variable from data file
-  void LoadVariableData(char* name);
-  void LoadVariableData(int index);
+  int GenerateGrid();
+  int LoadVariableData(char* name);
 
+  // Request Information Helpers
+  int PopulateArrays();
+  int PopulateTimeStepInfo();
+  int PopulateWholeExtents();
+  void printWholeExtents();
 
   // Required Paraview Functions
-  virtual int CanReadFile(const char* filename);
+  static int CanReadFile(const char* filename);
 
   virtual int RequestData(
       vtkInformation* request,
