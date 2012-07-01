@@ -104,7 +104,7 @@ public:
   // information is being requested for and if there is
   // a REQUEST_DATA_NOT_GENERATED request then we mark
   // which ports won't have data generated for that request.
-  virtual int ProcessRequest(vtkInformation *reqInfo,
+  virtual int ProcessRequest(vtkInformation *request,
                              vtkInformationVector **inInfo,
                              vtkInformationVector *outInfo);
 
@@ -155,8 +155,10 @@ protected:
 
   // Request Information Helpers
   int PopulateArrays();
+  int PopulateMetaData(vtkInformationVector* outputVector);
   int PopulateTimeStepInfo();
   int PopulateWholeExtents();
+  int checkStatus(vtkObject* Object, char* name);
   void printWholeExtents();
 
   // Required Paraview Functions

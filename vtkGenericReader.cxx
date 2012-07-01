@@ -67,9 +67,9 @@ vtkGenericReader::~vtkGenericReader()
 {
   this->PointDataArraySelection->Delete();
   this->CellDataArraySelection->Delete();
-  this->MetaData->Delete();
-  this->Data->Delete();
-  this->Points->Delete();
+//  this->MetaData->Delete();
+//  this->Data->Delete();
+//  this->Points->Delete();
 }
 
 //-------------------------------------------------------------
@@ -216,33 +216,7 @@ int vtkGenericReader::ProcessRequest(
     vtkInformationVector **inInfo,
     vtkInformationVector *outInfo)
 {
-  if(reqInfo->Has(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED()))
-    {
-      int port = reqInfo->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
-
-      std::cout << "REQUEST DATA NOT GENERATED Activated" << std::endl;
-
-      if(port != 0)
-        {
-          vtkInformation* DataInfo = outInfo->GetInformationObject(0);
-          DataInfo->Set(vtkDemandDrivenPipeline::DATA_NOT_GENERATED(), 1);
-        }
-      if(port != 1)
-        {
-          std::cout << "Meta Data Setup..." << std::endl;
-
-          vtkInformation* MetaInfo = outInfo->GetInformationObject(1);
-
-          if(MetaInfo != NULL)
-            MetaInfo->Set(vtkDemandDrivenPipeline::DATA_NOT_GENERATED(), 1);
-          else
-            std::cerr << "ERROR: MetaInfo not retreived." << std::endl;
-        }
-      return 1;
-    }
-
   return this->Superclass::ProcessRequest(reqInfo, inInfo, outInfo);
-
 }
 
 //--
@@ -251,74 +225,48 @@ int vtkGenericReader::RequestInformation(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
-
-  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
-  if(port == 0)
-    {
-    vtkInformation* OtherInfo = outputVector->GetInformationObject(1);
-    if(OtherInfo != NULL)
-       OtherInfo->Set(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED());
-    else
-      std::cerr << "ERROR: Information Object not retreived." << std::endl;
-
-    }
-  else if(port == 1)
-    {
-    vtkInformation* OtherInfo = outputVector->GetInformationObject(0);
-    if(OtherInfo != NULL)
-       OtherInfo->Set(vtkDemandDrivenPipeline::REQUEST_DATA_NOT_GENERATED());
-    else
-      std::cerr << "ERROR: Information Object not retreived." << std::endl;
-
-    }
-
-
-
-
-  //TODO: Finish Error Managment for this section
+  int ActivePort = outputVector->GetNumberOfInformationObjects()-1;
+  std::cerr << "Active Port: " << ActivePort << std::endl;
 
   //get Data output port information
-  this->DataOutInfo = outputVector->GetInformationObject(0);
+  if(ActivePort == 0)
+    {
+      this->DataOutInfo = outputVector->GetInformationObject(0);
+      this->checkStatus(this->DataOutInfo, (char*)"Data Output Information");
 
+      // Array names and extents
+      if(this->CellDataArraySelection->GetNumberOfArrays() == 0 &&
+         this->PointDataArraySelection->GetNumberOfArrays() == 0)
+        {
+          this->PopulateArrays();
+          this->PopulateWholeExtents();
+        }
+
+      // Time Step Data
+      if(this->NumberOfTimeSteps == 0)
+        {
+          this->PopulateTimeStepInfo();
+        }
+
+      //Set Whole Extents for data
+      this->printWholeExtents();
+
+      this->DataOutInfo->Set(
+            vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+            this->WholeExtent,
+            6);
+
+    }
   //get MetaData output port information
-  this->MetaDataOutInfo = outputVector->GetInformationObject(1);
-
-  //make sure MetaDataOutInfo is set
-  if(this->MetaDataOutInfo == NULL)
+  if(ActivePort == 1)
     {
-      std::cerr << "ERROR: MetaDataOutInfo is not Populated" << std::endl;
-      return 0;
+      this->MetaDataOutInfo = outputVector->GetInformationObject(1);
+      this->checkStatus(this->MetaDataOutInfo, (char*)"Meta Data Output Info");
     }
-
-  //make sure DataOutInfo is set
-  if(this->DataOutInfo == NULL)
+  else
     {
-      std::cerr << "ERROR: DataOutInfo is not Populated" << std::endl;
-      return 0;
+      std::cerr << "Only one port on this loop" << std::endl;
     }
-
-
-  // Array names and extents
-  if(this->CellDataArraySelection->GetNumberOfArrays() == 0 &&
-     this->PointDataArraySelection->GetNumberOfArrays() == 0)
-    {
-      this->PopulateArrays();
-      this->PopulateWholeExtents();
-    }
-
-  // Time Step Data
-  if(this->NumberOfTimeSteps == 0)
-    {
-      this->PopulateTimeStepInfo();
-    }
-
-  //Set Whole Extents for data
-  this->printWholeExtents();
-
-  this->DataOutInfo->Set(
-        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-        this->WholeExtent,
-        6);
 
 
   return 1;
@@ -330,8 +278,34 @@ int vtkGenericReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
-  // configure the grid
-  this->GenerateGrid();
+  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+  int numberObjects = outputVector->GetNumberOfInformationObjects();
+
+  if(numberObjects != 2)
+    {
+      outputVector->GetInformationObject(1);
+      numberObjects = outputVector->GetNumberOfInformationObjects();
+    }
+
+  std::cerr << "Port: " << port << std::endl;
+  std::cerr << "Objs: " << numberObjects << std::endl;
+
+  this->MetaData = dynamic_cast<vtkTable*>
+      (this->MetaDataOutInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  outputVector->Print(std::cerr);
+  request->Print(std::cerr);
+
+  vtkStringArray *MetaString = vtkStringArray::New();
+  MetaString->SetName("Meta Data");
+  MetaString->SetNumberOfComponents(1);
+  MetaString->InsertNextValue("This is a Test");
+  cout << "Configured Table Column" << endl;
+  this->MetaData->AddColumn(MetaString);
+  cout << "Added column to Table" << endl;
+  MetaString->Delete();
+
+
 
 
   return 1;
@@ -348,9 +322,9 @@ void vtkGenericReader::SelectionCallback(
     unsigned long vtkNotUsed(eventid),
     void* clientdata,
     void* vtkNotUsed(calldata))
-  {
-    static_cast<vtkGenericReader*>(clientdata)->Modified();
-  }
+{
+  static_cast<vtkGenericReader*>(clientdata)->Modified();
+}
 
 //--
 void vtkGenericReader::EventCallback(
@@ -388,6 +362,46 @@ int vtkGenericReader::PopulateArrays()
   /* Add Test Arrays */
   this->CellDataArraySelection->AddArray("Test Array 1");
   this->PointDataArraySelection->AddArray("Test Array 2");
+
+  return 1;
+}
+
+//-- Meta Data Population
+int vtkGenericReader::PopulateMetaData(vtkInformationVector *outputVector)
+{
+  vtkInformation* info = outputVector->GetInformationObject(1);
+
+  vtkTable* MetaData =
+      dynamic_cast<vtkTable*>(info->Get(vtkDataObject::DATA_OBJECT()));
+
+  vtkStringArray *MetaString = vtkStringArray::New();
+  MetaString->SetName("Meta Data");
+  MetaString->SetNumberOfComponents(1);
+  MetaString->InsertNextValue("This is a Test");
+
+  MetaData->AddColumn(MetaString);
+
+  MetaString->Delete();
+
+  return 1;
+}
+
+int vtkGenericReader::checkStatus(vtkObject *Object, char *name)
+{
+  if(Object == NULL)
+    {
+      std::cerr << "ERROR: " << name
+                << " has failed to initialize"
+                << std::endl;
+
+      return 0;
+    }
+  else
+    {
+      std::cerr << "SUCCESS: " << name
+                << " has successfully initialized"
+                << std::endl;
+    }
 
   return 1;
 }
@@ -448,7 +462,7 @@ int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
   switch(port)
     {
     case 0:
-      return this->Superclass::FillOutputPortInformation(port, info);
+      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
       break;
 
     case 1:
