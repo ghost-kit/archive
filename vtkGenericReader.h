@@ -3,6 +3,7 @@
 
 
 #include "vtkStructuredGridAlgorithm.h"
+#include "vtkMultiBlockDataSetAlgorithm.h"
 
 #define CALL_NETCDF(call)\
 {\

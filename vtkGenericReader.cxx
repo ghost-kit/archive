@@ -228,6 +228,9 @@ int vtkGenericReader::RequestInformation(
   int ActivePort = outputVector->GetNumberOfInformationObjects()-1;
   std::cerr << "Active Port: " << ActivePort << std::endl;
 
+  this->Print(std::cerr);
+  std::cout << "Ports: " << this->GetNumberOfOutputPorts() << std::endl;
+
   //get Data output port information
   if(ActivePort == 0)
     {
@@ -278,6 +281,8 @@ int vtkGenericReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
+
+
   int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
   int numberObjects = outputVector->GetNumberOfInformationObjects();
 
@@ -290,22 +295,38 @@ int vtkGenericReader::RequestData(
   std::cerr << "Port: " << port << std::endl;
   std::cerr << "Objs: " << numberObjects << std::endl;
 
-  this->MetaData = dynamic_cast<vtkTable*>
-      (this->MetaDataOutInfo->Get(vtkDataObject::DATA_OBJECT()));
+//  this->MetaData = dynamic_cast<vtkTable*>
+//      (this->MetaDataOutInfo->Get(vtkDataObject::DATA_OBJECT()));
+
+  this->MetaData =
+      vtkTable::GetData(this->GetExecutive()->GetOutputInformation(1));
+
 
   outputVector->Print(std::cerr);
-  request->Print(std::cerr);
+
 
   vtkStringArray *MetaString = vtkStringArray::New();
   MetaString->SetName("Meta Data");
   MetaString->SetNumberOfComponents(1);
   MetaString->InsertNextValue("This is a Test");
+  MetaString->InsertNextValue("Test 2");
+  MetaString->InsertNextValue("Test 3");
   cout << "Configured Table Column" << endl;
   this->MetaData->AddColumn(MetaString);
+
+  vtkStringArray *MetaString2 = vtkStringArray::New();
+  MetaString2->SetName("Other Data");
+  MetaString2->SetNumberOfComponents(1);
+  MetaString2->InsertNextValue("Test 2,1");
+  MetaString2->InsertNextValue("Test 2,2");
+  MetaString2->InsertNextValue("Test 2,3");
+
+  this->MetaData->AddColumn(MetaString2);
   cout << "Added column to Table" << endl;
   MetaString->Delete();
 
 
+  this->MetaData->Print(std::cerr);
 
 
   return 1;
