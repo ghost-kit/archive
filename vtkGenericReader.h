@@ -69,8 +69,8 @@ public:
   vtkSetMacro(GridScaleType, int)
   vtkGetMacro(GridScaleType, int)
 
-  vtkSetStringMacro(Filename)
-  vtkGetStringMacro(Filename)
+  vtkSetStringMacro(FileName)
+  vtkGetStringMacro(FileName)
 
   vtkSetVector6Macro(WholeExtent, int)
   vtkGetVector6Macro(WholeExtent, int)
@@ -80,8 +80,6 @@ public:
 
   // Description:
   // The following methods allow selective reading of solutions fields.
-  // By default, ALL data fields on the nodes are read, but this can
-  // be modified.
   int GetNumberOfPointArrays();
   int GetNumberOfCellArrays();
 
@@ -114,7 +112,7 @@ protected:
   vtkGenericReader();
   ~vtkGenericReader();
 
-  char* Filename;            // Base file name
+  char* FileName;            // Base file name
   int GridScaleType;
 
   // Extent information
@@ -127,20 +125,12 @@ protected:
   int Dimension[3];         // Size of entire grid
   int SubDimension[3];      // Size of processor grid
 
-  //VTK Information objects
-  vtkInformation* DataOutInfo;
-  vtkInformation* MetaDataOutInfo;
-
   //Data interface information
   vtkPoints* Points;        // Structured grid geometry
-  vtkStructuredGrid* Data;  // Structured grid Data Interface
-  vtkTable* MetaData;       // Meta Data
+  vtkStructuredGrid* Data;  // Structured Grid Data
 
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
-  int TimeStepFirst;        // First time step
-  int TimeStepLast;         // Last time step
-  int TimeStepDelta;        // Delta on time steps
   double* TimeSteps;        // Actual times available for request
 
   // Selected field of interest
@@ -152,13 +142,14 @@ protected:
 
   // Load a variable from data file
   int GenerateGrid();
-  int LoadVariableData(char* name);
+  int LoadVariableData(vtkInformationVector *outputVector);
+  int LoadGridValues(const char *array);
+
 
   // Request Information Helpers
   int PopulateArrays();
   int PopulateMetaData(vtkInformationVector* outputVector);
-  int PopulateTimeStepInfo();
-  int PopulateWholeExtents();
+  int PopulateDataInformation();
   int checkStatus(vtkObject* Object, char* name);
   void printWholeExtents();
 
