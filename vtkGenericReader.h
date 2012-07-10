@@ -3,7 +3,7 @@
 
 
 #include "vtkStructuredGridAlgorithm.h"
-#include "vtkMultiBlockDataSetAlgorithm.h"
+#include "vtknetcdf/cxx/netcdfcpp.h"
 
 #define CALL_NETCDF(call)\
 {\
@@ -38,6 +38,7 @@ class vtkStructuredGrid;
 class vtkUnstructuredGrid;
 class vtkMultiBlockDataSetAlgorithm;
 class vtkStructuredGridAlgorithm;
+
 
 
 namespace GRID_SCALE

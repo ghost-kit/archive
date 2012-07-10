@@ -34,7 +34,8 @@
 
 #include "vtkMultiProcessController.h"
 #include "vtkToolkits.h"
-#include "netcdf.h"
+#include "vtk_netcdf.h"
+#include "vtk_netcdfcpp.h"
 
 vtkStandardNewMacro(vtkGenericReader)
 
@@ -44,6 +45,8 @@ vtkStandardNewMacro(vtkGenericReader)
 //---------------------------------------------------------------
 vtkGenericReader::vtkGenericReader()
 {
+
+  this->FileName = NULL;
 
   //set the number of output ports you will need
   this->SetNumberOfOutputPorts(2);
@@ -453,6 +456,10 @@ int vtkGenericReader::PopulateDataInformation()
   size_t dim_theta = 0;
   size_t dim_phi = 0;
 
+//  NcFile DataFile((const char*)this->FileName, NcFile::ReadOnly);;
+
+//  DataFile = NcFile::NcFile((const char*)this->FileName, NcFile::ReadOnly);
+
   CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
 
   int ndims, nvars, ngatts, unlimdimid;
@@ -526,10 +533,13 @@ int vtkGenericReader::GenerateGrid()
   int k = 0;
 
   CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
+  std::cerr << "File Open: " << this->FileName << std::endl;
 
   //Get Coordinate Array and Sizes
   std::cerr << "Getting X1" << std::endl;
   CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
+
+  std::cerr << "Trying to get Data" << std::endl;
   CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
 
   std::cerr << "Getting X2" << std::endl;
@@ -542,7 +552,7 @@ int vtkGenericReader::GenerateGrid()
 
   CALL_NETCDF(nc_close(ncFileID));
 
-  // Point-centered data
+  // Point grid data
   double xyz[3] = { 0, 0, 0 };
 
   const int GridScale = this->GetGridScaleType();
