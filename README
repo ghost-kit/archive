@@ -1,0 +1,7 @@
+This ParaView reader plugin demonstrates how to write a multi-port
+reader.  The example stores a sturctured grid as output[0] and a
+vtkTable storing vtkStringArray's as output[1].
+
+This plugin was implemented using
+ParaView-src/VTK/Parallel/vtkWindBladeReader.* as a reference point.
+Tested/validated on ParaView-3.12.0.

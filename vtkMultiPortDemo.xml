@@ -1,0 +1,26 @@
+<ServerManagerConfiguration>
+  <ProxyGroup name="sources">
+    <SourceProxy 
+       name="vtkMultiPortDemo"
+       class="vtkMultiPortDemo">
+
+      <OutputPort name="Fields" index="0" />
+      <OutputPort name="Metadata" index="1" />
+
+      <StringVectorProperty
+         name="FileName"
+	 animateable="0"
+         command="SetFileName"
+         number_of_elements="1">
+        <FileListDomain name="files"/>
+      </StringVectorProperty>
+
+      <Hints>
+        <ReaderFactory
+	   extensions="txt"
+	   file_description="Any text file"/>
+      </Hints>
+
+    </SourceProxy>
+  </ProxyGroup>
+</ServerManagerConfiguration>
