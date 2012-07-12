@@ -105,7 +105,7 @@
 
       <Hints>
         <ReaderFactory
-           extensions="enc nc"
+           extensions="txt enc nc"
            file_description="***GENERIC*** Data File"/>
       </Hints>
 
@@ -124,12 +124,10 @@
         This Property makes it possible to open a series of files based on the integered input files.
       </Documentation>
 
-      <OutputPort name="Fields" index="0" />
-      <OutputPort name="MetaData" index="1" />
 
       <Hints>
         <ReaderFactory
-        extensions="enc nc"
+        extensions="txt enc nc"
         file_description="***Generic*** Data File"/>
       </Hints>
 

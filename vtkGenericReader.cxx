@@ -61,6 +61,11 @@ vtkGenericReader::vtkGenericReader()
   //Configure sytem array interfaces
   this->Points = vtkPoints::New();
 
+  this->SelectionObserver = vtkCallbackCommand::New();
+  this->SelectionObserver->SetCallback(&vtkGenericReader::SelectionCallback);
+  this->SelectionObserver->SetClientData(this);
+  this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
+  this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
 }
 
 //--
@@ -69,6 +74,8 @@ vtkGenericReader::~vtkGenericReader()
   this->PointDataArraySelection->Delete();
   this->CellDataArraySelection->Delete();
   this->Points->Delete();
+
+  this->SelectionObserver->Delete();
 }
 
 //-------------------------------------------------------------
@@ -146,7 +153,7 @@ void vtkGenericReader::SetPointArrayStatus(const char *name, int status)
   else
     this->PointDataArraySelection->DisableArray(name);
 
-  this->Modified();
+  //  this->Modified();
 }
 
 /*
@@ -160,7 +167,7 @@ void vtkGenericReader::SetCellArrayStatus(const char *name, int status)
   else
     this->CellDataArraySelection->DisableArray(name);
 
-  this->Modified();
+  //  this->Modified();
 }
 
 /*
@@ -170,7 +177,7 @@ void vtkGenericReader::SetCellArrayStatus(const char *name, int status)
 void vtkGenericReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
-  this->Modified();
+  //  this->Modified();
 }
 
 /*
@@ -180,7 +187,7 @@ void vtkGenericReader::DisableAllPointArrays()
 void vtkGenericReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
-  this->Modified();
+  //  this->Modified();
 }
 
 /*
@@ -190,7 +197,7 @@ void vtkGenericReader::DisableAllCellArrays()
 void vtkGenericReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
-  this->Modified();
+  //  this->Modified();
 }
 
 /*
@@ -200,7 +207,7 @@ void vtkGenericReader::EnableAllPointArrays()
 void vtkGenericReader::EnableAllCellArrays()
 {
   this->CellDataArraySelection->EnableAllArrays();
-  this->Modified();
+  //  this->Modified();
 }
 //=============== END SELECTIVE READER METHODS================
 
@@ -223,6 +230,12 @@ int vtkGenericReader::ProcessRequest(
     vtkInformationVector **inInfo,
     vtkInformationVector *outInfo)
 {
+
+
+  std::cerr << "Number of Information Objects: "
+            << outInfo->GetNumberOfInformationObjects()
+            << std::endl;
+
   return this->Superclass::ProcessRequest(reqInfo, inInfo, outInfo);
 }
 
@@ -233,14 +246,20 @@ int vtkGenericReader::RequestInformation(
     vtkInformationVector* outputVector)
 {
 
+  std::cerr << getSerialNumber() << ": " << __FUNCTION__ << std::endl;
+
+
+  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+  int status = 0;
+
   std::cerr << "Object Count: " << outputVector->GetNumberOfInformationObjects()
             << std::endl;
 
   std::cout << "Ports: " << this->GetNumberOfOutputPorts() << std::endl;
 
   //get Data output port information
-  vtkInformation* MetaDataOutInfo = outputVector->GetInformationObject(0);
-  int status = this->checkStatus(MetaDataOutInfo, (char*)"Meta Data Output Information");
+  vtkInformation* MetaDataOutInfo = outputVector->GetInformationObject(1);
+  status = this->checkStatus(MetaDataOutInfo, (char*)"Meta Data Output Information");
 
   //If status has been verified, load MetaData Information
   if(status)
@@ -254,7 +273,7 @@ int vtkGenericReader::RequestInformation(
     }
 
   // Array names and extents
-  vtkInformation* DataOutputInfo = outputVector->GetInformationObject(1);
+  vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
   status = this->checkStatus(
         DataOutputInfo,
         (char*)" Array Name: Data Info Output Information");
@@ -298,23 +317,40 @@ int vtkGenericReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
+  std::cerr << getSerialNumber() << ": " << __FUNCTION__ << std::endl;
+
+  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+
   //check number of Information Objects being offered
   int numberObjects = outputVector->GetNumberOfInformationObjects();
   std::cerr << "Objs: " << numberObjects << std::endl;
 
-  this->CellDataArraySelection->Print(std::cerr);
-  this->PointDataArraySelection->Print(std::cerr);
+  std::cerr << "Request Data: Loading Ports:" << std::endl;
 
-  //Import the MetaData - Port 0
+
+  //Import the MetaData - Port 1
   this->PopulateMetaData(outputVector);
 
   //Import the actual Data
   this->LoadVariableData(outputVector);
+  this->CellDataArraySelection->Print(std::cerr);
+  this->PointDataArraySelection->Print(std::cerr);
 
   return 1;
+
 }
 
 //=================== END CORE METHODS =======================
+
+//-- Callback
+void vtkGenericReader::SelectionCallback(
+    vtkObject*,
+    unsigned long vtkNotUsed(eventid),
+    void* clientdata,
+    void* vtkNotUsed(calldata))
+{
+  static_cast<vtkGenericReader*>(clientdata)->Modified();
+}
 
 
 //------------------------------------------------------------
@@ -329,9 +365,7 @@ int vtkGenericReader::RequestData(
 //-- Return 0 for failure, 1 for success --//
 int vtkGenericReader::LoadVariableData(vtkInformationVector* outputVector)
 {
-  vtkStructuredGrid* Data =
-      vtkStructuredGrid::SafeDownCast(this->GetExecutive()->GetOutputData(1));
-//  vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 1);
+  vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 0);
   int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
 
   if(status)
@@ -340,9 +374,9 @@ int vtkGenericReader::LoadVariableData(vtkInformationVector* outputVector)
       this->GenerateGrid();
 
       //Commit the grid
-      Data->SetDimensions(this->Dimension[0],
-                          this->Dimension[1],
-                          (this->Dimension[2] + 1));
+      Data->SetDimensions(100,
+                          100,
+                          100);
 
       Data->SetPoints(this->Points);
 
@@ -390,11 +424,13 @@ int vtkGenericReader::PopulateArrays()
 //-- Meta Data Population
 int vtkGenericReader::PopulateMetaData(vtkInformationVector *outputVector)
 {
-  vtkTable* MetaData = vtkTable::GetData(outputVector,0);
-  int status = this->checkStatus(MetaData, (char*)"Meta Data Table Object");
+  vtkTable* MetaData = vtkTable::GetData(outputVector,1);
+  int status = this->checkStatus(MetaData, (char*)"(PMD) Meta Data Table Object");
 
   if(status)
     {
+      std::cerr << ":::Loading Meta Data:::" << std::endl;
+
       vtkStringArray *MetaString = vtkStringArray::New();
       MetaString->SetName("Meta Data");
       MetaString->SetNumberOfComponents(1);
@@ -413,10 +449,18 @@ int vtkGenericReader::PopulateMetaData(vtkInformationVector *outputVector)
 
       MetaData->AddColumn(MetaString2);
 
+      vtkDoubleArray* MetaString3 = vtkDoubleArray::New();
+      MetaString3->SetName("Numeric Data (Double)");
+      MetaString3->SetNumberOfComponents(1);
+      MetaString3->InsertNextValue(1.234);
+      MetaString3->InsertNextValue(2.3456);
+      MetaString3->InsertNextValue(3.456);
+
+      MetaData->AddColumn(MetaString3);
+
       MetaString->Delete();
 
     }
-
 
   return 1;
 }
@@ -447,47 +491,10 @@ int vtkGenericReader::checkStatus(vtkObject *Object, char *name)
 int vtkGenericReader::PopulateDataInformation()
 {
 
-  int ncFileID = 0;
-  int ncSDSID = 0;
-
-  double TIME = 0;
-
-  size_t dim_r = 0;
-  size_t dim_theta = 0;
-  size_t dim_phi = 0;
-
-//  NcFile DataFile((const char*)this->FileName, NcFile::ReadOnly);;
-
-//  DataFile = NcFile::NcFile((const char*)this->FileName, NcFile::ReadOnly);
-
-  CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-
-  int ndims, nvars, ngatts, unlimdimid;
-  CALL_NETCDF(nc_inq(ncFileID, &ndims, &nvars, &ngatts, &unlimdimid));
-
-  std::cerr << "File Opened: " << this->FileName << std::endl;
-
-  //get dimension and time data
-  CALL_NETCDF(nc_inq_dimid(ncFileID, "n1", &ncSDSID));
-  CALL_NETCDF(nc_inq_dimlen(ncFileID, ncSDSID, &dim_r));
-
-  CALL_NETCDF(nc_inq_dimid(ncFileID, "n2", &ncSDSID));
-  CALL_NETCDF(nc_inq_dimlen(ncFileID, ncSDSID, &dim_theta));
-
-  CALL_NETCDF(nc_inq_dimid(ncFileID, "n3", &ncSDSID));
-  CALL_NETCDF(nc_inq_dimlen(ncFileID, ncSDSID, &dim_phi));
-
-  CALL_NETCDF(nc_inq_varid(ncFileID, "TIME", &ncSDSID));
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, &TIME));
-
-  CALL_NETCDF(nc_close(ncFileID));
-
-  cout << __FUNCTION__ << " nc_close" << endl;
-
   //Populate Dimensions
-  this->Dimension[0] = dim_r;
-  this->Dimension[1] = dim_theta;
-  this->Dimension[2] = dim_phi;
+  this->Dimension[0] = 100;
+  this->Dimension[1] = 100;
+  this->Dimension[2] = 100;
 
   //Populate Extents
   this->WholeExtent[0] = 0;
@@ -495,12 +502,12 @@ int vtkGenericReader::PopulateDataInformation()
   this->WholeExtent[2] = 0;
   this->WholeExtent[3] = (this->Dimension[1] - 1);
   this->WholeExtent[4] = 0;
-  this->WholeExtent[5] = (this->Dimension[2]);
+  this->WholeExtent[5] = (this->Dimension[2]-1);
 
   //Set Time step Information
   this->NumberOfTimeSteps = 1;
   this->TimeSteps = new double[this->NumberOfTimeSteps];
-  this->TimeSteps[0] = TIME;
+  this->TimeSteps[0] = 10.00;
 
   return 1;
 }
@@ -521,41 +528,13 @@ void vtkGenericReader::printWholeExtents()
  * your own grid-information */
 int vtkGenericReader::GenerateGrid()
 {
-  double *X1 = NULL;
-  double *X2 = NULL;
-  double *X3 = NULL;
-
-  int ncFileID = 0;
-  int ncSDSID = 0;
 
   int i = 0;
   int j = 0;
   int k = 0;
 
-  CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-  std::cerr << "File Open: " << this->FileName << std::endl;
-
-  //Get Coordinate Array and Sizes
-  std::cerr << "Getting X1" << std::endl;
-  CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
-
-  std::cerr << "Trying to get Data" << std::endl;
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
-
-  std::cerr << "Getting X2" << std::endl;
-  CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X2));
-
-  std::cerr << "Getting X3" << std::endl;
-  CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X3));
-
-  CALL_NETCDF(nc_close(ncFileID));
-
   // Point grid data
   double xyz[3] = { 0, 0, 0 };
-
-  const int GridScale = this->GetGridScaleType();
 
   for (k = 0; k < this->Dimension[2]; k++)
     {
@@ -563,12 +542,9 @@ int vtkGenericReader::GenerateGrid()
         {
           for (i = 0; i < this->Dimension[0]; i++)
             {
-              xyz[0] = X1[i] * sin(X2[j]) * cos(X3[k])
-                  / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[1] = X1[i] * sin(X2[j]) * sin(X3[k])
-                  / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[2] = X1[i] * cos(X2[j])
-                  / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[0] = i;
+              xyz[1] = j;
+              xyz[2] = k;
 
               //insert point information into the grid
               this->Points->InsertNextPoint(xyz);
@@ -577,21 +553,7 @@ int vtkGenericReader::GenerateGrid()
     }
 
   // Close off the gap in the grid (make sphere continuous
-  for (j = 0; j < this->Dimension[1]; j++)
-    {
-      for (i = 0; i < this->Dimension[0]; i++)
-        {
-          xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0])
-              / GRID_SCALE::ScaleFactor[GridScale];
-          xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0])
-              / GRID_SCALE::ScaleFactor[GridScale];
-          xyz[2] = X1[i] * cos(X2[j])
-              / GRID_SCALE::ScaleFactor[GridScale];
 
-          this->Points->InsertNextPoint(xyz);
-
-        }
-    }
 
   return 1;
 }
@@ -607,11 +569,14 @@ int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
 
   if (port==0)
     {
-      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
+      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
+
+      return this->Superclass::FillInputPortInformation(port, info);
+
     }
   else if (port==1)
     {
-      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
+      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
     }
   return 1;
 }

@@ -146,6 +146,12 @@ protected:
   int LoadVariableData(vtkInformationVector *outputVector);
   int LoadGridValues(const char *array);
 
+  int getSerialNumber()
+  {
+    static int number = 0;
+    return ++number;
+  }
+
 
   // Request Information Helpers
   int PopulateArrays();
@@ -172,11 +178,6 @@ protected:
       unsigned long eid,
       void *clientdata,
       void *calldata);
-
-  static void EventCallback(
-      vtkObject* caller,
-      unsigned long eid,
-      void* clientdata, void* calldata);
 
   virtual int FillOutputPortInformation(int, vtkInformation*);
 
