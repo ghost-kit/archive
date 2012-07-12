@@ -11,6 +11,11 @@ ADD_PARAVIEW_PLUGIN(vtkGenericReader "1.0"
   SERVER_MANAGER_SOURCES vtkGenericReader.cxx
   GUI_RESOURCE_FILES vtkGenericGUI.xml)
 
+ADD_PARAVIEW_PLUGIN(vtkGenericReaderNonTime "1.0"
+  SERVER_MANAGER_XML vtkGenericReaderNonTime.xml
+  SERVER_MANAGER_SOURCES vtkGenericReader.cxx
+  GUI_RESOURCE_FILES vtkGenericGUI.xml)
+
  FIND_LIBRARY(NETCDF_LIBRARIES NAMES libvtkNetCDF.pv3.14.dylib PATHS "/usr/local/lib/paraview-3.14/")
  FIND_PATH(NETCDF_INCLUDE_DIRS vtk_netcdfcpp.h)
 
