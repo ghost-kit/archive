@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-SET(ParaView_DIR /Users/jjm390/Development/paraview/build/ParaView-build)
+#SET(ParaView_DIR /Users/jjm390/Development/paraview/build/ParaView-build)
 
 FIND_PACKAGE(ParaView REQUIRED)
 
@@ -16,13 +16,6 @@ ADD_PARAVIEW_PLUGIN(vtkGenericReaderNonTime "1.0"
   SERVER_MANAGER_SOURCES vtkGenericReader.cxx
   GUI_RESOURCE_FILES vtkGenericGUI.xml)
 
- FIND_LIBRARY(NETCDF_LIBRARIES NAMES libvtkNetCDF.pv3.14.dylib PATHS "/usr/local/lib/paraview-3.14/")
- FIND_PATH(NETCDF_INCLUDE_DIRS vtk_netcdfcpp.h)
 
-INCLUDE_DIRECTORIES(${VTKNETCDF_BINARY_DIR})
-INCLUDE_DIRECTORIES(${VTKNETCDF_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${ParaView_INCLUDE_DIR})
-
-
-Target_LINK_LIBRARIES(vtkGenericReader ${ParaView_LIBRARIES} ${NETCDF_LIBRARIES})
+Target_LINK_LIBRARIES(vtkGenericReader ${ParaView_LIBRARIES})
 
