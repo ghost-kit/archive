@@ -1,5 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
+SET(ParaView_DIR /Users/jjm390/Development/paraview/build/ParaView-build)
+
 FIND_PACKAGE(ParaView REQUIRED)
 
 INCLUDE(${PARAVIEW_USE_FILE})
