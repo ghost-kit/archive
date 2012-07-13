@@ -2,12 +2,16 @@
 
 
   <ProxyGroup name="internal_sources">
-    <SourceProxy 
-       name="vtkENLILReader"
-       class="vtkENLILReader">
+    <SourceProxy
+       name="vtkGenericReader"
+       class="vtkGenericReader">
+
+      <OutputPort name="Fields" index="0" />
+      <OutputPort name="MetaData" index="1" />
+
       <StringVectorProperty
          name="FileName"
-	 animateable="0"
+         animateable="0"
          command="SetFileName"
          number_of_elements="1">
         <FileListDomain name="files"/>
@@ -18,9 +22,9 @@
          command="SetGridScaleType"
          number_of_elements="1"
          default_values="3">
-	<!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkENLILReader.h! -->
+        <!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkGenericReader.h! -->
         <EnumerationDomain name="enum">
-	  <Entry value="0" text="No scaling: 1.0"/>
+          <Entry value="0" text="No scaling: 1.0"/>
           <Entry value="1" text="Earth Radius: 6.5e6 m"/>
           <Entry value="2" text="Solar Radius: 6.955e8 m"/>
           <Entry value="3" text="Astronomical Unit: 1.5e11 m"/>
@@ -30,7 +34,7 @@
         </Documentation>
       </IntVectorProperty>
 
-        
+
 
     <StringVectorProperty
         name="CellArrayInfo"
@@ -41,7 +45,7 @@
         <Documentation>
             This is the Cell Array Selector.
         </Documentation>
-        
+
     </StringVectorProperty>
 
     <StringVectorProperty
@@ -79,7 +83,7 @@
 
       <StringVectorProperty
         name="PointArrayStatus"
-        command="SetCellArrayStatus"
+        command="SetPointArrayStatus"
         number_of_elements="0"
         repeat_command="1"
         number_of_elements_per_command="2"
@@ -101,17 +105,17 @@
 
       <Hints>
         <ReaderFactory
-           extensions="enc nc"
-	   file_description="ENLIL Data File"/>
+           extensions="txt enc nc"
+           file_description="***GENERIC*** Data File"/>
       </Hints>
 
     </SourceProxy>
-      
+
   </ProxyGroup>
 
 
   <ProxyGroup name="sources">
-    <SourceProxy name="vtkENLILReader"
+    <SourceProxy name="vtkGenericReader"
       si_class="vtkSIFileSeriesReaderProxy"
       class="vtkFileSeriesReader"
       file_name_method="SetFileName">
@@ -120,16 +124,18 @@
         This Property makes it possible to open a series of files based on the integered input files.
       </Documentation>
 
+
       <Hints>
         <ReaderFactory
-        extensions="enc nc"
-        file_description="ENLIL Data File"/>
+        extensions="txt enc nc"
+        file_description="***Generic*** Data File"/>
       </Hints>
 
       <SubProxy>
         <Proxy name="Reader"
-        proxygroup="internal_sources" proxyname="vtkENLILReader" />
+        proxygroup="internal_sources" proxyname="vtkGenericReader" />
         <ExposedProperties>
+<!-- exposed components -->
           <Property name="GridScaleFactor" />
 
           <Property name="CellArrayInfo" />
@@ -137,7 +143,6 @@
 
           <Property name="PointArrayInfo" />
           <Property name="PointArrayStatus" />
-
 
         </ExposedProperties>
       </SubProxy>
