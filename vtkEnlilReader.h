@@ -1,5 +1,5 @@
-#ifndef VTKGENERICREADER_H
-#define VTKGENERICREADER_H
+#ifndef vtkEnlilReader_H
+#define vtkEnlilReader_H
 
 
 #include "vtkStructuredGridAlgorithm.h"
@@ -56,13 +56,13 @@ namespace GRID_SCALE
 
 
 /** READER PRIME **/
-class VTK_PARALLEL_EXPORT vtkGenericReader : public vtkStructuredGridAlgorithm
+class VTK_PARALLEL_EXPORT vtkEnlilReader : public vtkStructuredGridAlgorithm
 {
 
 public:
-  static vtkGenericReader* New();
+  static vtkEnlilReader* New();
 
-  vtkTypeMacro(vtkGenericReader, vtkStructuredGridAlgorithm)
+  vtkTypeMacro(vtkEnlilReader, vtkStructuredGridAlgorithm)
   void PrintSelf(ostream &os, vtkIndent indent);
 
   // Set/get macros
@@ -109,8 +109,8 @@ public:
 
 protected:
 
-  vtkGenericReader();
-  ~vtkGenericReader();
+  vtkEnlilReader();
+  ~vtkEnlilReader();
 
   char* FileName;            // Base file name
   int GridScaleType;
@@ -182,10 +182,10 @@ protected:
 
 
 private:
-  vtkGenericReader(const vtkGenericReader&);  // Not implemented.
-  void operator=(const vtkGenericReader&);  // Not implemented.
+  vtkEnlilReader(const vtkEnlilReader&);  // Not implemented.
+  void operator=(const vtkEnlilReader&);  // Not implemented.
 };
 
 
 
-#endif // VTKGENERICREADER_H
+#endif // vtkEnlilReader_H

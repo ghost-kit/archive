@@ -1,10 +1,10 @@
 <ServerManagerConfiguration>
 
 
-  <ProxyGroup name="sources">
+  <ProxyGroup name="internal_sources">
     <SourceProxy
-       name="vtkGenericReader"
-       class="vtkGenericReader">
+       name="vtkEnlilReader"
+       class="vtkEnlilReader">
 
       <OutputPort name="Fields" index="0" />
       <OutputPort name="MetaData" index="1" />
@@ -22,7 +22,7 @@
          command="SetGridScaleType"
          number_of_elements="1"
          default_values="3">
-        <!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkGenericReader.h! -->
+        <!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkEnlilReader.h! -->
         <EnumerationDomain name="enum">
           <Entry value="0" text="No scaling: 1.0"/>
           <Entry value="1" text="Earth Radius: 6.5e6 m"/>
@@ -111,6 +111,72 @@
 
     </SourceProxy>
 
+  </ProxyGroup>
+
+
+  <ProxyGroup name="sources">
+    <SourceProxy name="vtkEnlilReader"
+      si_class="vtkSIFileSeriesReaderProxy"
+      class="vtkFileSeriesReader"
+      file_name_method="SetFileName">
+
+      <Documentation>
+        This Property makes it possible to open a series of files based on the integered input files.
+      </Documentation>
+
+
+      <Hints>
+        <ReaderFactory
+        extensions="txt enc nc"
+        file_description="***Generic*** Data File"/>
+      </Hints>
+
+      <SubProxy>
+        <Proxy name="Reader"
+        proxygroup="internal_sources" proxyname="vtkEnlilReader" />
+        <ExposedProperties>
+<!-- exposed components -->
+          <Property name="GridScaleFactor" />
+
+          <Property name="CellArrayInfo" />
+          <Property name="CellArrayStatus" />
+
+          <Property name="PointArrayInfo" />
+          <Property name="PointArrayStatus" />
+
+        </ExposedProperties>
+      </SubProxy>
+
+      <StringVectorProperty name="FileNameInfo"
+        command="GetCurrentFileName"
+        information_only="1">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
+
+      <StringVectorProperty name="FileNames"
+        clean_command="RemoveAllFileNames"
+        command="AddFileName"
+        animateable="1"
+        number_of_elements="0"
+        repeat_command="1">
+        <FileListDomain name="files" />
+        <Documentation>
+          The file or list of files to be read by the reader.
+          A list of files will be sequenced over time.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- This exposes the Timestep Values to the ParaView UI.  Must be implemented in reader to get the time step values -->
+
+      <DoubleVectorProperty name="TimestepValues"
+        repeatable="1"
+        information_only="1">
+        <TimeStepsInformationHelper />
+        <Documentation>
+          Available timestep values.
+        </Documentation>
+      </DoubleVectorProperty>
+    </SourceProxy>
   </ProxyGroup>
 
 </ServerManagerConfiguration>
