@@ -1,4 +1,4 @@
-#include "vtkGenericReader.h"
+#include "vtkENLILReader.h"
 
 #include "vtkCallbackCommand.h"
 #include "vtkCell.h"
@@ -36,13 +36,13 @@
 #include "vtkToolkits.h"
 
 
-vtkStandardNewMacro(vtkGenericReader)
+vtkStandardNewMacro(vtkENLILReader)
 
 
 //---------------------------------------------------------------
 //    Constructors and Destructors
 //---------------------------------------------------------------
-vtkGenericReader::vtkGenericReader()
+vtkENLILReader::vtkENLILReader()
 {
 
   this->FileName = NULL;
@@ -61,14 +61,14 @@ vtkGenericReader::vtkGenericReader()
   this->Points = vtkPoints::New();
 
   this->SelectionObserver = vtkCallbackCommand::New();
-  this->SelectionObserver->SetCallback(&vtkGenericReader::SelectionCallback);
+  this->SelectionObserver->SetCallback(&vtkENLILReader::SelectionCallback);
   this->SelectionObserver->SetClientData(this);
   this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
   this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
 }
 
 //--
-vtkGenericReader::~vtkGenericReader()
+vtkENLILReader::~vtkENLILReader()
 {
   this->PointDataArraySelection->Delete();
   this->CellDataArraySelection->Delete();
@@ -91,7 +91,7 @@ vtkGenericReader::~vtkGenericReader()
  * The Number of Point Arrays in current selection
  *  This is an internal function
  */
-int vtkGenericReader::GetNumberOfPointArrays()
+int vtkENLILReader::GetNumberOfPointArrays()
 {
   return this->PointDataArraySelection->GetNumberOfArrays();
 }
@@ -100,7 +100,7 @@ int vtkGenericReader::GetNumberOfPointArrays()
  * The Number of Cell Arrays in current selection
  *  This is an internal function
  */
-int vtkGenericReader::GetNumberOfCellArrays()
+int vtkENLILReader::GetNumberOfCellArrays()
 {
   return this->CellDataArraySelection->GetNumberOfArrays();
 }
@@ -109,7 +109,7 @@ int vtkGenericReader::GetNumberOfCellArrays()
  *Return the NAME (characters) of the Point array at index
  *   This is an internal function
  */
-const char* vtkGenericReader::GetPointArrayName(int index)
+const char* vtkENLILReader::GetPointArrayName(int index)
 {
   return this->PointDataArraySelection->GetArrayName(index);
 }
@@ -118,7 +118,7 @@ const char* vtkGenericReader::GetPointArrayName(int index)
  *Return the NAME (characters) of the Cell array at index
  *   This is an internal function
  */
-const char* vtkGenericReader::GetCellArrayName(int index)
+const char* vtkENLILReader::GetCellArrayName(int index)
 {
   return this->CellDataArraySelection->GetArrayName(index);
 }
@@ -127,7 +127,7 @@ const char* vtkGenericReader::GetCellArrayName(int index)
  *Get the status of the Point Array of "name"
  *   This is an internal function
  */
-int vtkGenericReader::GetPointArrayStatus(const char *name)
+int vtkENLILReader::GetPointArrayStatus(const char *name)
 {
   return this->PointDataArraySelection->GetArraySetting(name);
 }
@@ -136,7 +136,7 @@ int vtkGenericReader::GetPointArrayStatus(const char *name)
  *Get the status of the Cell Array of "name"
  *   This is an internal function
  */
-int vtkGenericReader::GetCellArrayStatus(const char *name)
+int vtkENLILReader::GetCellArrayStatus(const char *name)
 {
   return this->CellDataArraySelection->GetArraySetting(name);
 }
@@ -145,7 +145,7 @@ int vtkGenericReader::GetCellArrayStatus(const char *name)
  *Set the status of the Point Array of "name"
  *   This is an internal function
  */
-void vtkGenericReader::SetPointArrayStatus(const char *name, int status)
+void vtkENLILReader::SetPointArrayStatus(const char *name, int status)
 {
   if(status == 1)
     this->PointDataArraySelection->EnableArray(name);
@@ -159,7 +159,7 @@ void vtkGenericReader::SetPointArrayStatus(const char *name, int status)
  *Set the status of the Cell Array of "name"
  *   This is an internal function
  */
-void vtkGenericReader::SetCellArrayStatus(const char *name, int status)
+void vtkENLILReader::SetCellArrayStatus(const char *name, int status)
 {
   if(status == 1)
     this->CellDataArraySelection->EnableArray(name);
@@ -173,7 +173,7 @@ void vtkGenericReader::SetCellArrayStatus(const char *name, int status)
  *Disables ALL Point arrays registered in system
  *   This is an internal function
  */
-void vtkGenericReader::DisableAllPointArrays()
+void vtkENLILReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
   //  this->Modified();
@@ -183,7 +183,7 @@ void vtkGenericReader::DisableAllPointArrays()
  *Disables ALL Cell arrays registered in system
  *   This is an internal function
  */
-void vtkGenericReader::DisableAllCellArrays()
+void vtkENLILReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
   //  this->Modified();
@@ -193,7 +193,7 @@ void vtkGenericReader::DisableAllCellArrays()
  *Enables ALL Point arrays registered in system
  *   This is an internal function
  */
-void vtkGenericReader::EnableAllPointArrays()
+void vtkENLILReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
   //  this->Modified();
@@ -203,7 +203,7 @@ void vtkGenericReader::EnableAllPointArrays()
  *Enables ALL Cell arrays registered in system
  *   This is an internal function
  */
-void vtkGenericReader::EnableAllCellArrays()
+void vtkENLILReader::EnableAllCellArrays()
 {
   this->CellDataArraySelection->EnableAllArrays();
   //  this->Modified();
@@ -217,14 +217,14 @@ void vtkGenericReader::EnableAllCellArrays()
 //  is implemented.
 //------------------------------------------------------------
 
-int vtkGenericReader::CanReadFile(const char *filename)
+int vtkENLILReader::CanReadFile(const char *filename)
 {
   //This doesn't really do anything right now...
   return 1;
 }
 
 //--
-int vtkGenericReader::ProcessRequest(
+int vtkENLILReader::ProcessRequest(
     vtkInformation *reqInfo,
     vtkInformationVector **inInfo,
     vtkInformationVector *outInfo)
@@ -239,7 +239,7 @@ int vtkGenericReader::ProcessRequest(
 }
 
 //--
-int vtkGenericReader::RequestInformation(
+int vtkENLILReader::RequestInformation(
     vtkInformation* request,
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
@@ -311,7 +311,7 @@ int vtkGenericReader::RequestInformation(
 }
 
 //--
-int vtkGenericReader::RequestData(
+int vtkENLILReader::RequestData(
     vtkInformation* request,
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
@@ -342,13 +342,13 @@ int vtkGenericReader::RequestData(
 //=================== END CORE METHODS =======================
 
 //-- Callback
-void vtkGenericReader::SelectionCallback(
+void vtkENLILReader::SelectionCallback(
     vtkObject*,
     unsigned long vtkNotUsed(eventid),
     void* clientdata,
     void* vtkNotUsed(calldata))
 {
-  static_cast<vtkGenericReader*>(clientdata)->Modified();
+  static_cast<vtkENLILReader*>(clientdata)->Modified();
 }
 
 
@@ -362,7 +362,7 @@ void vtkGenericReader::SelectionCallback(
 
 
 //-- Return 0 for failure, 1 for success --//
-int vtkGenericReader::LoadVariableData(vtkInformationVector* outputVector)
+int vtkENLILReader::LoadVariableData(vtkInformationVector* outputVector)
 {
   vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 0);
   int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
@@ -401,7 +401,7 @@ int vtkGenericReader::LoadVariableData(vtkInformationVector* outputVector)
 }
 
 //-- Return 0 for Failure, 1 for Success --//
-int vtkGenericReader::LoadGridValues(const char* array)
+int vtkENLILReader::LoadGridValues(const char* array)
 {
 
   return 1;
@@ -410,7 +410,7 @@ int vtkGenericReader::LoadGridValues(const char* array)
 //-- Return 0 for failure, 1 for success --//
 /* You will want to over-ride this method to
  * Populate the system with your own arrays */
-int vtkGenericReader::PopulateArrays()
+int vtkENLILReader::PopulateArrays()
 {
 
   /* Add Test Arrays */
@@ -421,7 +421,7 @@ int vtkGenericReader::PopulateArrays()
 }
 
 //-- Meta Data Population
-int vtkGenericReader::PopulateMetaData(vtkInformationVector *outputVector)
+int vtkENLILReader::PopulateMetaData(vtkInformationVector *outputVector)
 {
   vtkTable* MetaData = vtkTable::GetData(outputVector,1);
   int status = this->checkStatus(MetaData, (char*)"(PMD) Meta Data Table Object");
@@ -464,7 +464,7 @@ int vtkGenericReader::PopulateMetaData(vtkInformationVector *outputVector)
   return 1;
 }
 
-int vtkGenericReader::checkStatus(vtkObject *Object, char *name)
+int vtkENLILReader::checkStatus(vtkObject *Object, char *name)
 {
   if(Object == NULL)
     {
@@ -487,7 +487,7 @@ int vtkGenericReader::checkStatus(vtkObject *Object, char *name)
 //-- Return 0 for failure, 1 for success --//
 /* Over-ride this method to provide the
  * extents of your data */
-int vtkGenericReader::PopulateDataInformation()
+int vtkENLILReader::PopulateDataInformation()
 {
 
   //Populate Dimensions
@@ -512,7 +512,7 @@ int vtkGenericReader::PopulateDataInformation()
 }
 
 //-- print whole extents --//
-void vtkGenericReader::printWholeExtents()
+void vtkENLILReader::printWholeExtents()
 {
   std::cout << this->WholeExtent[0] << " " <<
                this->WholeExtent[1] << " " <<
@@ -525,7 +525,7 @@ void vtkGenericReader::printWholeExtents()
 //-- Return 0 for failure, 1 for success --//
 /* You will need to over-ride this method to provide
  * your own grid-information */
-int vtkGenericReader::GenerateGrid()
+int vtkENLILReader::GenerateGrid()
 {
 
   int i = 0;
@@ -563,7 +563,7 @@ int vtkGenericReader::GenerateGrid()
 //--------------------------------------------------------------
 //    Output Port Configuration
 //--------------------------------------------------------------
-int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
+int vtkENLILReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
 
   if (port==0)
@@ -585,7 +585,7 @@ int vtkGenericReader::FillOutputPortInformation(int port, vtkInformation* info)
 //------------------------------------------------------------
 //    Internal functions -- required for system to work
 //------------------------------------------------------------
-void vtkGenericReader::PrintSelf(ostream &os, vtkIndent indent)
+void vtkENLILReader::PrintSelf(ostream &os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
 
