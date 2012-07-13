@@ -1,4 +1,4 @@
-#include "vtkGenericReader.h"
+#include "vtkEnlilReader.h"
 
 #include "vtkCallbackCommand.h"
 #include "vtkCell.h"
