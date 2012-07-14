@@ -61,6 +61,7 @@ vtkEnlilReader::vtkEnlilReader()
 
   //Configure sytem array interfaces
   this->Points = NULL;
+  this->Radius = NULL;
   this->gridClean = false;
 
   this->SelectionObserver = vtkCallbackCommand::New();
@@ -374,6 +375,8 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
                           this->Dimension[2]);
 
       Data->SetPoints(this->Points);
+      Data->GetPointData()->AddArray(this->Radius);
+
 
       std::cerr << "Grid Commited" << std::endl;
 
@@ -601,14 +604,10 @@ int vtkEnlilReader::GenerateGrid()
   int j = 0;
   int k = 0;
 
-  bool returnStatus;
-  int status;
-
   double *X1 = new double[this->Dimension[0]];
   double *X2 = new double[this->Dimension[1]];
   double *X3 = new double[this->Dimension[2]];
 
-  int ncStatus = 0;
   int ncFileID = 0;
   int ncSDSID = 0;
 
@@ -619,8 +618,16 @@ int vtkEnlilReader::GenerateGrid()
       if(this->Points != NULL)
         {
           this->Points->Delete();
+          this->Radius->Delete();
         }
+
+      //build the Grid
       this->Points = vtkPoints::New();
+
+      //build the Radius Array
+      this->Radius = vtkDoubleArray::New();
+      this->Radius->SetName("Radius");
+      this->Radius->SetNumberOfComponents(1);
 
       //GET Grid Data
       CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
@@ -653,12 +660,16 @@ int vtkEnlilReader::GenerateGrid()
             {
               for (i = 0; i < dimI; i++)
                 {
-                  xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
-                  xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
-                  xyz[2] = (X1[i] * cos(X2[j])) / GRID_SCALE::ScaleFactor[GridScale];
+                  xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k]))
+                      / GRID_SCALE::ScaleFactor[GridScale];
+                  xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k]))
+                      / GRID_SCALE::ScaleFactor[GridScale];
+                  xyz[2] = (X1[i] * cos(X2[j]))
+                      / GRID_SCALE::ScaleFactor[GridScale];
 
                   //insert point information into the grid
                   this->Points->InsertNextPoint(xyz);
+                  this->Radius->InsertNextValue(X1[i]/GRID_SCALE::ScaleFactor[GridScale]);
                 }
             }
         }
@@ -667,13 +678,18 @@ int vtkEnlilReader::GenerateGrid()
         {
           for (i = 0; i < dimI; i++)
             {
-              xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[2] = X1[i] * cos(X2[j]) / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0])
+                  / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0])
+                  / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[2] = X1[i] * cos(X2[j])
+                  / GRID_SCALE::ScaleFactor[GridScale];
 
 
               // Close off the gap in the grid (make sphere continuous)
               this->Points->InsertNextPoint(xyz);
+              this->Radius->InsertNextValue(X1[i]/GRID_SCALE::ScaleFactor[GridScale]);
+
             }
         }
 

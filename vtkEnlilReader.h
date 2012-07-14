@@ -134,7 +134,7 @@ protected:
 
   //Data interface information
   vtkPoints* Points;        // Structured grid geometry
-  vtkStructuredGrid* Data;  // Structured Grid Data
+  vtkDoubleArray* Radius;  // Structured Grid Data
 
   //BTX
   vtkstd::vector<vtkstd::string> MetaDataNames;
