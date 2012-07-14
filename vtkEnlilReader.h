@@ -129,6 +129,10 @@ protected:
   vtkPoints* Points;        // Structured grid geometry
   vtkStructuredGrid* Data;  // Structured Grid Data
 
+  //BTX
+  vtkstd::vector<vtkstd::string> MetaDataNames;
+  //ETX
+
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
   double* TimeSteps;        // Actual times available for request
@@ -151,12 +155,20 @@ protected:
     return ++number;
   }
 
+  void clearString(char* string, int size)
+  {
+    for(int x = 0; x < size; x++)
+      {
+        string[x] = '\0';
+      }
+  }
+
 
   // Request Information Helpers
   int PopulateArrays();
   int PopulateMetaData(vtkInformationVector* outputVector);
   int PopulateDataInformation();
-  int checkStatus(vtkObject* Object, char* name);
+  int checkStatus(void* Object, char* name);
   void printWholeExtents();
 
   // Required Paraview Functions

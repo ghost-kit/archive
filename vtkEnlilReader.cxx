@@ -35,6 +35,8 @@
 #include "vtkMultiProcessController.h"
 #include "vtkToolkits.h"
 
+#include "vtk_netcdfcpp.h"
+
 
 vtkStandardNewMacro(vtkEnlilReader)
 
@@ -152,7 +154,6 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
   else
     this->PointDataArraySelection->DisableArray(name);
 
-  //  this->Modified();
 }
 
 /*
@@ -166,7 +167,6 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
   else
     this->CellDataArraySelection->DisableArray(name);
 
-  //  this->Modified();
 }
 
 /*
@@ -176,7 +176,6 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
 void vtkEnlilReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
-  //  this->Modified();
 }
 
 /*
@@ -186,7 +185,6 @@ void vtkEnlilReader::DisableAllPointArrays()
 void vtkEnlilReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
-  //  this->Modified();
 }
 
 /*
@@ -196,7 +194,6 @@ void vtkEnlilReader::DisableAllCellArrays()
 void vtkEnlilReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
-  //  this->Modified();
 }
 
 /*
@@ -247,8 +244,9 @@ int vtkEnlilReader::RequestInformation(
 
   std::cerr << getSerialNumber() << ": " << __FUNCTION__ << std::endl;
 
-
   int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
+  std::cerr << "PORT: " << port << std::endl;
+
   int status = 0;
 
   std::cerr << "Object Count: " << outputVector->GetNumberOfInformationObjects()
@@ -268,7 +266,6 @@ int vtkEnlilReader::RequestInformation(
                 << MetaDataOutInfo->Get(vtkTable::FIELD_ASSOCIATION())
                 << std::endl;
 
-      MetaDataOutInfo->Print(std::cerr);
     }
 
   // Array names and extents
@@ -324,16 +321,14 @@ int vtkEnlilReader::RequestData(
   int numberObjects = outputVector->GetNumberOfInformationObjects();
   std::cerr << "Objs: " << numberObjects << std::endl;
 
-  std::cerr << "Request Data: Loading Ports:" << std::endl;
+  std::cerr << "Request Data: Loading Ports:" <<  port << std::endl;
 
 
   //Import the MetaData - Port 1
   this->PopulateMetaData(outputVector);
 
-  //Import the actual Data
+  //Import the actual Data - Port 0
   this->LoadVariableData(outputVector);
-  this->CellDataArraySelection->Print(std::cerr);
-  this->PointDataArraySelection->Print(std::cerr);
 
   return 1;
 
@@ -372,12 +367,17 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Generate the Grid
       this->GenerateGrid();
 
+      std::cerr << "Grid Generated" << std::endl;
+
+      std::cerr << "Commiting grid" << std::endl;
       //Commit the grid
-      Data->SetDimensions(100,
-                          100,
-                          100);
+      Data->SetDimensions(this->Dimension[0],
+                          this->Dimension[1],
+                          this->Dimension[2]);
 
       Data->SetPoints(this->Points);
+
+      std::cerr << "Grid Commited" << std::endl;
 
       //Load Variables
       int c = 0;
@@ -385,6 +385,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Cell Data
       for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
         {
+          std::cerr << "Loading Cell Variable " << c << std::endl;
           //Load the current Cell array
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
@@ -392,6 +393,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Point Data
       for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
         {
+          std::cerr << "Loading Point Variable " << c << std::endl;
           //Load the current Point array
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
@@ -423,48 +425,99 @@ int vtkEnlilReader::PopulateArrays()
 //-- Meta Data Population
 int vtkEnlilReader::PopulateMetaData(vtkInformationVector *outputVector)
 {
+  int ncFileID = 0;
+  int ncSDSID = 0;
+  int natts = 0;
+
+  nc_type type;
+
+  char attname[256];
+
+  char    attvalc[256];
+  int     attvali;
+  double  attvald;
+
   vtkTable* MetaData = vtkTable::GetData(outputVector,1);
   int status = this->checkStatus(MetaData, (char*)"(PMD) Meta Data Table Object");
+
 
   if(status)
     {
       std::cerr << ":::Loading Meta Data:::" << std::endl;
 
-      vtkStringArray *MetaString = vtkStringArray::New();
-      MetaString->SetName("Meta Data");
-      MetaString->SetNumberOfComponents(1);
-      MetaString->InsertNextValue("This is a Test");
-      MetaString->InsertNextValue("Test 2");
-      MetaString->InsertNextValue("Test 3");
+      CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
+      CALL_NETCDF(nc_inq_natts(ncFileID, &natts));
 
-      MetaData->AddColumn(MetaString);
+      std::cerr << "Number of Attributes " << natts << std::endl;
 
-      vtkStringArray *MetaString2 = vtkStringArray::New();
-      MetaString2->SetName("Other Data");
-      MetaString2->SetNumberOfComponents(1);
-      MetaString2->InsertNextValue("Test 2,1");
-      MetaString2->InsertNextValue("Test 2,2");
-      MetaString2->InsertNextValue("Test 2,3");
+      for(int q=0; q < natts; q++)
+        {
+          vtkStringArray *MetaString = vtkStringArray::New();
+          vtkIntArray *MetaInt = vtkIntArray::New();
+          vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
 
-      MetaData->AddColumn(MetaString2);
+          CALL_NETCDF(nc_inq_attname(ncFileID, NC_GLOBAL, q, attname));
+          std::cerr << "Att Name: " << attname << std::endl;
 
-      vtkDoubleArray* MetaString3 = vtkDoubleArray::New();
-      MetaString3->SetName("Numeric Data (Double)");
-      MetaString3->SetNumberOfComponents(1);
-      MetaString3->InsertNextValue(1.234);
-      MetaString3->InsertNextValue(2.3456);
-      MetaString3->InsertNextValue(3.456);
+          CALL_NETCDF(nc_inq_atttype(ncFileID, NC_GLOBAL, attname, &type));
+          std::cerr << "type: " << type << std::endl;
 
-      MetaData->AddColumn(MetaString3);
+          switch(type)
+            {
+            case 1:
+              break;
 
-      MetaString->Delete();
+            case 2: //text
+              this->clearString(attvalc,256);
+              CALL_NETCDF(nc_get_att_text(ncFileID, NC_GLOBAL, attname, attvalc));
+
+              MetaString->SetName(attname);
+              MetaString->SetNumberOfComponents(1);
+              MetaString->InsertNextValue(attvalc);
+
+              MetaData->AddColumn(MetaString);
+
+              break;
+
+            case 3:
+              break;
+
+            case 4: //int
+              CALL_NETCDF(nc_get_att_int(ncFileID, NC_GLOBAL, attname, &attvali));
+
+              MetaInt->SetName(attname);
+              MetaInt->SetNumberOfComponents(1);
+              MetaInt->InsertNextValue(attvali);
+
+              MetaData->AddColumn(MetaInt);
+              break;
+
+            case 5:
+              break;
+
+            case 6: //double
+              CALL_NETCDF(nc_get_att_double(ncFileID, NC_GLOBAL, attname, &attvald));
+
+              MetaDouble->SetName(attname);
+              MetaDouble->SetNumberOfComponents(1);
+              MetaDouble->InsertNextValue(attvald);
+
+              MetaData->AddColumn(MetaDouble);
+              break;
+            }
+
+
+
+        }
+
+      CALL_NETCDF(nc_close(ncFileID));
 
     }
 
   return 1;
 }
 
-int vtkEnlilReader::checkStatus(vtkObject *Object, char *name)
+int vtkEnlilReader::checkStatus(void *Object, char *name)
 {
   if(Object == NULL)
     {
@@ -490,23 +543,41 @@ int vtkEnlilReader::checkStatus(vtkObject *Object, char *name)
 int vtkEnlilReader::PopulateDataInformation()
 {
 
-  //Populate Dimensions
-  this->Dimension[0] = 100;
-  this->Dimension[1] = 100;
-  this->Dimension[2] = 100;
+  std::cerr << "Opening File " << this->FileName << "." << std::endl;
+  NcFile data(this->FileName);
+  NcDim* dims_x = data.get_dim(0);
+  NcDim* dims_y = data.get_dim(1);
+  NcDim* dims_z = data.get_dim(2);
+
+  NcVar* time = data.get_var("TIME");
+
+  std::cerr << "Closing File" << this->FileName << std::endl;
+
+  this->Dimension[0] = (int)dims_x->size();
+  this->Dimension[1] = (int)dims_y->size();
+  this->Dimension[2] = (int)dims_z->size()+1;
+
+  int Time = time->as_double(0);
+
+  data.close();
 
   //Populate Extents
   this->WholeExtent[0] = 0;
-  this->WholeExtent[1] = (this->Dimension[0] - 1);
+  this->WholeExtent[1] = (this->Dimension[0]-1);
   this->WholeExtent[2] = 0;
-  this->WholeExtent[3] = (this->Dimension[1] - 1);
+  this->WholeExtent[3] = (this->Dimension[1]-1);
   this->WholeExtent[4] = 0;
   this->WholeExtent[5] = (this->Dimension[2]-1);
+
+  //Whole Extent
+  this->printWholeExtents();
 
   //Set Time step Information
   this->NumberOfTimeSteps = 1;
   this->TimeSteps = new double[this->NumberOfTimeSteps];
-  this->TimeSteps[0] = 10.00;
+  this->TimeSteps[0] = Time;
+
+  std::cerr << " Ending " << __FUNCTION__ << std::endl;
 
   return 1;
 }
@@ -532,18 +603,54 @@ int vtkEnlilReader::GenerateGrid()
   int j = 0;
   int k = 0;
 
+  bool returnStatus;
+  int status;
+
+  double *X1 = new double[this->Dimension[0]];
+  double *X2 = new double[this->Dimension[1]];
+  double *X3 = new double[this->Dimension[2]];
+
+  int ncStatus = 0;
+  int ncFileID = 0;
+  int ncSDSID = 0;
+
+  const int GridScale = this->GetGridScaleType();
+
+
+  //GET Grid Data
+  CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
+
+  CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
+
+  CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X2));
+
+  CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
+  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X3));
+
+  CALL_NETCDF(nc_close(ncFileID));
+
+  int dimI, dimJ, dimK;
+
+  dimI = this->Dimension[0];
+  dimJ = this->Dimension[1];
+  dimK = this->Dimension[2]-1;
+
+
+
   // Point grid data
   double xyz[3] = { 0, 0, 0 };
 
-  for (k = 0; k < this->Dimension[2]; k++)
+  for (k = 0; k < dimK; k++)
     {
-      for (j = 0; j < this->Dimension[1]; j++)
+      for (j = 0; j < dimJ; j++)
         {
-          for (i = 0; i < this->Dimension[0]; i++)
+          for (i = 0; i < dimI; i++)
             {
-              xyz[0] = i;
-              xyz[1] = j;
-              xyz[2] = k;
+              xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[2] = (X1[i] * cos(X2[j])) / GRID_SCALE::ScaleFactor[GridScale];
 
               //insert point information into the grid
               this->Points->InsertNextPoint(xyz);
@@ -551,8 +658,21 @@ int vtkEnlilReader::GenerateGrid()
         }
     }
 
-  // Close off the gap in the grid (make sphere continuous
+  for (j = 0; j < dimJ; j++)
+    {
+      for (i = 0; i < dimI; i++)
+        {
+          xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
+          xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
+          xyz[2] = X1[i] * cos(X2[j]) / GRID_SCALE::ScaleFactor[GridScale];
 
+
+          // Close off the gap in the grid (make sphere continuous)
+          this->Points->InsertNextPoint(xyz);
+        }
+    }
+
+  std::cerr << "Finishing Grid Output" << std::endl;
 
   return 1;
 }

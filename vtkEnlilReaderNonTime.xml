@@ -109,6 +109,15 @@
            file_description="***GENERIC*** Data File"/>
       </Hints>
 
+      <DoubleVectorProperty name="TimestepValues"
+        repeatable="1"
+        information_only="1">
+        <TimeStepsInformationHelper />
+        <Documentation>
+          Available timestep values.
+        </Documentation>
+      </DoubleVectorProperty>
+
     </SourceProxy>
 
   </ProxyGroup>
