@@ -66,7 +66,13 @@ public:
   void PrintSelf(ostream &os, vtkIndent indent);
 
   // Set/get macros
-  vtkSetMacro(GridScaleType, int)
+  void SetGridScaleType(int value)
+  {
+    this->GridScaleType = value;
+    this->gridClean = false;
+    this->Modified();
+  }
+
   vtkGetMacro(GridScaleType, int)
 
   vtkSetStringMacro(FileName)
@@ -114,6 +120,7 @@ protected:
 
   char* FileName;            // Base file name
   int GridScaleType;
+  bool gridClean;
 
   // Extent information
   vtkIdType NumberOfTuples;  // Number of tuples in subextent

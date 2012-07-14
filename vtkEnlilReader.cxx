@@ -60,7 +60,8 @@ vtkEnlilReader::vtkEnlilReader()
   this->CellDataArraySelection  = vtkDataArraySelection::New();
 
   //Configure sytem array interfaces
-  this->Points = vtkPoints::New();
+  this->Points = NULL;
+  this->gridClean = false;
 
   this->SelectionObserver = vtkCallbackCommand::New();
   this->SelectionObserver->SetCallback(&vtkEnlilReader::SelectionCallback);
@@ -74,7 +75,9 @@ vtkEnlilReader::~vtkEnlilReader()
 {
   this->PointDataArraySelection->Delete();
   this->CellDataArraySelection->Delete();
-  this->Points->Delete();
+
+  if(this->gridClean)
+    this->Points->Delete();
 
   this->SelectionObserver->Delete();
 }
@@ -315,14 +318,9 @@ int vtkEnlilReader::RequestData(
 {
   std::cerr << getSerialNumber() << ": " << __FUNCTION__ << std::endl;
 
-  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
-
   //check number of Information Objects being offered
   int numberObjects = outputVector->GetNumberOfInformationObjects();
   std::cerr << "Objs: " << numberObjects << std::endl;
-
-  std::cerr << "Request Data: Loading Ports:" <<  port << std::endl;
-
 
   //Import the MetaData - Port 1
   this->PopulateMetaData(outputVector);
@@ -616,64 +614,72 @@ int vtkEnlilReader::GenerateGrid()
 
   const int GridScale = this->GetGridScaleType();
 
-
-  //GET Grid Data
-  CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-
-  CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
-
-  CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X2));
-
-  CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
-  CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X3));
-
-  CALL_NETCDF(nc_close(ncFileID));
-
-  int dimI, dimJ, dimK;
-
-  dimI = this->Dimension[0];
-  dimJ = this->Dimension[1];
-  dimK = this->Dimension[2]-1;
-
-
-
-  // Point grid data
-  double xyz[3] = { 0, 0, 0 };
-
-  for (k = 0; k < dimK; k++)
+  if(!this->gridClean)
     {
+      if(this->Points != NULL)
+        {
+          this->Points->Delete();
+        }
+      this->Points = vtkPoints::New();
+
+      //GET Grid Data
+      CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
+
+      CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
+
+      CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X2));
+
+      CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
+      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X3));
+
+      CALL_NETCDF(nc_close(ncFileID));
+
+      int dimI, dimJ, dimK;
+
+      dimI = this->Dimension[0];
+      dimJ = this->Dimension[1];
+      dimK = this->Dimension[2]-1;
+
+      std::cerr << "Grid Scale: " << GRID_SCALE::ScaleFactor[GridScale] << std::endl;
+
+      // Point grid data
+      double xyz[3] = { 0, 0, 0 };
+
+      for (k = 0; k < dimK; k++)
+        {
+          for (j = 0; j < dimJ; j++)
+            {
+              for (i = 0; i < dimI; i++)
+                {
+                  xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
+                  xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
+                  xyz[2] = (X1[i] * cos(X2[j])) / GRID_SCALE::ScaleFactor[GridScale];
+
+                  //insert point information into the grid
+                  this->Points->InsertNextPoint(xyz);
+                }
+            }
+        }
+
       for (j = 0; j < dimJ; j++)
         {
           for (i = 0; i < dimI; i++)
             {
-              xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k])) / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[2] = (X1[i] * cos(X2[j])) / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
+              xyz[2] = X1[i] * cos(X2[j]) / GRID_SCALE::ScaleFactor[GridScale];
 
-              //insert point information into the grid
+
+              // Close off the gap in the grid (make sphere continuous)
               this->Points->InsertNextPoint(xyz);
             }
         }
+
+      std::cerr << "Finishing Grid Output" << std::endl;
+      this->gridClean=true;
     }
-
-  for (j = 0; j < dimJ; j++)
-    {
-      for (i = 0; i < dimI; i++)
-        {
-          xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
-          xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0]) / GRID_SCALE::ScaleFactor[GridScale];
-          xyz[2] = X1[i] * cos(X2[j]) / GRID_SCALE::ScaleFactor[GridScale];
-
-
-          // Close off the gap in the grid (make sphere continuous)
-          this->Points->InsertNextPoint(xyz);
-        }
-    }
-
-  std::cerr << "Finishing Grid Output" << std::endl;
-
   return 1;
 }
 
