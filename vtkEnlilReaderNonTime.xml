@@ -105,8 +105,8 @@
 
       <Hints>
         <ReaderFactory
-           extensions="txt enc nc"
-           file_description="***GENERIC*** Data File"/>
+           extensions="enc nc"
+           file_description="Enlil Model Data File"/>
       </Hints>
 
       <DoubleVectorProperty name="TimestepValues"

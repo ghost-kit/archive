@@ -127,8 +127,8 @@
 
       <Hints>
         <ReaderFactory
-        extensions="txt enc nc"
-        file_description="***Generic*** Data File"/>
+        extensions="enc nc"
+        file_description="Enlil Model Data File"/>
       </Hints>
 
       <SubProxy>
