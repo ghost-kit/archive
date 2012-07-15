@@ -359,21 +359,33 @@ void vtkEnlilReader::SelectionCallback(
 int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 {
   vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 0);
+  vtkInformation* fieldInfo = outputVector->GetInformationObject(0);
+
   int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
 
   if(status)
     {
+
+      fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
+                     this->SubExtent);
+      Data->SetExtent(this->SubExtent);
+
+      this->printSubExtents();
+
       //Generate the Grid
       this->GenerateGrid();
 
       std::cerr << "Grid Generated" << std::endl;
-
       std::cerr << "Commiting grid" << std::endl;
-      //Commit the grid
-      Data->SetDimensions(this->Dimension[0],
-                          this->Dimension[1],
-                          this->Dimension[2]);
 
+      //Commit the grid
+      this->SubDimension[0] = this->SubExtent[1] - this->SubExtent[0] + 1;
+      this->SubDimension[1] = this->SubExtent[3] - this->SubExtent[2] + 1;
+      this->SubDimension[2] = this->SubExtent[5] - this->SubExtent[4] + 1;
+
+      Data->SetDimensions(this->SubDimension);
+
+      //set points and radius
       Data->SetPoints(this->Points);
       Data->GetPointData()->AddArray(this->Radius);
 
@@ -586,12 +598,25 @@ int vtkEnlilReader::PopulateDataInformation()
 //-- print whole extents --//
 void vtkEnlilReader::printWholeExtents()
 {
-  std::cout << this->WholeExtent[0] << " " <<
+  std::cout << "WHOLE: "
+            << this->WholeExtent[0] << " " <<
                this->WholeExtent[1] << " " <<
                this->WholeExtent[2] << " " <<
                this->WholeExtent[3] << " " <<
                this->WholeExtent[4] << " " <<
                this->WholeExtent[5] << std::endl;
+}
+
+//-- print whole extents --//
+void vtkEnlilReader::printSubExtents()
+{
+  std::cout << "SUB: "
+            << this->SubExtent[0] << " " <<
+               this->SubExtent[1] << " " <<
+               this->SubExtent[2] << " " <<
+               this->SubExtent[3] << " " <<
+               this->SubExtent[4] << " " <<
+               this->SubExtent[5] << std::endl;
 }
 
 //-- Return 0 for failure, 1 for success --//
@@ -643,22 +668,16 @@ int vtkEnlilReader::GenerateGrid()
 
       CALL_NETCDF(nc_close(ncFileID));
 
-      int dimI, dimJ, dimK;
-
-      dimI = this->Dimension[0];
-      dimJ = this->Dimension[1];
-      dimK = this->Dimension[2]-1;
-
       std::cerr << "Grid Scale: " << GRID_SCALE::ScaleFactor[GridScale] << std::endl;
 
       // Point grid data
       double xyz[3] = { 0, 0, 0 };
 
-      for (k = 0; k < dimK; k++)
+      for (k = this->SubExtent[4]; k < this->SubExtent[5]; k++)
         {
-          for (j = 0; j < dimJ; j++)
+          for (j = this->SubExtent[2]; j < SubExtent[3]+1; j++)
             {
-              for (i = 0; i < dimI; i++)
+              for (i = this->SubExtent[0]; i < this->SubExtent[1]+1; i++)
                 {
                   xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k]))
                       / GRID_SCALE::ScaleFactor[GridScale];
@@ -674,9 +693,9 @@ int vtkEnlilReader::GenerateGrid()
             }
         }
 
-      for (j = 0; j < dimJ; j++)
+      for (j = this->SubExtent[2]; j < this->SubExtent[3]+1; j++)
         {
-          for (i = 0; i < dimI; i++)
+          for (i = this->SubExtent[0]; i < this->SubExtent[1]+1; i++)
             {
               xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0])
                   / GRID_SCALE::ScaleFactor[GridScale];

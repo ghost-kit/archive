@@ -134,7 +134,7 @@ protected:
 
   //Data interface information
   vtkPoints* Points;        // Structured grid geometry
-  vtkDoubleArray* Radius;  // Structured Grid Data
+  vtkDoubleArray* Radius;   // Radius Grid Data
 
   //BTX
   vtkstd::vector<vtkstd::string> MetaDataNames;
@@ -177,6 +177,7 @@ protected:
   int PopulateDataInformation();
   int checkStatus(void* Object, char* name);
   void printWholeExtents();
+  void printSubExtents();
 
   // Required Paraview Functions
   static int CanReadFile(const char* filename);
