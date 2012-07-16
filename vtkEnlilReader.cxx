@@ -329,6 +329,14 @@ int vtkEnlilReader::RequestData(
   //Import the actual Data - Port 0
   this->LoadVariableData(outputVector);
 
+  //  vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
+
+  //  DataOutputInfo->Set(
+  //        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+  //        this->WholeExtent,
+  //        6);
+
+
   return 1;
 
 }
@@ -363,12 +371,37 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 
   int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
 
+  int newExtent[6];
   if(status)
     {
 
-      fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(),
-                     this->SubExtent);
+      //get new extent request
+      fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), newExtent);
+
+      //check to see if exents have changed
+      if(!(this->SubExtent[0] == newExtent[0] && this->SubExtent[1] == newExtent[1]
+           && this->SubExtent[2] == newExtent[2] && this->SubExtent[3] == newExtent[3]
+           && this->SubExtent[4] == newExtent[4] && this->SubExtent[5] == newExtent[5]))
+        {
+          this->SubExtent[0] = newExtent[0];
+          this->SubExtent[1] = newExtent[1];
+          this->SubExtent[2] = newExtent[2];
+          this->SubExtent[3] = newExtent[3];
+          this->SubExtent[4] = newExtent[4];
+          this->SubExtent[5] = newExtent[5];
+
+          // The extents have changes, so mark grid dirty.
+          this->gridClean = false;
+        }
+
+      //set the extents provided to Paraview
       Data->SetExtent(this->SubExtent);
+
+      //Calculate Sub Dimensions
+      this->SubDimension[0] = this->SubExtent[1] - this->SubExtent[0]+1;
+      this->SubDimension[1] = this->SubExtent[3] - this->SubExtent[2]+1;
+      this->SubDimension[2] = this->SubExtent[5] - this->SubExtent[4]+1;
+
 
       this->printSubExtents();
 
@@ -378,12 +411,6 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       std::cerr << "Grid Generated" << std::endl;
       std::cerr << "Commiting grid" << std::endl;
 
-      //Commit the grid
-      this->SubDimension[0] = this->SubExtent[1] - this->SubExtent[0] + 1;
-      this->SubDimension[1] = this->SubExtent[3] - this->SubExtent[2] + 1;
-      this->SubDimension[2] = this->SubExtent[5] - this->SubExtent[4] + 1;
-
-      Data->SetDimensions(this->SubDimension);
 
       //set points and radius
       Data->SetPoints(this->Points);
@@ -411,6 +438,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
     }
+
 
   return 1;
 }
@@ -629,12 +657,26 @@ int vtkEnlilReader::GenerateGrid()
   int j = 0;
   int k = 0;
 
-  double *X1 = new double[this->Dimension[0]];
-  double *X2 = new double[this->Dimension[1]];
-  double *X3 = new double[this->Dimension[2]];
+  size_t startLoc[2]={1,0};
+  size_t startDim[2]={1,1};
+
+  //set read start:
+  startLoc[0] = this->SubExtent[0];
+  startLoc[1] = this->SubExtent[2];
+  startLoc[2] = this->SubExtent[4];
+
+  double *X1 = new double[this->SubDimension[0]];
+  double *X2 = new double[this->SubDimension[1]];
+  double *X3 = new double[this->SubDimension[2]];
 
   int ncFileID = 0;
   int ncSDSID = 0;
+  int varDim = 0;
+  int dimID[2] = {0,0};
+  size_t lenp = 0;
+
+  char tempName[256];
+  this->clearString(tempName, 256);
 
   const int GridScale = this->GetGridScaleType();
 
@@ -645,6 +687,8 @@ int vtkEnlilReader::GenerateGrid()
           this->Points->Delete();
           this->Radius->Delete();
         }
+
+      std::cerr << "Grid Dirty; Rebuilding " << std::endl;
 
       //build the Grid
       this->Points = vtkPoints::New();
@@ -657,27 +701,111 @@ int vtkEnlilReader::GenerateGrid()
       //GET Grid Data
       CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
 
+      //      startLoc[1] = this->SubExtent[0];
+      //      startDim[1] = this->SubDimension[0];
+
       CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
-      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X1));
+      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
+      CALL_NETCDF(nc_inq_vardimid(ncFileID, ncSDSID, dimID));
+      CALL_NETCDF(nc_inq_dim(ncFileID, dimID[1], tempName, &lenp));
+      //      CALL_NETCDF(nc_get_var(ncFileID, ncSDSID, X1));
+
+      std::cerr << "X1 Dims: " << varDim << std::endl;
+      std::cerr << "Name: " << tempName << std::endl;
+      std::cerr << "Length: " << lenp << std::endl;
+
+      //start location at {1,0}
+      startLoc[0] = 0;
+      startLoc[1] = 0;
+
+      //dimensions from start
+      startDim[1] = this->SubDimension[0];
+      startDim[0] = 1;
+
+
+      CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                     ncSDSID,
+                                     startLoc,
+                                     startDim,
+                                     X1));
+
+      std::cerr << "Start Location: " << startLoc[0] << ":" << startLoc[1] << std::endl;
+      std::cerr << "Start Dims: " << startDim[0] << ":" << startDim[1] << std::endl;
+      std::cerr << "Start of Array: " << X1[0] << ":" << X1[1] << ":" << X1[2] << std::endl;
+      std::cerr << "Last Element: " << X1[this->SubDimension[0]-1] << std::endl;
+
 
       CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
-      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X2));
+      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
+
+      //start location at {1,0}
+      startLoc[0] = 0;
+      startLoc[1] = 0;
+
+      //dimensions from start
+      startDim[1] = this->SubDimension[1];
+      startDim[0] = 1;
+
+
+      CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                     ncSDSID,
+                                     startLoc,
+                                     startDim,
+                                     X2));
 
       CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
-      CALL_NETCDF(nc_get_var_double(ncFileID, ncSDSID, X3));
+      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
+
+      //start location at {1,0}
+      startLoc[0] = 0;
+      startLoc[1] = 0;
+
+      int X3_dims;
+      if(this->SubDimension[2] == this->Dimension[2])
+        {
+          X3_dims = this->SubDimension[2] - 1;
+
+        }
+      else
+        {
+          X3_dims = this->SubDimension[2];
+        }
+
+      //dimensions from start
+      startDim[1] = X3_dims;
+      //this->SubDimension[2];
+      startDim[0] = 1;
+
+
+      CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                     ncSDSID,
+                                     startLoc,
+                                     startDim,
+                                     X3));
 
       CALL_NETCDF(nc_close(ncFileID));
 
-      std::cerr << "Grid Scale: " << GRID_SCALE::ScaleFactor[GridScale] << std::endl;
+
+      //if whole extent on X3, must add grid closure.
+      if(this->SubDimension[2] == this->Dimension[2])
+        {
+          std::cerr << "Grid Scale: " << GRID_SCALE::ScaleFactor[GridScale] << std::endl;
+          std::cerr << "Last X3: " << X3[this->Dimension[2]-1] << std::endl;
+
+          //close off X3
+          X3[this->Dimension[2]-1] = X3[0];
+          std::cerr << "New Last X3: " << X3[this->Dimension[2]-1] << std::endl;
+        }
+
 
       // Point grid data
       double xyz[3] = { 0, 0, 0 };
 
-      for (k = this->SubExtent[4]; k < this->SubExtent[5]; k++)
+      for (k = 0; k < this->SubDimension[2]; k++)
         {
-          for (j = this->SubExtent[2]; j < SubExtent[3]+1; j++)
+          for (j = 0; j < SubDimension[1]; j++)
             {
-              for (i = this->SubExtent[0]; i < this->SubExtent[1]+1; i++)
+              for (i = 0; i < this->SubDimension[0]; i++)
                 {
                   xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k]))
                       / GRID_SCALE::ScaleFactor[GridScale];
@@ -690,25 +818,6 @@ int vtkEnlilReader::GenerateGrid()
                   this->Points->InsertNextPoint(xyz);
                   this->Radius->InsertNextValue(X1[i]/GRID_SCALE::ScaleFactor[GridScale]);
                 }
-            }
-        }
-
-      for (j = this->SubExtent[2]; j < this->SubExtent[3]+1; j++)
-        {
-          for (i = this->SubExtent[0]; i < this->SubExtent[1]+1; i++)
-            {
-              xyz[0] = X1[i] * sin(X2[j]) * cos(X3[0])
-                  / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[1] = X1[i] * sin(X2[j]) * sin(X3[0])
-                  / GRID_SCALE::ScaleFactor[GridScale];
-              xyz[2] = X1[i] * cos(X2[j])
-                  / GRID_SCALE::ScaleFactor[GridScale];
-
-
-              // Close off the gap in the grid (make sphere continuous)
-              this->Points->InsertNextPoint(xyz);
-              this->Radius->InsertNextValue(X1[i]/GRID_SCALE::ScaleFactor[GridScale]);
-
             }
         }
 
