@@ -672,14 +672,13 @@ int vtkEnlilReader::GenerateGrid()
   int ncFileID = 0;
   int ncSDSID = 0;
   int varDim = 0;
-  int dimID[2] = {0,0};
-  size_t lenp = 0;
 
   char tempName[256];
   this->clearString(tempName, 256);
 
   const int GridScale = this->GetGridScaleType();
 
+  //build the grid if it is dirty (modified in application)
   if(!this->gridClean)
     {
       if(this->Points != NULL)
@@ -698,21 +697,13 @@ int vtkEnlilReader::GenerateGrid()
       this->Radius->SetName("Radius");
       this->Radius->SetNumberOfComponents(1);
 
-      //GET Grid Data
+      //Start grid partial read.
       CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
 
-      //      startLoc[1] = this->SubExtent[0];
-      //      startDim[1] = this->SubDimension[0];
-
+      //Read the Radius Component//
+      //-------------------------//
       CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
       CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
-      CALL_NETCDF(nc_inq_vardimid(ncFileID, ncSDSID, dimID));
-      CALL_NETCDF(nc_inq_dim(ncFileID, dimID[1], tempName, &lenp));
-      //      CALL_NETCDF(nc_get_var(ncFileID, ncSDSID, X1));
-
-      std::cerr << "X1 Dims: " << varDim << std::endl;
-      std::cerr << "Name: " << tempName << std::endl;
-      std::cerr << "Length: " << lenp << std::endl;
 
       //start location at {1,0}
       startLoc[0] = 0;
@@ -722,19 +713,14 @@ int vtkEnlilReader::GenerateGrid()
       startDim[1] = this->SubDimension[0];
       startDim[0] = 1;
 
-
       CALL_NETCDF(nc_get_vara_double(ncFileID,
                                      ncSDSID,
                                      startLoc,
                                      startDim,
                                      X1));
 
-      std::cerr << "Start Location: " << startLoc[0] << ":" << startLoc[1] << std::endl;
-      std::cerr << "Start Dims: " << startDim[0] << ":" << startDim[1] << std::endl;
-      std::cerr << "Start of Array: " << X1[0] << ":" << X1[1] << ":" << X1[2] << std::endl;
-      std::cerr << "Last Element: " << X1[this->SubDimension[0]-1] << std::endl;
-
-
+      //Read Theta Component//
+      //--------------------//
       CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
       CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
 
@@ -746,13 +732,14 @@ int vtkEnlilReader::GenerateGrid()
       startDim[1] = this->SubDimension[1];
       startDim[0] = 1;
 
-
       CALL_NETCDF(nc_get_vara_double(ncFileID,
                                      ncSDSID,
                                      startLoc,
                                      startDim,
                                      X2));
 
+      //Read Phi Component//
+      //------------------//
       CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
       CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
 
@@ -760,14 +747,18 @@ int vtkEnlilReader::GenerateGrid()
       startLoc[0] = 0;
       startLoc[1] = 0;
 
+      //if reading the entire grid, must make adjustments to X dimension
       int X3_dims;
       if(this->SubDimension[2] == this->Dimension[2])
         {
+          //if full grid, we need to recognize that
+          //the file does not contain the grid closure.
           X3_dims = this->SubDimension[2] - 1;
-
         }
       else
         {
+          // if not reading the entire grid, we don't need to
+          // worry about the grid closure.
           X3_dims = this->SubDimension[2];
         }
 
@@ -776,15 +767,14 @@ int vtkEnlilReader::GenerateGrid()
       //this->SubDimension[2];
       startDim[0] = 1;
 
-
       CALL_NETCDF(nc_get_vara_double(ncFileID,
                                      ncSDSID,
                                      startLoc,
                                      startDim,
                                      X3));
 
+      //end partial read on grid
       CALL_NETCDF(nc_close(ncFileID));
-
 
       //if whole extent on X3, must add grid closure.
       if(this->SubDimension[2] == this->Dimension[2])
@@ -792,18 +782,16 @@ int vtkEnlilReader::GenerateGrid()
           std::cerr << "Grid Scale: " << GRID_SCALE::ScaleFactor[GridScale] << std::endl;
           std::cerr << "Last X3: " << X3[this->Dimension[2]-1] << std::endl;
 
-          //close off X3
+          //close off X3 if reading the entire grid in the Phi direction
           X3[this->Dimension[2]-1] = X3[0];
           std::cerr << "New Last X3: " << X3[this->Dimension[2]-1] << std::endl;
         }
 
-
-      // Point grid data
+      // Generate the grid based on the R-P-T coordinate system.
       double xyz[3] = { 0, 0, 0 };
-
       for (k = 0; k < this->SubDimension[2]; k++)
         {
-          for (j = 0; j < SubDimension[1]; j++)
+          for (j = 0; j < this->SubDimension[1]; j++)
             {
               for (i = 0; i < this->SubDimension[0]; i++)
                 {
@@ -821,7 +809,7 @@ int vtkEnlilReader::GenerateGrid()
             }
         }
 
-      std::cerr << "Finishing Grid Output" << std::endl;
+      //grid just created, so clean by definition.
       this->gridClean=true;
     }
   return 1;
