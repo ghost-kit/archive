@@ -176,7 +176,12 @@ protected:
   int PopulateMetaData(vtkInformationVector* outputVector);
   int PopulateDataInformation();
   int checkStatus(void* Object, char* name);
+
+  void setExtents(int extentToSet[], int sourceExtent[]);
+  void setExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6);
   void printExtents(int extent[], char* description);
+
+  bool eq(int extent1[], int extent2[]);
 
   // Required Paraview Functions
   static int CanReadFile(const char* filename);

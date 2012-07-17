@@ -335,12 +335,13 @@ void vtkEnlilReader::SelectionCallback(
 //-- Return 0 for failure, 1 for success --//
 int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 {
+  int newExtent[6];
+
   vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 0);
   vtkInformation* fieldInfo = outputVector->GetInformationObject(0);
 
   int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
 
-  int newExtent[6];
   if(status)
     {
 
@@ -348,16 +349,10 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), newExtent);
 
       //check to see if exents have changed
-      if(!(this->SubExtent[0] == newExtent[0] && this->SubExtent[1] == newExtent[1]
-           && this->SubExtent[2] == newExtent[2] && this->SubExtent[3] == newExtent[3]
-           && this->SubExtent[4] == newExtent[4] && this->SubExtent[5] == newExtent[5]))
+      if(!this->eq(this->SubExtent, newExtent))
         {
-          this->SubExtent[0] = newExtent[0];
-          this->SubExtent[1] = newExtent[1];
-          this->SubExtent[2] = newExtent[2];
-          this->SubExtent[3] = newExtent[3];
-          this->SubExtent[4] = newExtent[4];
-          this->SubExtent[5] = newExtent[5];
+          // Set the SubExtents to the NewExtents
+          this->setExtents(this->SubExtent, newExtent);
 
           // The extents have changes, so mark grid dirty.
           this->gridClean = false;
@@ -555,12 +550,10 @@ int vtkEnlilReader::PopulateDataInformation()
   data.close();
 
   //Populate Extents
-  this->WholeExtent[0] = 0;
-  this->WholeExtent[1] = (this->Dimension[0]-1);
-  this->WholeExtent[2] = 0;
-  this->WholeExtent[3] = (this->Dimension[1]-1);
-  this->WholeExtent[4] = 0;
-  this->WholeExtent[5] = (this->Dimension[2]-1);
+  this->setExtents(this->WholeExtent,
+                   0, this->Dimension[0]-1,
+                   0, this->Dimension[1]-1,
+                   0, this->Dimension[2]-1);
 
   //Whole Extent
   this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
@@ -583,6 +576,34 @@ void vtkEnlilReader::printExtents(int extent[], char* description)
                extent[3] << " " <<
                extent[4] << " " <<
                extent[5] << std::endl;
+}
+
+void vtkEnlilReader::setExtents(int extentToSet[], int sourceExtent[])
+{
+  extentToSet[0] = sourceExtent[0];
+  extentToSet[1] = sourceExtent[1];
+  extentToSet[2] = sourceExtent[2];
+  extentToSet[3] = sourceExtent[3];
+  extentToSet[4] = sourceExtent[4];
+  extentToSet[5] = sourceExtent[5];
+
+}
+
+void vtkEnlilReader::setExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6)
+{
+  extentToSet[0] = dim1;
+  extentToSet[1] = dim2;
+  extentToSet[2] = dim3;
+  extentToSet[3] = dim4;
+  extentToSet[4] = dim5;
+  extentToSet[5] = dim6;
+}
+
+bool vtkEnlilReader::eq(int extent1[], int extent2[])
+{
+  return (extent1[0] == extent2[0] && extent1[1] == extent2[1]
+          && extent1[2] == extent2[2] && extent1[3] == extent2[3]
+          && extent1[4] == extent2[4] && extent1[5] == extent2[5]);
 }
 
 //-- Return 0 for failure, 1 for success --//
