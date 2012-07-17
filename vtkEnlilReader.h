@@ -176,8 +176,7 @@ protected:
   int PopulateMetaData(vtkInformationVector* outputVector);
   int PopulateDataInformation();
   int checkStatus(void* Object, char* name);
-  void printWholeExtents();
-  void printSubExtents();
+  void printExtents(int extent[], char* description);
 
   // Required Paraview Functions
   static int CanReadFile(const char* filename);

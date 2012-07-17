@@ -232,9 +232,6 @@ int vtkEnlilReader::ProcessRequest(
 {
 
 
-  std::cerr << "Number of Information Objects: "
-            << outInfo->GetNumberOfInformationObjects()
-            << std::endl;
 
   return this->Superclass::ProcessRequest(reqInfo, inInfo, outInfo);
 }
@@ -245,18 +242,7 @@ int vtkEnlilReader::RequestInformation(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
-
-  std::cerr << getSerialNumber() << ": " << __FUNCTION__ << std::endl;
-
-  int port = request->Get(vtkDemandDrivenPipeline::FROM_OUTPUT_PORT());
-  std::cerr << "PORT: " << port << std::endl;
-
   int status = 0;
-
-  std::cerr << "Object Count: " << outputVector->GetNumberOfInformationObjects()
-            << std::endl;
-
-  std::cout << "Ports: " << this->GetNumberOfOutputPorts() << std::endl;
 
   //get Data output port information
   vtkInformation* MetaDataOutInfo = outputVector->GetInformationObject(1);
@@ -266,9 +252,6 @@ int vtkEnlilReader::RequestInformation(
   if(status)
     {
       MetaDataOutInfo->Set(vtkTable::FIELD_ASSOCIATION(), vtkTable::FIELD_ASSOCIATION_ROWS);
-      std::cerr << "Field Array Association: "
-                << MetaDataOutInfo->Get(vtkTable::FIELD_ASSOCIATION())
-                << std::endl;
 
     }
 
@@ -292,7 +275,7 @@ int vtkEnlilReader::RequestInformation(
         }
 
       //  Set Whole Extents for data
-      this->printWholeExtents();
+      this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
 
       /*Set Information*/
       //Set Extents
@@ -317,25 +300,11 @@ int vtkEnlilReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
-  std::cerr << getSerialNumber() << ": " << __FUNCTION__ << std::endl;
-
-  //check number of Information Objects being offered
-  int numberObjects = outputVector->GetNumberOfInformationObjects();
-  std::cerr << "Objs: " << numberObjects << std::endl;
-
   //Import the MetaData - Port 1
   this->PopulateMetaData(outputVector);
 
   //Import the actual Data - Port 0
   this->LoadVariableData(outputVector);
-
-  //  vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
-
-  //  DataOutputInfo->Set(
-  //        vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-  //        this->WholeExtent,
-  //        6);
-
 
   return 1;
 
@@ -402,22 +371,14 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       this->SubDimension[1] = this->SubExtent[3] - this->SubExtent[2]+1;
       this->SubDimension[2] = this->SubExtent[5] - this->SubExtent[4]+1;
 
-
-      this->printSubExtents();
+      this->printExtents(this->SubExtent, (char*)"Sub Extent:");
 
       //Generate the Grid
       this->GenerateGrid();
 
-      std::cerr << "Grid Generated" << std::endl;
-      std::cerr << "Commiting grid" << std::endl;
-
-
       //set points and radius
       Data->SetPoints(this->Points);
       Data->GetPointData()->AddArray(this->Radius);
-
-
-      std::cerr << "Grid Commited" << std::endl;
 
       //Load Variables
       int c = 0;
@@ -425,7 +386,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Cell Data
       for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
         {
-          std::cerr << "Loading Cell Variable " << c << std::endl;
+//          std::cerr << "Loading Cell Variable " << c << std::endl;
           //Load the current Cell array
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
@@ -433,7 +394,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Point Data
       for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
         {
-          std::cerr << "Loading Point Variable " << c << std::endl;
+//          std::cerr << "Loading Point Variable " << c << std::endl;
           //Load the current Point array
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
@@ -484,12 +445,9 @@ int vtkEnlilReader::PopulateMetaData(vtkInformationVector *outputVector)
 
   if(status)
     {
-      std::cerr << ":::Loading Meta Data:::" << std::endl;
 
       CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
       CALL_NETCDF(nc_inq_natts(ncFileID, &natts));
-
-      std::cerr << "Number of Attributes " << natts << std::endl;
 
       for(int q=0; q < natts; q++)
         {
@@ -498,10 +456,7 @@ int vtkEnlilReader::PopulateMetaData(vtkInformationVector *outputVector)
           vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
 
           CALL_NETCDF(nc_inq_attname(ncFileID, NC_GLOBAL, q, attname));
-          std::cerr << "Att Name: " << attname << std::endl;
-
           CALL_NETCDF(nc_inq_atttype(ncFileID, NC_GLOBAL, attname, &type));
-          std::cerr << "type: " << type << std::endl;
 
           switch(type)
             {
@@ -570,9 +525,9 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
     }
   else
     {
-      std::cerr << "SUCCESS: " << name
-                << " has successfully initialized"
-                << std::endl;
+//      std::cerr << "SUCCESS: " << name
+//                << " has successfully initialized"
+//                << std::endl;
     }
 
   return 1;
@@ -584,15 +539,12 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
 int vtkEnlilReader::PopulateDataInformation()
 {
 
-  std::cerr << "Opening File " << this->FileName << "." << std::endl;
   NcFile data(this->FileName);
   NcDim* dims_x = data.get_dim(0);
   NcDim* dims_y = data.get_dim(1);
   NcDim* dims_z = data.get_dim(2);
 
   NcVar* time = data.get_var("TIME");
-
-  std::cerr << "Closing File" << this->FileName << std::endl;
 
   this->Dimension[0] = (int)dims_x->size();
   this->Dimension[1] = (int)dims_y->size();
@@ -611,40 +563,26 @@ int vtkEnlilReader::PopulateDataInformation()
   this->WholeExtent[5] = (this->Dimension[2]-1);
 
   //Whole Extent
-  this->printWholeExtents();
+  this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
 
   //Set Time step Information
   this->NumberOfTimeSteps = 1;
   this->TimeSteps = new double[this->NumberOfTimeSteps];
   this->TimeSteps[0] = Time;
 
-  std::cerr << " Ending " << __FUNCTION__ << std::endl;
-
   return 1;
 }
 
-//-- print whole extents --//
-void vtkEnlilReader::printWholeExtents()
+//-- print extents --//
+void vtkEnlilReader::printExtents(int extent[], char* description)
 {
-  std::cout << "WHOLE: "
-            << this->WholeExtent[0] << " " <<
-               this->WholeExtent[1] << " " <<
-               this->WholeExtent[2] << " " <<
-               this->WholeExtent[3] << " " <<
-               this->WholeExtent[4] << " " <<
-               this->WholeExtent[5] << std::endl;
-}
-
-//-- print whole extents --//
-void vtkEnlilReader::printSubExtents()
-{
-  std::cout << "SUB: "
-            << this->SubExtent[0] << " " <<
-               this->SubExtent[1] << " " <<
-               this->SubExtent[2] << " " <<
-               this->SubExtent[3] << " " <<
-               this->SubExtent[4] << " " <<
-               this->SubExtent[5] << std::endl;
+  std::cout << description << " "
+            << extent[0] << " " <<
+               extent[1] << " " <<
+               extent[2] << " " <<
+               extent[3] << " " <<
+               extent[4] << " " <<
+               extent[5] << std::endl;
 }
 
 //-- Return 0 for failure, 1 for success --//
@@ -672,6 +610,8 @@ int vtkEnlilReader::GenerateGrid()
   int ncFileID = 0;
   int ncSDSID = 0;
   int varDim = 0;
+
+  int X3_dims = 0;
 
   char tempName[256];
   this->clearString(tempName, 256);
@@ -707,7 +647,7 @@ int vtkEnlilReader::GenerateGrid()
 
       //start location at {1,0}
       startLoc[0] = 0;
-      startLoc[1] = 0;
+      startLoc[1] = this->SubExtent[0];
 
       //dimensions from start
       startDim[1] = this->SubDimension[0];
@@ -726,7 +666,7 @@ int vtkEnlilReader::GenerateGrid()
 
       //start location at {1,0}
       startLoc[0] = 0;
-      startLoc[1] = 0;
+      startLoc[1] = this->SubExtent[2];
 
       //dimensions from start
       startDim[1] = this->SubDimension[1];
@@ -745,10 +685,21 @@ int vtkEnlilReader::GenerateGrid()
 
       //start location at {1,0}
       startLoc[0] = 0;
-      startLoc[1] = 0;
 
-      //if reading the entire grid, must make adjustments to X dimension
-      int X3_dims;
+      //Check for reading of Periodic Boundry ONLY
+      // Fix so we read the 0 position instead
+      if(this->SubExtent[4] == this->Dimension[2]-1)
+        {
+          //periodic correction
+          startLoc[1] = 0;
+        }
+      else
+        {
+          //not reading the periodic boundry
+          startLoc[1] = this->SubExtent[4];
+        }
+
+      //if reading through loop of grid, must make adjustments to X dimension
       if(this->SubDimension[2] == this->Dimension[2])
         {
           //if full grid, we need to recognize that
@@ -761,6 +712,12 @@ int vtkEnlilReader::GenerateGrid()
           // worry about the grid closure.
           X3_dims = this->SubDimension[2];
         }
+
+      std::cerr << "X3_dims:  " << X3_dims << std::endl;
+      std::cerr << "startLoc: " << startLoc[0] << ":" << startLoc[1] << std::endl;
+
+      //TODO: Reading ONLY 180 phi will cause read error...
+      //need to read 0 in this case
 
       //dimensions from start
       startDim[1] = X3_dims;
@@ -779,12 +736,8 @@ int vtkEnlilReader::GenerateGrid()
       //if whole extent on X3, must add grid closure.
       if(this->SubDimension[2] == this->Dimension[2])
         {
-          std::cerr << "Grid Scale: " << GRID_SCALE::ScaleFactor[GridScale] << std::endl;
-          std::cerr << "Last X3: " << X3[this->Dimension[2]-1] << std::endl;
-
           //close off X3 if reading the entire grid in the Phi direction
           X3[this->Dimension[2]-1] = X3[0];
-          std::cerr << "New Last X3: " << X3[this->Dimension[2]-1] << std::endl;
         }
 
       // Generate the grid based on the R-P-T coordinate system.
