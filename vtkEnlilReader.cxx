@@ -804,7 +804,12 @@ int vtkEnlilReader::GenerateGrid()
 
                   //insert point information into the grid
                   this->Points->InsertNextPoint(xyz);
-                  this->Radius->InsertNextValue(X1[i]/GRID_SCALE::ScaleFactor[GridScale]);
+
+                  // insert radius value into radius array.
+                  // Scaled by grid scale factor
+                  this->Radius->InsertNextValue(
+                        X1[i]
+                        / GRID_SCALE::ScaleFactor[GridScale]);
                 }
             }
         }
