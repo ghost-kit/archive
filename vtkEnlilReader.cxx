@@ -384,17 +384,19 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Cell Data
       for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
         {
-          //          std::cerr << "Loading Cell Variable " << c << std::endl;
           //Load the current Cell array
-          this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
+          vtkstd::string array = vtkstd::string(this->CellDataArraySelection->GetArrayName(c));
+          std::cerr << "Cell Data Name: " << array << std::endl;
+          this->LoadGridValues(array);
         }
 
       //Load Point Data
       for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
         {
-          //          std::cerr << "Loading Point Variable " << c << std::endl;
+          vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
+          std::cerr << "Point Data Name: " << array << std::endl;
           //Load the current Point array
-          this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
+          this->LoadGridValues(array);
         }
     }
 
@@ -402,8 +404,78 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 }
 
 //-- Return 0 for Failure, 1 for Success --//
-int vtkEnlilReader::LoadGridValues(const char* array)
+int vtkEnlilReader::LoadGridValues(vtkstd::string array)
 {
+
+  bool vector
+      = (this->VectorVariableMap.find(vtkstd::string(array)) != this->VectorVariableMap.end());
+
+  if(vector)
+    {
+      int ncFileID = 0;
+      int ncSDSID = 0;
+      int varDim = 0;
+
+      int X3_dims = 0;
+
+      //load as a vector
+      std::cerr << "Loading as a Vector" << std::endl;
+
+      //size of the individual arrays
+      int64_t arraySize
+          = this->SubDimension[0]
+          * this->SubDimension[1]
+          * this->SubDimension[2];
+
+      //allocate space for Radius, Theta, Phi components
+      double* newArrayR
+          = new double[arraySize];
+
+      double* newArrayT
+          = new double[arraySize];
+
+      double* newArrayP
+          = new double[arraySize];
+
+      //Calculate the Starting location within grid
+      int64_t startLoc[3]
+          = {this->SubExtent[0], this->SubExtent[2], this->SubExtent[4]};
+
+      //open the file
+      CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
+
+      //Get the extents needed from the file
+      if(this->SubDimension[2] == this->WholeExtent[2])
+        {
+          //need to adjust the dimensions so we dont try to read through
+          //  through the periodic boundary
+          //
+          //Must fix the periodic boundary after read.
+          //------------------------------------------
+
+          std::cerr << "Data Arrays not implemented at this time." << std::endl;
+
+        }
+      else
+        {
+          //continue reading the extents.
+          std::cerr << "Data Arrays not implemented at this time." << std::endl;
+
+        }
+
+      //close the file
+      CALL_NETCDF(nc_close(ncFileID));
+
+
+
+    }
+  else
+    {
+      //load as a scalar
+      std::cerr << "Loading as a Scalar" << std::endl;
+
+    }
+
 
   return 1;
 }
@@ -416,7 +488,6 @@ int vtkEnlilReader::PopulateArrays()
 
   /*Open File and Find array names*/
   NcFile file(this->FileName);
-  int numVars = file.num_vars();
 
   this->addPointArray((char*)"D");
   this->addPointArray((char*)"DP");
@@ -667,28 +738,28 @@ void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
   NcFile file(this->FileName);
   try
   {
+    //get the long name of the first variable in the vector
     vtkstd::string varname1 = file.get_var(name1)->get_att("long_name")->as_string(0);
 
+    //remove the vector component of the name
+    size_t pos = varname1.find("-");
+    vtkstd::string varname2 = varname1.substr(pos+1);
+
+    //ensure that first work is capitalized
+    varname2[0] = toupper((unsigned char) varname2[0]);
+
+    //add components of vector to vector map
     vtkstd::vector<vtkstd::string> nameArray;
     nameArray.push_back(name1);
     nameArray.push_back(name2);
     nameArray.push_back(name3);
-
-    this->VectorVariableMap[varname1] = nameArray;
+    this->VectorVariableMap[varname2] = nameArray;
 
     //add array to point array name list
-    this->PointDataArraySelection->AddArray(varname1.c_str());
-//    vtkstd::string dispName = varname1.
+    this->PointDataArraySelection->AddArray(varname2.c_str());
 
-//    string s("Somewhere down the road");
-//    istringstream iss(s);
 
-//    do
-//    {
-//        string sub;
-//        iss >> sub;
-//        cout << "Substring: " << sub << endl;
-//    } while (iss);
+
 
   }
   catch(...)
@@ -719,7 +790,6 @@ int vtkEnlilReader::GenerateGrid()
   //set read start:
   startLoc[0] = this->SubExtent[0];
   startLoc[1] = this->SubExtent[2];
-  startLoc[2] = this->SubExtent[4];
 
   double *X1 = new double[this->SubDimension[0]];
   double *X2 = new double[this->SubDimension[1]];
