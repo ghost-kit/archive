@@ -144,7 +144,8 @@ protected:
 
   //BTX
   vtkstd::vector<vtkstd::string> MetaDataNames;
-  vtkstd::map<vtkstd::string, vtkstd::string> variableMap;
+  vtkstd::map<vtkstd::string, vtkstd::string> ScalarVariableMap;
+  vtkstd::map<vtkstd::string, vtkstd::vector<vtkstd::string> > VectorVariableMap;
   //ETX
 
   // Time step information

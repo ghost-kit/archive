@@ -36,7 +36,7 @@
 #include "vtkToolkits.h"
 
 #include "vtk_netcdfcpp.h"
-
+#include <iostream>
 
 vtkStandardNewMacro(vtkEnlilReader)
 
@@ -422,8 +422,8 @@ int vtkEnlilReader::PopulateArrays()
   this->addPointArray((char*)"DP");
   this->addPointArray((char*)"T");
   this->addPointArray((char*)"BP");
-  this->addPointArray((char*)"B1");
-  this->addPointArray((char*)"V1");
+  this->addPointArray((char*)"B1", (char*)"B2", (char*)"B3");
+  this->addPointArray((char*)"V1", (char*)"V2", (char*)"V3");
 
 
   file.close();
@@ -645,7 +645,7 @@ void vtkEnlilReader::addPointArray(char* name)
   {
     // look up the "Long Name" of the variable
     vtkstd::string varname = file.get_var(name)->get_att("long_name")->as_string(0);
-    this->variableMap[varname] = vtkstd::string(name);
+    this->ScalarVariableMap[varname] = vtkstd::string(name);
 
     // Add it to the point grid
     this->PointDataArraySelection->AddArray(varname.c_str());
@@ -664,7 +664,43 @@ void vtkEnlilReader::addPointArray(char* name)
 
 void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
 {
+  NcFile file(this->FileName);
+  try
+  {
+    vtkstd::string varname1 = file.get_var(name1)->get_att("long_name")->as_string(0);
 
+    vtkstd::vector<vtkstd::string> nameArray;
+    nameArray.push_back(name1);
+    nameArray.push_back(name2);
+    nameArray.push_back(name3);
+
+    this->VectorVariableMap[varname1] = nameArray;
+
+    //add array to point array name list
+    this->PointDataArraySelection->AddArray(varname1.c_str());
+//    vtkstd::string dispName = varname1.
+
+//    string s("Somewhere down the road");
+//    istringstream iss(s);
+
+//    do
+//    {
+//        string sub;
+//        iss >> sub;
+//        cout << "Substring: " << sub << endl;
+//    } while (iss);
+
+  }
+  catch(...)
+  {
+    std::cerr << "Failed to retrieve variable "
+              << name1 << " or " << name2 << " or " << name3
+              << ". Verify variable names." << std::endl;
+
+    file.close();
+    return;
+  }
+  file.close();
 }
 
 //-- Return 0 for failure, 1 for success --//
