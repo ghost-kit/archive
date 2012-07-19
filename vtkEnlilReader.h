@@ -3,6 +3,9 @@
 
 
 #include "vtkStructuredGridAlgorithm.h"
+#include<vtkstd/map>
+#include<vtkstd/string>
+#include<vtkstd/vector>
 
 #define CALL_NETCDF(call)\
 {\
@@ -132,12 +135,16 @@ protected:
   int Dimension[3];         // Size of entire grid
   int SubDimension[3];      // Size of processor grid
 
+  // Check to see if info is clean
+  bool infoClean;
+
   //Data interface information
   vtkPoints* Points;        // Structured grid geometry
   vtkDoubleArray* Radius;   // Radius Grid Data
 
   //BTX
   vtkstd::vector<vtkstd::string> MetaDataNames;
+  vtkstd::map<vtkstd::string, vtkstd::string> variableMap;
   //ETX
 
   // Time step information
@@ -162,7 +169,7 @@ protected:
     return ++number;
   }
 
-  void clearString(char* string, int size)
+ inline void clearString(char* string, int size)
   {
     for(int x = 0; x < size; x++)
       {
@@ -173,15 +180,19 @@ protected:
 
   // Request Information Helpers
   int PopulateArrays();
-  int PopulateMetaData(vtkInformationVector* outputVector);
+  int LoadMetaData(vtkInformationVector* outputVector);
   int PopulateDataInformation();
   int checkStatus(void* Object, char* name);
 
+  void addPointArray(char* name);
+  void addPointArray(char* name1, char* name2, char* name3);
+  void extractDimensions(int dims[], int extent[]);
   void setExtents(int extentToSet[], int sourceExtent[]);
   void setExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6);
   void printExtents(int extent[], char* description);
 
   bool eq(int extent1[], int extent2[]);
+  bool ExtentOutOfBounds(int extToCheck[], int extStandard[]);
 
   // Required Paraview Functions
   static int CanReadFile(const char* filename);

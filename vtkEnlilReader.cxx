@@ -46,7 +46,7 @@ vtkStandardNewMacro(vtkEnlilReader)
 //---------------------------------------------------------------
 vtkEnlilReader::vtkEnlilReader()
 {
-
+  int nulExtent[6] = {0,0,0,0,0,0};
   this->FileName = NULL;
 
   //set the number of output ports you will need
@@ -63,6 +63,10 @@ vtkEnlilReader::vtkEnlilReader()
   this->Points = NULL;
   this->Radius = NULL;
   this->gridClean = false;
+  this->infoClean = false;
+
+  this->setExtents(this->WholeExtent, nulExtent);
+  this->setExtents(this->SubExtent, nulExtent);
 
   this->SelectionObserver = vtkCallbackCommand::New();
   this->SelectionObserver->SetCallback(&vtkEnlilReader::SelectionCallback);
@@ -230,9 +234,6 @@ int vtkEnlilReader::ProcessRequest(
     vtkInformationVector **inInfo,
     vtkInformationVector *outInfo)
 {
-
-
-
   return this->Superclass::ProcessRequest(reqInfo, inInfo, outInfo);
 }
 
@@ -278,18 +279,17 @@ int vtkEnlilReader::RequestInformation(
       this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
 
       /*Set Information*/
-      //Set Extents
-      DataOutputInfo->Set(
-            vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-            this->WholeExtent,
-            6);
-
       //Set Time
       DataOutputInfo->Set(
             vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
             &this->TimeSteps[0],
             1);
 
+      //Set Extents
+      DataOutputInfo->Set(
+            vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+            this->WholeExtent,
+            6);
     }
   return 1;
 }
@@ -301,7 +301,7 @@ int vtkEnlilReader::RequestData(
     vtkInformationVector* outputVector)
 {
   //Import the MetaData - Port 1
-  this->PopulateMetaData(outputVector);
+  this->LoadMetaData(outputVector);
 
   //Import the actual Data - Port 0
   this->LoadVariableData(outputVector);
@@ -345,8 +345,13 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
   if(status)
     {
 
+      //print extents for debug purposes
+      this->printExtents(this->WholeExtent, (char*)"DEBUG: Whole Extent: ");
+      this->printExtents(this->SubExtent, (char*)"DEBUG: SUBEXTENTS: ");
+
       //get new extent request
       fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), newExtent);
+
 
       //check to see if exents have changed
       if(!this->eq(this->SubExtent, newExtent))
@@ -362,10 +367,8 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       Data->SetExtent(this->SubExtent);
 
       //Calculate Sub Dimensions
-      this->SubDimension[0] = this->SubExtent[1] - this->SubExtent[0]+1;
-      this->SubDimension[1] = this->SubExtent[3] - this->SubExtent[2]+1;
-      this->SubDimension[2] = this->SubExtent[5] - this->SubExtent[4]+1;
-
+      this->extractDimensions(this->SubDimension, this->SubExtent);
+      this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
       this->printExtents(this->SubExtent, (char*)"Sub Extent:");
 
       //Generate the Grid
@@ -381,7 +384,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Cell Data
       for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
         {
-//          std::cerr << "Loading Cell Variable " << c << std::endl;
+          //          std::cerr << "Loading Cell Variable " << c << std::endl;
           //Load the current Cell array
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
@@ -389,12 +392,11 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Point Data
       for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
         {
-//          std::cerr << "Loading Point Variable " << c << std::endl;
+          //          std::cerr << "Loading Point Variable " << c << std::endl;
           //Load the current Point array
           this->LoadGridValues(this->CellDataArraySelection->GetArrayName(c));
         }
     }
-
 
   return 1;
 }
@@ -412,15 +414,24 @@ int vtkEnlilReader::LoadGridValues(const char* array)
 int vtkEnlilReader::PopulateArrays()
 {
 
-  /* Add Test Arrays */
-  this->CellDataArraySelection->AddArray("Test Array 1");
-  this->PointDataArraySelection->AddArray("Test Array 2");
+  /*Open File and Find array names*/
+  NcFile file(this->FileName);
+  int numVars = file.num_vars();
 
+  this->addPointArray((char*)"D");
+  this->addPointArray((char*)"DP");
+  this->addPointArray((char*)"T");
+  this->addPointArray((char*)"BP");
+  this->addPointArray((char*)"B1");
+  this->addPointArray((char*)"V1");
+
+
+  file.close();
   return 1;
 }
 
 //-- Meta Data Population
-int vtkEnlilReader::PopulateMetaData(vtkInformationVector *outputVector)
+int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
 {
   int ncFileID = 0;
   int ncSDSID = 0;
@@ -520,9 +531,9 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
     }
   else
     {
-//      std::cerr << "SUCCESS: " << name
-//                << " has successfully initialized"
-//                << std::endl;
+      //      std::cerr << "SUCCESS: " << name
+      //                << " has successfully initialized"
+      //                << std::endl;
     }
 
   return 1;
@@ -562,6 +573,9 @@ int vtkEnlilReader::PopulateDataInformation()
   this->NumberOfTimeSteps = 1;
   this->TimeSteps = new double[this->NumberOfTimeSteps];
   this->TimeSteps[0] = Time;
+
+  //We just populated info, so we are clean
+  this->infoClean = true;
 
   return 1;
 }
@@ -604,6 +618,53 @@ bool vtkEnlilReader::eq(int extent1[], int extent2[])
   return (extent1[0] == extent2[0] && extent1[1] == extent2[1]
           && extent1[2] == extent2[2] && extent1[3] == extent2[3]
           && extent1[4] == extent2[4] && extent1[5] == extent2[5]);
+}
+
+bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
+{
+  return extToCheck[0] < 0 || (extToCheck[0] > extStandard[0])
+      || extToCheck[1] < 0 || (extToCheck[1] > extStandard[1])
+      || extToCheck[2] < 0 || (extToCheck[2] > extStandard[2])
+      || extToCheck[3] < 0 || (extToCheck[3] > extStandard[3])
+      || extToCheck[4] < 0 || (extToCheck[4] > extStandard[4])
+      || extToCheck[5] < 0 || (extToCheck[5] > extStandard[5]);
+
+}
+
+void vtkEnlilReader::extractDimensions(int dims[], int extent[])
+{
+  dims[0] = extent[1] - extent[0]+1;
+  dims[1] = extent[3] - extent[2]+1;
+  dims[2] = extent[5] - extent[4]+1;
+}
+
+void vtkEnlilReader::addPointArray(char* name)
+{
+  NcFile file(this->FileName);
+  try
+  {
+    // look up the "Long Name" of the variable
+    vtkstd::string varname = file.get_var(name)->get_att("long_name")->as_string(0);
+    this->variableMap[varname] = vtkstd::string(name);
+
+    // Add it to the point grid
+    this->PointDataArraySelection->AddArray(varname.c_str());
+  }
+  catch (...)
+  {
+    std::cerr << "Failed to retrieve variable " << name
+              << ". Verify variable name." << std::endl;
+
+    file.close();
+    return;
+  }
+
+  file.close();
+}
+
+void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
+{
+
 }
 
 //-- Return 0 for failure, 1 for success --//
