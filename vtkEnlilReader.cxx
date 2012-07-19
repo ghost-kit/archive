@@ -368,7 +368,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 
       //Calculate Sub Dimensions
       this->extractDimensions(this->SubDimension, this->SubExtent);
-      this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
+      this->printExtents(Data->GetWholeExtent(), (char*)"Whole Extent:");
       this->printExtents(this->SubExtent, (char*)"Sub Extent:");
 
       //Generate the Grid
