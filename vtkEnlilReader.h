@@ -146,6 +146,8 @@ protected:
   vtkstd::vector<vtkstd::string> MetaDataNames;
   vtkstd::map<vtkstd::string, vtkstd::string> ScalarVariableMap;
   vtkstd::map<vtkstd::string, vtkstd::vector<vtkstd::string> > VectorVariableMap;
+  vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
+
   //ETX
 
   // Time step information
@@ -162,7 +164,7 @@ protected:
   // Load a variable from data file
   int GenerateGrid();
   int LoadVariableData(vtkInformationVector *outputVector);
-  int LoadGridValues(vtkstd::string array, vtkInformationVector* outputVector);
+  int LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector);
 
   int getSerialNumber()
   {

@@ -387,7 +387,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           //Load the current Cell array
           vtkstd::string array = vtkstd::string(this->CellDataArraySelection->GetArrayName(c));
           std::cerr << "Cell Data Name: " << array << std::endl;
-          this->LoadGridValues(array, outputVector);
+          this->LoadArrayValues(array, outputVector);
         }
 
       //Load Point Data
@@ -396,7 +396,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
           std::cerr << "Point Data Name: " << array << std::endl;
           //Load the current Point array
-          this->LoadGridValues(array, outputVector);
+          this->LoadArrayValues(array, outputVector);
         }
     }
 
@@ -404,7 +404,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 }
 
 //-- Return 0 for Failure, 1 for Success --//
-int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* outputVector)
+int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector)
 {
 
   bool vector
@@ -414,7 +414,11 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
   int ncSDSID = 0;
   int varDim = 0;
 
+  int i=0, j=0, k=0;
+
   int X3_dims = 0;
+
+  double xyz[3] = {0.0, 0.0, 0.0};
 
   //get data from system
   vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
@@ -423,10 +427,8 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
   vtkDoubleArray *DataArray = vtkDoubleArray::New();
   DataArray->SetName(array.c_str());
 
-
   //open the file
   CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-
 
   if(vector)
     {
@@ -453,6 +455,7 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
       //configure DataArray
       DataArray->SetNumberOfComponents(3);  //3-Dim Vector
 
+      //Partial Read Variables
       size_t startLoc[4] = {0,0,0,0};
       size_t startDim[4] = {1,1,1,1};
 
@@ -467,6 +470,7 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
 
       std::cerr << "Whole Extent[5]: " << this->WholeExtent[5] << std::endl;
 
+      //Periodic Boundary Crossing Check
       if((this->SubDimension[2]-1) == this->WholeExtent[5])
         {
           //need to adjust the dimensions so we dont try to read through
@@ -478,61 +482,97 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
 
           std::cerr << "Reading accross Periodic Boundary" << std::endl;
 
-          startLoc[1] = this->SubExtent[0];
+          //Variables are stored in file (NBLK,P,T,R)
+          startLoc[1] = this->SubExtent[4];
           startLoc[2] = this->SubExtent[2];
-          startLoc[3] = this->SubExtent[4];
+          startLoc[3] = this->SubExtent[0];
 
-          if(startLoc[3] == this->WholeExtent[3])
+          //dont try to read accross periodic boundary
+          if(startLoc[3] == this->WholeExtent[5])
             {
-              //dont try to read periodic boundary
               startLoc[3] = 0;
             }
 
-          startDim[1] = this->SubDimension[0];
+          //dims are (NBLK,P,T,R)
+          startDim[0] = 1;
+          startDim[1] = this->SubDimension[2]-1;
           startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[2] - 1;  //Don't read perodic boundary
-
-          std::cerr << "StartLoc: "
-                    << startLoc[0] << ":"
-                    << startLoc[1] << ":"
-                    << startLoc[2] << ":"
-                    << startLoc[3] << std::endl;
-
-          std::cerr << "StartDim: "
-                    << startDim[0] << ":"
-                    << startDim[1] << ":"
-                    << startDim[2] << ":"
-                    << startDim[3] << std::endl;
-
+          startDim[3] = this->SubDimension[0];  //Don't read perodic boundary
 
           //get vector data
-//          CALL_NETCDF(nc_inq_varid(ncFileID, this->VectorVariableMap[array][0].c_str(), &ncSDSID));
+          CALL_NETCDF(nc_inq_varid(ncFileID,
+                                   this->VectorVariableMap[array][0].c_str(),
+                                   &ncSDSID));
 
-//          CALL_NETCDF(nc_get_vara_double(ncFileID,
-//                                         ncSDSID,
-//                                         startLoc,
-//                                         startDim,
-//                                         newArrayR));
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         newArrayR));
 
-//          CALL_NETCDF(nc_inq_varid(ncFileID, this->VectorVariableMap[array][1].c_str(), &ncSDSID));
+          CALL_NETCDF(nc_inq_varid(ncFileID,
+                                   this->VectorVariableMap[array][1].c_str(),
+                                   &ncSDSID));
 
-//          CALL_NETCDF(nc_get_vara_double(ncFileID,
-//                                         ncSDSID,
-//                                         startLoc,
-//                                         startDim,
-//                                         newArrayT));
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         newArrayT));
 
-//          CALL_NETCDF(nc_inq_varid(ncFileID, this->VectorVariableMap[array][2].c_str(), &ncSDSID));
+          CALL_NETCDF(nc_inq_varid(ncFileID,
+                                   this->VectorVariableMap[array][2].c_str(),
+                                   &ncSDSID));
 
-//          CALL_NETCDF(nc_get_vara_double(ncFileID,
-//                                         ncSDSID,
-//                                         startLoc,
-//                                         startDim,
-//                                         newArrayP));
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         newArrayP));
 
+          // check ordering of arrays
 
+          // fix array for periodic boundary
+          // if we are loading phi = 0, lets load it now. Otherwise, lets copy
+          //  the relevent peices without loading it again.
+          if(startLoc[1] != 0)
+            {
+              //TODO: CURRENT WORK
+              //load the required dims from file (phi = 1, theta = theta, r = r)
+              //  starting spot = (0, SubExtent[2], SubExtent[0])
 
+            }
+          else
+            {
+              //TODO: CURRENT WORK
+              //copy the required dims from memory
+            }
 
+          // convert from spherical to cartesian
+          int loc=0;
+          for(k=0; k<this->Dimension[2]; k++)
+            {
+              for(j=0; j<this->Dimension[1]; j++)
+                {
+                  for(i=0; i<this->Dimension[0]; i++)
+
+                    {
+
+                      xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                      xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                      xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
+
+                      xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                      xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                      xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
+
+                      xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
+                      xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
+
+                      loc++;
+                    }
+                }
+            }
 
         }
       else
@@ -540,45 +580,53 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
 
           std::cerr << "NOT Reading accross Periodic Boundary" << std::endl;
 
-
           //continue reading the extents.
-          startLoc[1] = this->SubExtent[0];
+          startLoc[1] = this->SubExtent[4];
           startLoc[2] = this->SubExtent[2];
-          startLoc[3] = this->SubExtent[4];
+          startLoc[3] = this->SubExtent[0];
 
-          startDim[1] = this->SubDimension[0];
+          startDim[1] = this->SubDimension[2];
           startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[2] ;
-
+          startDim[3] = this->SubDimension[0];
 
           //get vector data
-//          CALL_NETCDF(nc_inq_varid(ncFileID, this->VectorVariableMap[array][0].c_str(), &ncSDSID));
+          CALL_NETCDF(nc_inq_varid(ncFileID,
+                                   this->VectorVariableMap[array][0].c_str(),
+                                   &ncSDSID));
 
-//          CALL_NETCDF(nc_get_vara_double(ncFileID,
-//                                         ncSDSID,
-//                                         startLoc,
-//                                         startDim,
-//                                         newArrayR));
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         newArrayR));
 
-//          CALL_NETCDF(nc_inq_varid(ncFileID, this->VectorVariableMap[array][1].c_str(), &ncSDSID));
+          CALL_NETCDF(nc_inq_varid(ncFileID,
+                                   this->VectorVariableMap[array][1].c_str(),
+                                   &ncSDSID));
 
-//          CALL_NETCDF(nc_get_vara_double(ncFileID,
-//                                         ncSDSID,
-//                                         startLoc,
-//                                         startDim,
-//                                         newArrayT));
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         newArrayT));
 
-//          CALL_NETCDF(nc_inq_varid(ncFileID, this->VectorVariableMap[array][2].c_str(), &ncSDSID));
+          CALL_NETCDF(nc_inq_varid(ncFileID,
+                                   this->VectorVariableMap[array][2].c_str(),
+                                   &ncSDSID));
 
-//          CALL_NETCDF(nc_get_vara_double(ncFileID,
-//                                         ncSDSID,
-//                                         startLoc,
-//                                         startDim,
-//                                         newArrayP));
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         newArrayP));
 
 
         }
 
+
+      //calculate fields
+
+      //add fields to grid
 
       //free temporary memory
       delete [] newArrayR; newArrayR = NULL;
@@ -608,7 +656,7 @@ int vtkEnlilReader::LoadGridValues(vtkstd::string array, vtkInformationVector* o
   CALL_NETCDF(nc_close(ncFileID));
 
   //Add array to grid
-//  Data->GetPointData()->AddArray(DataArray);
+  //  Data->GetPointData()->AddArray(DataArray);
   DataArray->Delete();
 
   return 1;
@@ -629,7 +677,6 @@ int vtkEnlilReader::PopulateArrays()
   this->addPointArray((char*)"BP");
   this->addPointArray((char*)"B1", (char*)"B2", (char*)"B3");
   this->addPointArray((char*)"V1", (char*)"V2", (char*)"V3");
-
 
   file.close();
   return 1;
@@ -1005,7 +1052,7 @@ int vtkEnlilReader::GenerateGrid()
       CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
       CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
 
-      //start location at {1,0}
+      //start location at {0,0}
       startLoc[0] = 0;
 
       //Check for reading of Periodic Boundry ONLY
@@ -1062,6 +1109,15 @@ int vtkEnlilReader::GenerateGrid()
           X3[this->Dimension[2]-1] = X3[0];
         }
 
+      // Populate the Spherical Grid Coordinates (to be used in calcs later)
+      vtkstd::vector<double> R(X1, X1 + this->SubDimension[0]);
+      vtkstd::vector<double> T(X2, X2 + this->SubDimension[1]);
+      vtkstd::vector<double> P(X3, X3 + this->SubDimension[2]);
+
+      this->sphericalGridCoords.push_back(R);
+      this->sphericalGridCoords.push_back(T);
+      this->sphericalGridCoords.push_back(P);
+
       // Generate the grid based on the R-P-T coordinate system.
       double xyz[3] = { 0, 0, 0 };
       for (k = 0; k < this->SubDimension[2]; k++)
@@ -1083,8 +1139,7 @@ int vtkEnlilReader::GenerateGrid()
                   // insert radius value into radius array.
                   // Scaled by grid scale factor
                   this->Radius->InsertNextValue(
-                        X1[i]
-                        / GRID_SCALE::ScaleFactor[GridScale]);
+                        X1[i] / GRID_SCALE::ScaleFactor[GridScale]);
                 }
             }
         }
