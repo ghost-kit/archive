@@ -162,7 +162,7 @@ protected:
   // Load a variable from data file
   int GenerateGrid();
   int LoadVariableData(vtkInformationVector *outputVector);
-  int LoadGridValues(vtkstd::string array);
+  int LoadGridValues(vtkstd::string array, vtkInformationVector* outputVector);
 
   int getSerialNumber()
   {
