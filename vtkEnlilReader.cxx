@@ -474,7 +474,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       std::cerr << "Whole Extent[5]: " << this->WholeExtent[5] << std::endl;
 
       //Periodic Boundary Crossing Check
-      if((this->SubDimension[2]-1) == this->WholeExtent[5])
+      if(this->SubExtent[5] == this->WholeExtent[5])
         {
           //need to adjust the dimensions so we dont try to read through
           //  through the periodic boundary
@@ -494,9 +494,9 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
           startLoc[3] = this->SubExtent[0];
 
           //dont try to read accross periodic boundary
-          if(startLoc[3] == this->WholeExtent[5])
+          if(startLoc[1] == this->WholeExtent[5])
             {
-              startLoc[3] = 0;
+              startLoc[1] = 0;
             }
 
           //dims are (NBLK,P,T,R)
@@ -548,6 +548,12 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
               //TODO: CURRENT WORK
               //load the required dims from file (phi = 1, theta = theta, r = r)
               //  starting spot = (0, SubExtent[2], SubExtent[0])
+
+
+
+
+
+
 
             }
           else
