@@ -541,8 +541,10 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
           // fix array for periodic boundary
           // if we are loading phi = 0, lets load it now. Otherwise, lets copy
           //  the relevent peices without loading it again.
-          if(startLoc[1] != 0)
+          if(this->SubExtent[4] != 0)
             {
+              std::cerr << "NEED TO LOAD MORE DATA" << std::endl;
+
               //TODO: CURRENT WORK
               //load the required dims from file (phi = 1, theta = theta, r = r)
               //  starting spot = (0, SubExtent[2], SubExtent[0])
@@ -550,6 +552,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
             }
           else
             {
+              std::cerr << "No need to load more data" << std::endl;
               //TODO: CURRENT WORK
               //copy the required dims from memory
               int t, r;
@@ -559,6 +562,8 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
                   = this->SubDimension[0]
                   * this->SubDimension[1]
                   * (this->SubDimension[2]-1);
+
+              std::cerr << "Non Period Size: " << nonPeriodSize << std::endl;
 
               int loc = 0;
 
@@ -575,6 +580,8 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
                       //advance counters
                       loc++;
                       nonPeriodSize++;
+
+
                     }
                 }
             }
@@ -628,14 +635,15 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
 
         }
 
+      std::cerr << "Calculating Vector"  << std::endl;
 
       // convert from spherical to cartesian
       int loc=0;
-      for(k=0; k<this->Dimension[2]; k++)
+      for(k=0; k<this->SubDimension[2]; k++)
         {
-          for(j=0; j<this->Dimension[1]; j++)
+          for(j=0; j<this->SubDimension[1]; j++)
             {
-              for(i=0; i<this->Dimension[0]; i++)
+              for(i=0; i<this->SubDimension[0]; i++)
 
                 {
 
@@ -652,8 +660,8 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
 
                   DataArray->InsertNextTuple(xyz);
 
-
                   loc++;
+
                 }
             }
         }
