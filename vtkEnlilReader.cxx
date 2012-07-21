@@ -396,7 +396,10 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
           std::cerr << "Point Data Name: " << array << std::endl;
           //Load the current Point array
-          this->LoadArrayValues(array, outputVector);
+          if(PointDataArraySelection->ArrayIsEnabled(array.c_str()))
+            {
+              this->LoadArrayValues(array, outputVector);
+            }
         }
     }
 
@@ -479,6 +482,9 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
           //Must fix the periodic boundary after read.
           //------------------------------------------
 
+          //TODO: Logic faulty on partial read here somewhere..
+          //      When limiting T to 29:29, we segfault.
+
 
           std::cerr << "Reading accross Periodic Boundary" << std::endl;
 
@@ -546,30 +552,29 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
             {
               //TODO: CURRENT WORK
               //copy the required dims from memory
-            }
+              int t, r;
 
-          // convert from spherical to cartesian
-          int loc=0;
-          for(k=0; k<this->Dimension[2]; k++)
-            {
-              for(j=0; j<this->Dimension[1]; j++)
+              //set counters
+              int nonPeriodSize
+                  = this->SubDimension[0]
+                  * this->SubDimension[1]
+                  * (this->SubDimension[2]-1);
+
+              int loc = 0;
+
+              //fill periodic boundary
+              for(t = 0; t < this->SubDimension[1]; t++)
                 {
-                  for(i=0; i<this->Dimension[0]; i++)
-
+                  for(r = 0; r < this->SubDimension[0]; r++)
                     {
+                      // copy periodic boundary from begining of array to end
+                      newArrayP[nonPeriodSize] = newArrayP[loc];
+                      newArrayT[nonPeriodSize] = newArrayT[loc];
+                      newArrayR[nonPeriodSize] = newArrayR[loc];
 
-                      xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
-                      xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
-                      xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
-
-                      xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
-                      xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
-                      xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
-
-                      xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
-                      xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
-
+                      //advance counters
                       loc++;
+                      nonPeriodSize++;
                     }
                 }
             }
@@ -624,10 +629,37 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
         }
 
 
-      //calculate fields
+      // convert from spherical to cartesian
+      int loc=0;
+      for(k=0; k<this->Dimension[2]; k++)
+        {
+          for(j=0; j<this->Dimension[1]; j++)
+            {
+              for(i=0; i<this->Dimension[0]; i++)
 
-      //add fields to grid
+                {
 
+                  xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                  xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                  xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
+
+                  xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                  xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                  xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
+
+                  xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
+                  xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
+
+                  DataArray->InsertNextTuple(xyz);
+
+
+                  loc++;
+                }
+            }
+        }
+      //Add array to grid
+      Data->GetPointData()->AddArray(DataArray);
+      DataArray->Delete();
       //free temporary memory
       delete [] newArrayR; newArrayR = NULL;
       delete [] newArrayP; newArrayP = NULL;
@@ -655,9 +687,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
   //close the file
   CALL_NETCDF(nc_close(ncFileID));
 
-  //Add array to grid
-  //  Data->GetPointData()->AddArray(DataArray);
-  DataArray->Delete();
+
 
   return 1;
 }
@@ -994,6 +1024,7 @@ int vtkEnlilReader::GenerateGrid()
         {
           this->Points->Delete();
           this->Radius->Delete();
+          this->sphericalGridCoords.clear();
         }
 
       std::cerr << "Grid Dirty; Rebuilding " << std::endl;
