@@ -37,11 +37,7 @@ class vtkIntArray;
 class vtkPoints;
 class vtkTable;
 class vtkStructuredGrid;
-class vtkUnstructuredGrid;
-class vtkMultiBlockDataSetAlgorithm;
 class vtkStructuredGridAlgorithm;
-
-
 
 namespace GRID_SCALE
 {

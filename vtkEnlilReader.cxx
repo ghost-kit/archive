@@ -1365,5 +1365,4 @@ int vtkEnlilReader::FillOutputPortInformation(int port, vtkInformation* info)
 void vtkEnlilReader::PrintSelf(ostream &os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
-
 }
