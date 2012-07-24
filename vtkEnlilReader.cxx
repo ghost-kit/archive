@@ -501,9 +501,9 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
 
           //dims are (NBLK,P,T,R)
           startDim[0] = 1;
-          startDim[1] = this->SubDimension[2]-1;
+          startDim[1] = this->SubDimension[2]-1; //Don't read perodic boundary
           startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[0];  //Don't read perodic boundary
+          startDim[3] = this->SubDimension[0];
 
           //get vector data
           CALL_NETCDF(nc_inq_varid(ncFileID,
@@ -539,7 +539,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
           // check ordering of arrays
 
           // fix array for periodic boundary
-          // if we are loading phi = 0, lets load it now. Otherwise, lets copy
+          // if we are not loading phi = 0, lets load it now. Otherwise, lets copy
           //  the relevent peices without loading it again.
           if(this->SubExtent[4] != 0)
             {
@@ -549,11 +549,90 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
               //load the required dims from file (phi = 1, theta = theta, r = r)
               //  starting spot = (0, SubExtent[2], SubExtent[0])
 
+              startLoc[0] = 0;
+              startLoc[1] = 0;
+              startLoc[2] = 0;
+              startLoc[3] = 0;
+
+              startDim[0] = 1;
+              startDim[1] = 1;
+              startDim[2] = this->SubDimension[1];
+              startDim[3] = this->SubDimension[0];
+
+              //allocate space for Radius, Theta, Phi components
+              int wedgesize = this->SubDimension[1]*this->SubDimension[0];
+
+              double* newArrayRperiodic
+                  = new double[wedgesize];
+
+              double* newArrayTperiodic
+                  = new double[wedgesize];
+
+              double* newArrayPperiodic
+                  = new double[wedgesize];
+
+              //get periodic wedge Radius
+              CALL_NETCDF(nc_inq_varid(ncFileID,
+                                       this->VectorVariableMap[array][0].c_str(),
+                                       &ncSDSID));
+
+              CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                             ncSDSID,
+                                             startLoc,
+                                             startDim,
+                                             newArrayRperiodic));
+
+              //get Periodic Wedge Theta
+              CALL_NETCDF(nc_inq_varid(ncFileID,
+                                       this->VectorVariableMap[array][1].c_str(),
+                                       &ncSDSID));
+
+              CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                             ncSDSID,
+                                             startLoc,
+                                             startDim,
+                                             newArrayTperiodic));
+
+              //get Periodic Wedge Phi
+              CALL_NETCDF(nc_inq_varid(ncFileID,
+                                       this->VectorVariableMap[array][2].c_str(),
+                                       &ncSDSID));
+
+              CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                             ncSDSID,
+                                             startLoc,
+                                             startDim,
+                                             newArrayPperiodic));
+
+              int t, r;
+
+              //set counters
+              int nonPeriodSize
+                  = this->SubDimension[0]
+                  * this->SubDimension[1]
+                  * (this->SubDimension[2]-1);
+
+              std::cerr << "Non Period Size: " << nonPeriodSize << std::endl;
+
+              int loc = 0;
+
+              //fill periodic boundary
+              for(t = 0; t < this->SubDimension[1]; t++)
+                {
+                  for(r = 0; r < this->SubDimension[0]; r++)
+                    {
+                      // copy periodic boundary from begining of array to end
+                      newArrayP[nonPeriodSize] = newArrayPperiodic[loc];
+                      newArrayT[nonPeriodSize] = newArrayTperiodic[loc];
+                      newArrayR[nonPeriodSize] = newArrayRperiodic[loc];
+
+                      //advance counters
+                      loc++;
+                      nonPeriodSize++;
 
 
-
-
-
+                    }
+                }
 
             }
           else
@@ -599,13 +678,34 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
           std::cerr << "NOT Reading accross Periodic Boundary" << std::endl;
 
           //continue reading the extents.
+          startLoc[0] = 0;
           startLoc[1] = this->SubExtent[4];
           startLoc[2] = this->SubExtent[2];
           startLoc[3] = this->SubExtent[0];
 
+          startDim[0] = 1;
           startDim[1] = this->SubDimension[2];
           startDim[2] = this->SubDimension[1];
           startDim[3] = this->SubDimension[0];
+
+          //DEBUG:
+          std::cerr << "SubDims: " << this->SubDimension[0]
+                    << ":" << this->SubDimension[1]
+                    << ":" << this->SubDimension[2] << std::endl;
+
+          this->printExtents(this->SubExtent, (char*)"SubExtents");
+
+          std::cerr << "Start Location: " << startLoc[0]
+                    << ":" << startLoc[1]
+                    << ":" << startLoc[2]
+                    << ":" << startLoc[3] << std::endl;
+
+          std::cerr << "StartDim: " << startDim[0]
+                    << ":" << startDim[1]
+                    << ":" << startDim[2]
+                    << ":" << startDim[3] << std::endl;
+
+
 
           //get vector data
           CALL_NETCDF(nc_inq_varid(ncFileID,
@@ -1097,32 +1197,42 @@ int vtkEnlilReader::GenerateGrid()
       CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
       CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
 
+      //if we need to read in Phi = 0 for periodic boundary.
+      bool readZero = false;
+      bool periodicOnly = false;
+
       //start location at {0,0}
       startLoc[0] = 0;
 
-      //Check for reading of Periodic Boundry ONLY
-      // Fix so we read the 0 position instead
-      if(this->SubExtent[4] == this->Dimension[2]-1)
+      //Default to NOT reading the periodic boundry
+      startLoc[1] = this->SubExtent[4];
+
+      if(startLoc[1] == this->WholeExtent[5])
         {
-          //periodic correction
-          startLoc[1] = 0;
-        }
-      else
-        {
-          //not reading the periodic boundry
-          startLoc[1] = this->SubExtent[4];
+          periodicOnly = true;
         }
 
-      //if reading through loop of grid, must make adjustments to X dimension
-      if(this->SubDimension[2] == this->Dimension[2])
+      //if reading through loop of grid, must make adjustments to phi dimension
+      if(this->SubExtent[5] == this->WholeExtent[5])
         {
           //if full grid, we need to recognize that
           //the file does not contain the grid closure.
+          std::cerr << "Reduced Dims" << std::endl;
+
           X3_dims = this->SubDimension[2] - 1;
+
+          if(this->SubExtent[4] > 0)
+            {
+              //mark periodic boundary for read
+              readZero = true;
+            }
         }
       else
         {
-          // if not reading the entire grid, we don't need to
+
+          std::cerr << "Full Dims" << std::endl;
+
+          // if not reading the end of the grid, we don't need to
           // worry about the grid closure.
           X3_dims = this->SubDimension[2];
         }
@@ -1130,29 +1240,58 @@ int vtkEnlilReader::GenerateGrid()
       std::cerr << "X3_dims:  " << X3_dims << std::endl;
       std::cerr << "startLoc: " << startLoc[0] << ":" << startLoc[1] << std::endl;
 
-      //TODO: Reading ONLY 180 phi will cause read error...
-      //need to read 0 in this case
-
-      //dimensions from start
-      startDim[1] = X3_dims;
-      //this->SubDimension[2];
       startDim[0] = 1;
+      startDim[1] = X3_dims;
 
-      CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                     ncSDSID,
-                                     startLoc,
-                                     startDim,
-                                     X3));
+      if(!periodicOnly)
+        {
+          CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                         ncSDSID,
+                                         startLoc,
+                                         startDim,
+                                         X3));
+
+          std::cerr << " Read Complete" << std::endl;
+
+        }
+
+      //if whole extent on X3, must add grid closure.
+      if(this->SubExtent[5] == this->WholeExtent[5])
+        {
+          //close off X3 if reading the entire grid in the Phi direction
+          if(this->SubExtent[4] == this->WholeExtent[4])
+            {
+              std::cerr << "Closing off grid from previous read" << std::endl;
+              X3[this->SubDimension[2]-1] = X3[0];
+            }
+          else  // we need to read in the phi = 0 and add it to X3
+            {
+              std::cerr << "Closing off grid from new read" << std::endl;
+              double X3_0_value;
+
+              //reset the starting point to beginig
+              startLoc[0] = 0;
+              startLoc[1] = 0;
+
+              //set read dimensions to
+              startDim[1] = 1;
+
+              //read the periodic boundary information
+              CALL_NETCDF(nc_get_vara_double(ncFileID,
+                                             ncSDSID,
+                                             startLoc,
+                                             startDim,
+                                             &X3_0_value));
+
+              std::cerr << "Adding X3[0] value to X3[180]: "
+                        << X3_0_value << std::endl;
+
+              X3[this->SubDimension[2]-1] = X3_0_value;
+            }
+        }
 
       //end partial read on grid
       CALL_NETCDF(nc_close(ncFileID));
-
-      //if whole extent on X3, must add grid closure.
-      if(this->SubDimension[2] == this->Dimension[2])
-        {
-          //close off X3 if reading the entire grid in the Phi direction
-          X3[this->Dimension[2]-1] = X3[0];
-        }
 
       // Populate the Spherical Grid Coordinates (to be used in calcs later)
       vtkstd::vector<double> R(X1, X1 + this->SubDimension[0]);
