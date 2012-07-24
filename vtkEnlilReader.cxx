@@ -743,6 +743,8 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       //CURRENT WORK: IMPLEMENT READING SCALAR ARRAYS
       //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
+      //TODO: VERIFY PARTIAL IO (Doesn't work correctly on Demo Shapes)
+
       //size of the individual arrays
       int64_t arraySize
           = this->SubDimension[0]
