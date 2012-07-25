@@ -297,11 +297,17 @@ int vtkEnlilReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
+  this->SetProgress(0);
+
   //Import the MetaData - Port 1
   this->LoadMetaData(outputVector);
 
+  this->SetProgress(.05);
+
   //Import the actual Data - Port 0
   this->LoadVariableData(outputVector);
+
+  this->SetProgress(1.00);
 
   return 1;
 
@@ -369,6 +375,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 
       //Load Variables
       int c = 0;
+      double progress = 0.05;
 
       //Load Cell Data
       for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
@@ -390,6 +397,8 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           if(PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
               this->LoadArrayValues(array, outputVector);
+              this->SetProgress(progress);
+              progress += 0.1;
             }
         }
     }
