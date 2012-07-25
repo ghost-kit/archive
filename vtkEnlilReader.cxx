@@ -507,7 +507,9 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
   return 1;
 }
 
-//Enlil Specific Partial IO
+//-- returns array read via partial IO limited by extents --//
+/* This method will automatically adjust for the periodic boundary
+ *  condition that does not exist sequentially in file */
 double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 {
   int extDims[3] = {0,0,0};
@@ -674,12 +676,136 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 //-- returns array read via partial IO limited by extents --//
 /* This method will automatically adjust for the periodic boundary
  *  condition that does not exist sequentially in file */
-double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[], bool periodic = false)
+double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[], bool isPeriodic = false)
 {
+  int     extDim = subExtents[1]-subExtents[0]+1;;
+  size_t  readDims[2]  = {1,extDim};
+  long    readStart[2] = {0,subExtents[0]};
 
+  // DEBUG VERIFICATION
+  std::cout << "Read Dimensions: "
+            << readDims[0] << ":"
+            << readDims[1] << std::endl;
+
+  std::cout << "Read Start: "
+            << readStart[0] << ":"
+            << readStart[1] << std::endl;
+
+  //Find conditions that need to be handled
+  bool periodic = false;
+  bool periodicRead = false;
+  bool periodicOnly = false;
+
+  //if isPeriodic is set, then we are looking at phi
+  if(isPeriodic)
+    {
+      if(subExtents[1] == this->WholeExtent[5])
+        {
+          periodic = true;
+          if(subExtents[0] > 0)
+            {
+              periodicRead = true;
+              if(subExtents[0] == this->WholeExtent[5])
+                {
+                  periodicOnly = true;
+                }
+            }
+        }
+    }
+
+  //allocate Memory for complete array
+  double *array = new double[extDim];
+
+  //Open file
+  NcFile file(this->FileName);
+  NcVar* variable = file.get_var(arrayName);
+
+  //start to read in data
+  if(periodic && !periodicOnly)
+    {
+      std::cout << "periodic && !periodicOnly" << std::endl;
+
+      //adjust dims
+      readDims[1] = readDims[1]-1;
+
+      //adjust the start point
+      variable->set_cur(readStart);
+
+      //read the file
+      variable->get(array, readDims);
+
+    }
+  else if(periodicOnly)
+    {
+      std::cout << "periodicOnly" << std::endl;
+
+      //set periodic only
+      readDims[1] = 1;
+      readStart[1] = 0;
+
+      //set read location
+      variable->set_cur(readStart);
+
+      //read the file
+      variable->get(array, readDims);
+
+    }
+  else
+    {
+      std::cout << "!periodic" << std::endl;
+
+      //set read location as stated
+      variable->set_cur(readStart);
+
+      //read as stated
+      variable->get(array, readDims);
+    }
+
+  //fix periodic boundary if necesary
+  if(periodic && !periodicRead && !periodicOnly)
+    {
+      std::cout << "periodic && !periodicRead && !periodicOnly" << std::endl;
+
+      //copy periodic data from begining to end
+      array[extDim-1] = array[0];
+
+    }
+  else if (periodic && periodicRead && !periodicOnly)
+    {
+      std::cout << "periodic && periodicRead && !periodicOnly" << std::endl;
+
+      //read in periodic data and place at end of array
+      size_t wedgeSize = 1;
+      size_t wedgeLoc  = (extDim-1);
+
+      double * wedge = new double[wedgeSize];
+
+      //start at 0,0,0
+      readStart[1] = 0;
+
+      //restrict to phi = 1 dimension
+      readDims[1] = 1;
+
+      //set start
+      variable->set_cur(readStart);
+
+      //read data
+      variable->get(wedge, readDims);
+
+      //populate wedge to array
+
+      array[wedgeLoc] = wedge[0];
+
+      //free temp memory
+      delete [] wedge; wedge = NULL;
+    }
+
+  //close the file
+  file.close();
+
+  //return completed array
+  return array;
 }
-
-
 
 //-- Return 0 for failure, 1 for success --//
 /* You will want to over-ride this method to
