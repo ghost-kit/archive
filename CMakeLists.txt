@@ -7,12 +7,12 @@ FIND_PACKAGE(ParaView REQUIRED)
 
 INCLUDE(${PARAVIEW_USE_FILE})
 
-ADD_PARAVIEW_PLUGIN(vtkEnlilReaderNonTime "2.0"
-  SERVER_MANAGER_XML vtkEnlilReaderNonTime.xml
+ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0"
+  SERVER_MANAGER_XML vtkEnlilReader.xml
   SERVER_MANAGER_SOURCES vtkEnlilReader.cxx
   GUI_RESOURCE_FILES vtkEnlilGUI.xml)
 
 SET(KIT_LIBS vtkNetCDF_cxx)
 
-Target_LINK_LIBRARIES(vtkEnlilReaderNonTime ${ParaView_LIBRARIES} ${KIT_LIBS})
+Target_LINK_LIBRARIES(vtkEnlilReader ${ParaView_LIBRARIES} ${KIT_LIBS})
 

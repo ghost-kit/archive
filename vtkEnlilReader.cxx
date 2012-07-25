@@ -245,17 +245,6 @@ int vtkEnlilReader::RequestInformation(
 {
   int status = 0;
 
-//  //get Data output port information
-//  vtkInformation* MetaDataOutInfo = outputVector->GetInformationObject(1);
-//  status = this->checkStatus(MetaDataOutInfo, (char*)"Meta Data Output Information");
-
-//  //If status has been verified, load MetaData Information
-//  if(status)
-//    {
-//      MetaDataOutInfo->Set(vtkTable::FIELD_ASSOCIATION(), vtkTable::FIELD_ASSOCIATION_ROWS);
-
-//    }
-
   // Array names and extents
   vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
   status = this->checkStatus(
@@ -270,17 +259,26 @@ int vtkEnlilReader::RequestInformation(
         {
           //Set the Names of the Arrays
           this->PopulateArrays();
-
-          //Set the Whole Extents and Time
-          this->PopulateDataInformation();
         }
+
+      //Set the Whole Extents and Time
+      this->PopulateDataInformation();
+
 
       /*Set Information*/
       //Set Time
+      double timeRange[2]
+          = {this->TimeSteps[0], this->TimeSteps[0]};
+
       DataOutputInfo->Set(
             vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-            &this->TimeSteps[0],
+            this->TimeSteps,
             1);
+
+      DataOutputInfo->Set(
+            vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
+            timeRange,
+            2);
 
       //Set Extents
       DataOutputInfo->Set(
@@ -475,6 +473,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       //Add array to grid
       Data->GetPointData()->AddArray(DataArray);
       DataArray->Delete();
+
       //free temporary memory
       delete [] newArrayR; newArrayR = NULL;
       delete [] newArrayP; newArrayP = NULL;
@@ -504,6 +503,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       //Add array to grid
       Data->GetPointData()->AddArray(DataArray);
       DataArray->Delete();
+
       //free temporary memory
       delete [] newArray; newArray = NULL;
 
@@ -841,7 +841,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               MetaString->InsertNextValue(attvalc);
 
               Data->GetFieldData()->AddArray(MetaString);
-
+              MetaString->Delete();
               break;
 
             case 3:
@@ -855,6 +855,8 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               MetaInt->InsertNextValue(attvali);
 
               Data->GetFieldData()->AddArray(MetaInt);
+              MetaInt->Delete();
+
               break;
 
             case 5:
@@ -868,6 +870,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               MetaDouble->InsertNextValue(attvald);
 
               Data->GetFieldData()->AddArray(MetaDouble);
+              MetaDouble->Delete();
               break;
             }
         }
@@ -1153,10 +1156,7 @@ int vtkEnlilReader::FillOutputPortInformation(int port, vtkInformation* info)
       return this->Superclass::FillInputPortInformation(port, info);
 
     }
-  else if (port==1)
-    {
-      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
-    }
+
   return 1;
 }
 
