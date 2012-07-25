@@ -407,14 +407,6 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
   bool vector
       = (this->VectorVariableMap.find(vtkstd::string(array)) != this->VectorVariableMap.end());
 
-  int ncFileID = 0;
-  int ncSDSID = 0;
-  int varDim = 0;
-
-  int i=0, j=0, k=0;
-
-  int X3_dims = 0;
-
   double xyz[3] = {0.0, 0.0, 0.0};
 
   //get data from system
@@ -424,270 +416,30 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
   vtkDoubleArray *DataArray = vtkDoubleArray::New();
   DataArray->SetName(array.c_str());
 
-  //open the file
-  CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-
   if(vector)      //load as a vector
     {
-      //size of the individual arrays
-      int64_t arraySize
-          = this->SubDimension[0]
-          * this->SubDimension[1]
-          * this->SubDimension[2];
-
-      //allocate space for Radius, Theta, Phi components
-      double* newArrayR
-          = new double[arraySize];
-
-      double* newArrayT
-          = new double[arraySize];
-
-      double* newArrayP
-          = new double[arraySize];
+      //need three arrays for vector reads
+      double* newArrayR;
+      double* newArrayT;
+      double* newArrayP;
 
       //configure DataArray
       DataArray->SetNumberOfComponents(3);  //3-Dim Vector
 
-      //Partial Read Variables
-      size_t startLoc[4] = {0,0,0,0};
-      size_t startDim[4] = {1,1,1,1};
+      //read in the arrays
+      newArrayR
+          = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
 
-      //Periodic Boundary Crossing Check
-      if(this->SubExtent[5] == this->WholeExtent[5])
-        {
-          //need to adjust the dimensions so we dont try to read through
-          //  through the periodic boundary
-          //
-          //Must fix the periodic boundary after read.
-          //------------------------------------------
+      newArrayT
+          = this->read3dPartialToArray((char*)this->VectorVariableMap[array][1].c_str(), this->SubExtent);
 
-          //Variables are stored in file (NBLK,P,T,R)
-          startLoc[1] = this->SubExtent[4];
-          startLoc[2] = this->SubExtent[2];
-          startLoc[3] = this->SubExtent[0];
+      newArrayP
+          = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
 
-          //dont try to read accross periodic boundary
-          if(startLoc[1] == this->WholeExtent[5])
-            {
-              startLoc[1] = 0;
-            }
-
-          //dims are (NBLK,P,T,R)
-          startDim[0] = 1;
-          startDim[1] = this->SubDimension[2]-1; //Don't read perodic boundary
-          startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[0];
-
-          //get vector data
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][0].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArrayR));
-
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][1].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArrayT));
-
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][2].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArrayP));
-
-          // check ordering of arrays
-
-          // fix array for periodic boundary
-          // if we are not loading phi = 0, lets load it now. Otherwise, lets copy
-          //  the relevent peices without loading it again.
-          if(this->SubExtent[4] != 0)
-            {
-
-              //load the required dims from file (phi = 1, theta = theta, r = r)
-              //  starting spot = (0, SubExtent[2], SubExtent[0])
-
-              startLoc[0] = 0;
-              startLoc[1] = 0;
-              startLoc[2] = 0;
-              startLoc[3] = 0;
-
-              //we just want the phi = 0 wedge
-              startDim[0] = 1;
-              startDim[1] = 1;
-              startDim[2] = this->SubDimension[1];
-              startDim[3] = this->SubDimension[0];
-
-              //allocate space for Radius, Theta, Phi components
-              int wedgesize = this->SubDimension[1]*this->SubDimension[0];
-
-              double* newArrayRperiodic
-                  = new double[wedgesize];
-
-              double* newArrayTperiodic
-                  = new double[wedgesize];
-
-              double* newArrayPperiodic
-                  = new double[wedgesize];
-
-              //get periodic wedge Radius
-              CALL_NETCDF(nc_inq_varid(ncFileID,
-                                       this->VectorVariableMap[array][0].c_str(),
-                                       &ncSDSID));
-
-              CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                             ncSDSID,
-                                             startLoc,
-                                             startDim,
-                                             newArrayRperiodic));
-
-              //get Periodic Wedge Theta
-              CALL_NETCDF(nc_inq_varid(ncFileID,
-                                       this->VectorVariableMap[array][1].c_str(),
-                                       &ncSDSID));
-
-              CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                             ncSDSID,
-                                             startLoc,
-                                             startDim,
-                                             newArrayTperiodic));
-
-              //get Periodic Wedge Phi
-              CALL_NETCDF(nc_inq_varid(ncFileID,
-                                       this->VectorVariableMap[array][2].c_str(),
-                                       &ncSDSID));
-
-              CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                             ncSDSID,
-                                             startLoc,
-                                             startDim,
-                                             newArrayPperiodic));
-
-              int t, r;
-
-              //set counters
-              int nonPeriodSize
-                  = this->SubDimension[0]
-                  * this->SubDimension[1]
-                  * (this->SubDimension[2]-1);
-
-              int loc = 0;
-
-              //fill periodic boundary
-              for(t = 0; t < this->SubDimension[1]; t++)
-                {
-                  for(r = 0; r < this->SubDimension[0]; r++)
-                    {
-                      // copy periodic boundary from begining of array to end
-                      newArrayP[nonPeriodSize] = newArrayPperiodic[loc];
-                      newArrayT[nonPeriodSize] = newArrayTperiodic[loc];
-                      newArrayR[nonPeriodSize] = newArrayRperiodic[loc];
-
-                      //advance counters
-                      loc++;
-                      nonPeriodSize++;
-
-
-                    }
-                }
-
-            }
-          else
-            {
-              //copy the required dims from memory
-              int t, r;
-
-              //set counters
-              int nonPeriodSize
-                  = this->SubDimension[0]
-                  * this->SubDimension[1]
-                  * (this->SubDimension[2]-1);
-
-              int loc = 0;
-
-              //fill periodic boundary
-              for(t = 0; t < this->SubDimension[1]; t++)
-                {
-                  for(r = 0; r < this->SubDimension[0]; r++)
-                    {
-                      // copy periodic boundary from begining of array to end
-                      newArrayP[nonPeriodSize] = newArrayP[loc];
-                      newArrayT[nonPeriodSize] = newArrayT[loc];
-                      newArrayR[nonPeriodSize] = newArrayR[loc];
-
-                      //advance counters
-                      loc++;
-                      nonPeriodSize++;
-
-
-                    }
-                }
-            }
-
-        }
-      else
-        {
-
-          //continue reading the extents.
-          startLoc[0] = 0;
-          startLoc[1] = this->SubExtent[4];
-          startLoc[2] = this->SubExtent[2];
-          startLoc[3] = this->SubExtent[0];
-
-          startDim[0] = 1;
-          startDim[1] = this->SubDimension[2];
-          startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[0];
-
-          //get vector data
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][0].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArrayR));
-
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][1].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArrayT));
-
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][2].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArrayP));
-
-
-        }
 
       // convert from spherical to cartesian
       int loc=0;
+      int i,j,k;
       for(k=0; k<this->SubDimension[2]; k++)
         {
           for(j=0; j<this->SubDimension[1]; j++)
@@ -729,207 +481,15 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       //configure DataArray
       DataArray->SetNumberOfComponents(1);  //Scalar
 
-      //get data
-      CALL_NETCDF(nc_inq_varid(ncFileID, this->ScalarVariableMap[array].c_str(), &ncSDSID));
-      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
+      //array pointers
+      double* newArray;
 
-      std::cerr << "Array: " << this->ScalarVariableMap[array].c_str() << std::endl;
-      std::cerr << "Dims:  " << varDim << std::endl;
-
-
-      std::cerr << "Loading as a Scalar" << std::endl;
-
-
-      //CURRENT WORK: IMPLEMENT READING SCALAR ARRAYS
-      //vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
-      //TODO: VERIFY PARTIAL IO (Doesn't work correctly on Demo Shapes)
-
-      //size of the individual arrays
-      int64_t arraySize
-          = this->SubDimension[0]
-          * this->SubDimension[1]
-          * this->SubDimension[2];
-
-      //allocate space for Radius, Theta, Phi components
-      double* newArray
-          = new double[arraySize];
-
-      //Partial Read Variables
-      size_t startLoc[4] = {0,0,0,0};
-      size_t startDim[4] = {1,1,1,1};
-
-      //Periodic Boundary Crossing Check
-      if(this->SubExtent[5] == this->WholeExtent[5])
-        {
-          //need to adjust the dimensions so we dont try to read through
-          //  through the periodic boundary
-          //
-          //Must fix the periodic boundary after read.
-          //------------------------------------------
-
-          //Variables are stored in file (NBLK,P,T,R)
-          startLoc[1] = this->SubExtent[4];
-          startLoc[2] = this->SubExtent[2];
-          startLoc[3] = this->SubExtent[0];
-
-          //dont try to read accross periodic boundary
-          if(startLoc[1] == this->WholeExtent[5])
-            {
-              startLoc[1] = 0;
-            }
-
-          //dims are (NBLK,P,T,R)
-          startDim[0] = 1;
-          startDim[1] = this->SubDimension[2]-1; //Don't read perodic boundary
-          startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[0];
-
-          //get vector data
-
-          std::cout << "READING MAIN ARRAY (SCALAR): "<< array << std::endl;
-
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->ScalarVariableMap[array].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArray));
-
-          std::cout << "READ COMPLETE (MAIN ARRAY)" << std::endl;
-
-          // check ordering of arrays
-
-          // fix array for periodic boundary
-          // if we are not loading phi = 0, lets load it now. Otherwise, lets copy
-          //  the relevent peices without loading it again.
-          if(this->SubExtent[4] != 0)
-            {
-
-              //load the required dims from file (phi = 1, theta = theta, r = r)
-              //  starting spot = (0, SubExtent[2], SubExtent[0])
-
-              startLoc[0] = 0;
-              startLoc[1] = 0;
-              startLoc[2] = 0;
-              startLoc[3] = 0;
-
-              //we just want the phi = 0 wedge
-              startDim[0] = 1;
-              startDim[1] = 1;
-              startDim[2] = this->SubDimension[1];
-              startDim[3] = this->SubDimension[0];
-
-              //allocate space for Radius, Theta, Phi components
-              int wedgesize = this->SubDimension[1]*this->SubDimension[0];
-
-              double* newArrayPeriodic
-                  = new double[wedgesize];
-
-              std::cout << "READING PERIODIC BOUNDARY" << std::endl;
-
-              //get periodic wedge
-              CALL_NETCDF(nc_inq_varid(ncFileID,
-                                       this->ScalarVariableMap[array].c_str(),
-                                       &ncSDSID));
-
-              CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                             ncSDSID,
-                                             startLoc,
-                                             startDim,
-                                             newArrayPeriodic));
-
-              int t, r;
-
-              //set counters
-              int nonPeriodSize
-                  = this->SubDimension[0]
-                  * this->SubDimension[1]
-                  * (this->SubDimension[2]-1);
-
-              int loc = 0;
-
-              //fill periodic boundary
-              for(t = 0; t < this->SubDimension[1]; t++)
-                {
-                  for(r = 0; r < this->SubDimension[0]; r++)
-                    {
-                      std::cout << "FILLING BOUNDARY FROM FILE" << std::endl;
-
-                      // copy periodic boundary from begining of array to end
-                      newArray[nonPeriodSize] = newArrayPeriodic[loc];
-
-                      //advance counters
-                      loc++;
-                      nonPeriodSize++;
-
-                    }
-                }
-
-            }
-          else
-            {
-              //copy the required dims from memory
-              int t, r;
-
-              //set counters
-              int nonPeriodSize
-                  = this->SubDimension[0]
-                  * this->SubDimension[1]
-                  * (this->SubDimension[2]-1);
-
-              int loc = 0;
-
-              std::cout << "FILLING BOUNDARY FROM MEMORY" << std::endl;
-
-              //fill periodic boundary
-              for(t = 0; t < this->SubDimension[1]; t++)
-                {
-                  for(r = 0; r < this->SubDimension[0]; r++)
-                    {
-                      // copy periodic boundary from begining of array to end
-                      newArray[nonPeriodSize] = newArray[loc];
-
-                      //advance counters
-                      loc++;
-                      nonPeriodSize++;
-
-                    }
-                }
-            }
-
-        }
-      else
-        {
-          //no adjustments needed... just read and populate
-          startLoc[0] = 0;
-          startLoc[1] = this->SubExtent[4];
-          startLoc[2] = this->SubExtent[2];
-          startLoc[3] = this->SubExtent[0];
-
-          startDim[0] = 1;
-          startDim[1] = this->SubDimension[2];
-          startDim[2] = this->SubDimension[1];
-          startDim[3] = this->SubDimension[0];
-
-          //get vector data
-          CALL_NETCDF(nc_inq_varid(ncFileID,
-                                   this->VectorVariableMap[array][0].c_str(),
-                                   &ncSDSID));
-
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         newArray));
-
-        }
-
+      //get data array
+      newArray
+          = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
 
       //insert points
+      int k;
       for(k=0; k<this->SubDimension[2]*this->SubDimension[1]*this->SubDimension[0]; k++)
         {
           DataArray->InsertNextValue(newArray[k]);
@@ -941,18 +501,14 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       //free temporary memory
       delete [] newArray; newArray = NULL;
 
-      //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     }
-
-  //close the file
-  CALL_NETCDF(nc_close(ncFileID));
-
 
 
   return 1;
 }
 
-double* vtkEnlilReader::readPartialToArray(char* arrayName, int extents[])
+//Enlil Specific Partial IO
+double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 {
   int extDims[3] = {0,0,0};
   size_t readDims[4]   = {1,1,1,1};
@@ -1103,7 +659,6 @@ double* vtkEnlilReader::readPartialToArray(char* arrayName, int extents[])
 
       //free temp memory
       delete [] wedge; wedge = NULL;
-
     }
 
 
@@ -1115,6 +670,16 @@ double* vtkEnlilReader::readPartialToArray(char* arrayName, int extents[])
   return array;
 
 }
+
+//-- returns array read via partial IO limited by extents --//
+/* This method will automatically adjust for the periodic boundary
+ *  condition that does not exist sequentially in file */
+double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[], bool periodic = false)
+{
+
+}
+
+
 
 //-- Return 0 for failure, 1 for success --//
 /* You will want to over-ride this method to
