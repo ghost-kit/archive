@@ -1107,27 +1107,15 @@ int vtkEnlilReader::GenerateGrid()
   int j = 0;
   int k = 0;
 
-  size_t startLoc[2]={1,0};
-  size_t startDim[2]={1,1};
-
-  //set read start:
-  startLoc[0] = this->SubExtent[0];
-  startLoc[1] = this->SubExtent[2];
-
-  double *X1 = new double[this->SubDimension[0]];
-  double *X2 = new double[this->SubDimension[1]];
-  double *X3 = new double[this->SubDimension[2]];
-
-  int ncFileID = 0;
-  int ncSDSID = 0;
-  int varDim = 0;
-
-  int X3_dims = 0;
-
-  char tempName[256];
-  this->clearString(tempName, 256);
-
   const int GridScale = this->GetGridScaleType();
+
+  double *X1;
+  double *X2;
+  double *X3;
+
+  int X1_extents[2] = {this->SubExtent[0], this->SubExtent[1]};
+  int X2_extents[2] = {this->SubExtent[2], this->SubExtent[3]};
+  int X3_extents[2] = {this->SubExtent[4], this->SubExtent[5]};
 
   //build the grid if it is dirty (modified in application)
   if(!this->gridClean)
@@ -1149,134 +1137,10 @@ int vtkEnlilReader::GenerateGrid()
       this->Radius->SetName("Radius");
       this->Radius->SetNumberOfComponents(1);
 
-      //Start grid partial read.
-      CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-
-      //Read the Radius Component//
-      //-------------------------//
-      CALL_NETCDF(nc_inq_varid(ncFileID, "X1", &ncSDSID));
-      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
-
-      //start location at {1,0}
-      startLoc[0] = 0;
-      startLoc[1] = this->SubExtent[0];
-
-      //dimensions from start
-      startDim[1] = this->SubDimension[0];
-      startDim[0] = 1;
-
-      CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                     ncSDSID,
-                                     startLoc,
-                                     startDim,
-                                     X1));
-
-      //Read Theta Component//
-      //--------------------//
-      CALL_NETCDF(nc_inq_varid(ncFileID, "X2", &ncSDSID));
-      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
-
-      //start location at {1,0}
-      startLoc[0] = 0;
-      startLoc[1] = this->SubExtent[2];
-
-      //dimensions from start
-      startDim[1] = this->SubDimension[1];
-      startDim[0] = 1;
-
-      CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                     ncSDSID,
-                                     startLoc,
-                                     startDim,
-                                     X2));
-
-      //Read Phi Component//
-      //------------------//
-      CALL_NETCDF(nc_inq_varid(ncFileID, "X3", &ncSDSID));
-      CALL_NETCDF(nc_inq_varndims(ncFileID, ncSDSID, &varDim));
-
-      //if we need to read in Phi = 0 for periodic boundary.
-      bool readZero = false;
-      bool periodicOnly = false;
-
-      //start location at {0,0}
-      startLoc[0] = 0;
-
-      //Default to NOT reading the periodic boundry
-      startLoc[1] = this->SubExtent[4];
-
-      if(startLoc[1] == this->WholeExtent[5])
-        {
-          periodicOnly = true;
-        }
-
-      //if reading through loop of grid, must make adjustments to phi dimension
-      if(this->SubExtent[5] == this->WholeExtent[5])
-        {
-          //if full grid, we need to recognize that
-          //the file does not contain the grid closure.
-          X3_dims = this->SubDimension[2] - 1;
-
-          if(this->SubExtent[4] > 0)
-            {
-              //mark periodic boundary for read
-              readZero = true;
-            }
-        }
-      else
-        {
-          // if not reading the end of the grid, we don't need to
-          // worry about the grid closure.
-          X3_dims = this->SubDimension[2];
-        }
-
-      startDim[0] = 1;
-      startDim[1] = X3_dims;
-
-      //we only need to make this call if we have more than the
-      // periodic boundary to read.
-      if(!periodicOnly)
-        {
-          CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                         ncSDSID,
-                                         startLoc,
-                                         startDim,
-                                         X3));
-
-        }
-
-      //if whole extent on X3, must add grid closure.
-      if(this->SubExtent[5] == this->WholeExtent[5])
-        {
-          //close off X3 if reading the entire grid in the Phi direction
-          if(this->SubExtent[4] == this->WholeExtent[4])
-            {
-              X3[this->SubDimension[2]-1] = X3[0];
-            }
-          else  // we need to read in the phi = 0 and add it to X3
-            {
-              double X3_0_value;
-
-              //reset the starting point to beginig
-              startLoc[0] = 0;
-              startLoc[1] = 0;
-
-              //set read dimensions to
-              startDim[1] = 1;
-
-              //read the periodic boundary information
-              CALL_NETCDF(nc_get_vara_double(ncFileID,
-                                             ncSDSID,
-                                             startLoc,
-                                             startDim,
-                                             &X3_0_value));
-
-              X3[this->SubDimension[2]-1] = X3_0_value;
-            }
-        }
-
-      //end partial read on grid
-      CALL_NETCDF(nc_close(ncFileID));
+      // read data from file
+      X1 = this->readGridPartialToArray((char*)"X1", X1_extents, false);
+      X2 = this->readGridPartialToArray((char*)"X2", X2_extents, false);
+      X3 = this->readGridPartialToArray((char*)"X3", X3_extents, true);
 
       // Populate the Spherical Grid Coordinates (to be used in calcs later)
       vtkstd::vector<double> R(X1, X1 + this->SubDimension[0]);
