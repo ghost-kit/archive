@@ -187,7 +187,13 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   //Set Time step Information
   this->NumberOfTimeSteps = 1; // 1 step per file
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
-  this->TimeStepValues[0] = metaDoubles["mjd"];
+  if (metaDoubles.count(string("mjd")) != 0){
+    this->TimeStepValues[0] = metaDoubles["mjd"];
+  }
+  else{
+    // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
+    this->TimeStepValues[0] = metaFloats["time"];
+  }
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
                &this->TimeStepValues[0],
                static_cast<int>(this->TimeStepValues.size()));
