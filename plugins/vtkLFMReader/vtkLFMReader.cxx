@@ -185,9 +185,9 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
   //Set Time step Information
-  this->NumberOfTimeSteps = metaInts.count(string("time_step"));
+  this->NumberOfTimeSteps = 1; // 1 step per file
   this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
-  this->TimeStepValues[0] = metaFloats["time"];
+  this->TimeStepValues[0] = metaDoubles["mjd"];
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
                &this->TimeStepValues[0],
                static_cast<int>(this->TimeStepValues.size()));
@@ -199,11 +199,8 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   //Update Pipeline
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
-  // fprintf(stderr,"Time Step: %d\n", (int)metaInts.count(string("time_step")));
-  // fprintf(stderr,"Time: %f\n", (double)metaFloats["time"]);
-
-  vtkDebugMacro(<< "time_step=" << this->NumberOfTimeSteps);
-  vtkDebugMacro(<< "time=" << this->TimeStepValues[0]);
+  vtkDebugMacro(<< "number of timesteps in file=" << this->NumberOfTimeSteps);
+  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0]);
 
 
   return 1; 
