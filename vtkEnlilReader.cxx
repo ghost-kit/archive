@@ -50,7 +50,7 @@ vtkEnlilReader::vtkEnlilReader()
   this->FileName = NULL;
 
   //set the number of output ports you will need
-  this->SetNumberOfOutputPorts(2);
+  this->SetNumberOfOutputPorts(1);
 
   //set the number of input ports (Default 0)
   this->SetNumberOfInputPorts(0);
@@ -245,16 +245,16 @@ int vtkEnlilReader::RequestInformation(
 {
   int status = 0;
 
-  //get Data output port information
-  vtkInformation* MetaDataOutInfo = outputVector->GetInformationObject(1);
-  status = this->checkStatus(MetaDataOutInfo, (char*)"Meta Data Output Information");
+//  //get Data output port information
+//  vtkInformation* MetaDataOutInfo = outputVector->GetInformationObject(1);
+//  status = this->checkStatus(MetaDataOutInfo, (char*)"Meta Data Output Information");
 
-  //If status has been verified, load MetaData Information
-  if(status)
-    {
-      MetaDataOutInfo->Set(vtkTable::FIELD_ASSOCIATION(), vtkTable::FIELD_ASSOCIATION_ROWS);
+//  //If status has been verified, load MetaData Information
+//  if(status)
+//    {
+//      MetaDataOutInfo->Set(vtkTable::FIELD_ASSOCIATION(), vtkTable::FIELD_ASSOCIATION_ROWS);
 
-    }
+//    }
 
   // Array names and extents
   vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
@@ -299,12 +299,12 @@ int vtkEnlilReader::RequestData(
 {
   this->SetProgress(0);
 
-  //Import the MetaData - Port 1
+  //Import the MetaData
   this->LoadMetaData(outputVector);
 
   this->SetProgress(.05);
 
-  //Import the actual Data - Port 0
+  //Import the actual Data
   this->LoadVariableData(outputVector);
 
   this->SetProgress(1.00);
@@ -808,8 +808,8 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
   int     attvali;
   double  attvald;
 
-  vtkTable* MetaData = vtkTable::GetData(outputVector,1);
-  int status = this->checkStatus(MetaData, (char*)"(PMD) Meta Data Table Object");
+  vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
+  int status = this->checkStatus(Data, (char*)"(MetaData)Structured Grid Data Object");
 
 
   if(status)
@@ -840,7 +840,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               MetaString->SetNumberOfComponents(1);
               MetaString->InsertNextValue(attvalc);
 
-              MetaData->AddColumn(MetaString);
+              Data->GetFieldData()->AddArray(MetaString);
 
               break;
 
@@ -854,7 +854,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               MetaInt->SetNumberOfComponents(1);
               MetaInt->InsertNextValue(attvali);
 
-              MetaData->AddColumn(MetaInt);
+              Data->GetFieldData()->AddArray(MetaInt);
               break;
 
             case 5:
@@ -867,7 +867,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               MetaDouble->SetNumberOfComponents(1);
               MetaDouble->InsertNextValue(attvald);
 
-              MetaData->AddColumn(MetaDouble);
+              Data->GetFieldData()->AddArray(MetaDouble);
               break;
             }
         }
