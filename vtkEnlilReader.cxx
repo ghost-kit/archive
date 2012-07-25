@@ -275,9 +275,6 @@ int vtkEnlilReader::RequestInformation(
           this->PopulateDataInformation();
         }
 
-      //  Set Whole Extents for data
-      this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
-
       /*Set Information*/
       //Set Time
       DataOutputInfo->Set(
@@ -524,19 +521,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
   readDims[2] = extDims[1];
   readDims[3] = extDims[0];
 
-  // DEBUG VERIFICATION
-  std::cout << "Read Dimensions: "
-            << readDims[0] << ":"
-            << readDims[1] << ":"
-            << readDims[2] << ":"
-            << readDims[3] << std::endl;
-
-  std::cout << "Read Start: "
-            << readStart[0] << ":"
-            << readStart[1] << ":"
-            << readStart[2] << ":"
-            << readStart[3] << std::endl;
-
   //find all conditions that need to be accounted for
   bool periodic = false;
   bool periodicRead = false;
@@ -565,8 +549,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
   // start to read in data
   if(periodic && !periodicOnly)
     {
-      std::cout << "periodic && !periodicOnly" << std::endl;
-
       //adjust dims
       readDims[1] = readDims[1]-1;
 
@@ -579,8 +561,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
     }
   else if(periodicOnly)
     {
-      std::cout << "periodicOnly" << std::endl;
-
       //set periodic only
       readDims[1] = 1;
       readStart[1] = 0;
@@ -596,8 +576,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
     }
   else
     {
-      std::cout << "!periodic" << std::endl;
-
       //set read location as stated
       variable->set_cur(readStart);
 
@@ -609,8 +587,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
   //fix periodic boundary if necesary
   if(periodic && !periodicRead && !periodicOnly)
     {
-      std::cout << "periodic && !periodicRead && !periodicOnly" << std::endl;
-
       //copy periodic data from begining to end
       size_t wedgeSize = (extDims[0]*extDims[1]);
       size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
@@ -627,8 +603,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
     }
   else if (periodic && periodicRead && !periodicOnly)
     {
-      std::cout << "periodic && periodicRead && !periodicOnly" << std::endl;
-
       //read in periodic data and place at end of array
       size_t wedgeSize = extDims[0]*extDims[1];
       size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
@@ -667,8 +641,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
   //close file
   file.close();
 
-  std::cout << "returning array" << std::endl;
-
   return array;
 
 }
@@ -681,15 +653,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
   int     extDim = subExtents[1]-subExtents[0]+1;;
   size_t  readDims[2]  = {1,extDim};
   long    readStart[2] = {0,subExtents[0]};
-
-  // DEBUG VERIFICATION
-  std::cout << "Read Dimensions: "
-            << readDims[0] << ":"
-            << readDims[1] << std::endl;
-
-  std::cout << "Read Start: "
-            << readStart[0] << ":"
-            << readStart[1] << std::endl;
 
   //Find conditions that need to be handled
   bool periodic = false;
@@ -723,7 +686,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
   //start to read in data
   if(periodic && !periodicOnly)
     {
-      std::cout << "periodic && !periodicOnly" << std::endl;
 
       //adjust dims
       readDims[1] = readDims[1]-1;
@@ -737,7 +699,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
     }
   else if(periodicOnly)
     {
-      std::cout << "periodicOnly" << std::endl;
 
       //set periodic only
       readDims[1] = 1;
@@ -752,8 +713,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
     }
   else
     {
-      std::cout << "!periodic" << std::endl;
-
       //set read location as stated
       variable->set_cur(readStart);
 
@@ -764,7 +723,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
   //fix periodic boundary if necesary
   if(periodic && !periodicRead && !periodicOnly)
     {
-      std::cout << "periodic && !periodicRead && !periodicOnly" << std::endl;
 
       //copy periodic data from begining to end
       array[extDim-1] = array[0];
@@ -772,7 +730,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
     }
   else if (periodic && periodicRead && !periodicOnly)
     {
-      std::cout << "periodic && periodicRead && !periodicOnly" << std::endl;
 
       //read in periodic data and place at end of array
       size_t wedgeSize = 1;
@@ -922,12 +879,6 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
 
       return 0;
     }
-  else
-    {
-      //      std::cerr << "SUCCESS: " << name
-      //                << " has successfully initialized"
-      //                << std::endl;
-    }
 
   return 1;
 }
@@ -958,9 +909,6 @@ int vtkEnlilReader::PopulateDataInformation()
                    0, this->Dimension[0]-1,
                    0, this->Dimension[1]-1,
                    0, this->Dimension[2]-1);
-
-  //Whole Extent
-  this->printExtents(this->WholeExtent, (char*)"Whole Extent:");
 
   //Set Time step Information
   this->NumberOfTimeSteps = 1;
@@ -1125,8 +1073,6 @@ int vtkEnlilReader::GenerateGrid()
           this->Radius->Delete();
           this->sphericalGridCoords.clear();
         }
-
-      std::cout << "Grid Dirty; Rebuilding " << std::endl;
 
       //build the Grid
       this->Points = vtkPoints::New();
