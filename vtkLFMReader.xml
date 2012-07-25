@@ -153,8 +153,8 @@
       <StringVectorProperty name="FileNames"
         clean_command="RemoveAllFileNames"
         command="AddFileName"
-        animateable="1"
-        number_of_elements="0" 
+        animateable="0"
+        number_of_elements="0"
         repeat_command="1">
         <FileListDomain name="files" />
         <Documentation>
