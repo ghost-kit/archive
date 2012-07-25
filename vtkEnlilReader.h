@@ -183,6 +183,8 @@ protected:
   int PopulateDataInformation();
   int checkStatus(void* Object, char* name);
 
+  double* readPartialToArray(char *array, int extents[]);
+
   void addPointArray(char* name);
   void addPointArray(char* name1, char* name2, char* name3);
   void extractDimensions(int dims[], int extent[]);

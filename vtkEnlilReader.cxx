@@ -952,6 +952,170 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
   return 1;
 }
 
+double* vtkEnlilReader::readPartialToArray(char* arrayName, int extents[])
+{
+  int extDims[3] = {0,0,0};
+  size_t readDims[4]   = {1,1,1,1};
+  long readStart[4]  = {0,extents[4],extents[2],extents[0]};
+
+  // get dimensions from extents
+  this->extractDimensions(extDims, extents);
+
+  // Enlil encodes in reverse, so reverse the order, add fourth dimension 1st.
+  readDims[1] = extDims[2];
+  readDims[2] = extDims[1];
+  readDims[3] = extDims[0];
+
+  // DEBUG VERIFICATION
+  std::cout << "Read Dimensions: "
+            << readDims[0] << ":"
+            << readDims[1] << ":"
+            << readDims[2] << ":"
+            << readDims[3] << std::endl;
+
+  std::cout << "Read Start: "
+            << readStart[0] << ":"
+            << readStart[1] << ":"
+            << readStart[2] << ":"
+            << readStart[3] << std::endl;
+
+  //find all conditions that need to be accounted for
+  bool periodic = false;
+  bool periodicRead = false;
+  bool periodicOnly = false;
+
+  if(extents[5] == this->WholeExtent[5])
+    {
+      periodic = true;
+      if(extents[4] > 0)
+        {
+          periodicRead = true;
+          if(extents[4] == this->WholeExtent[5])
+            {
+              periodicOnly = true;
+            }
+        }
+    }
+
+  // allocate memory for complete array
+  double *array = new double[extDims[0]*extDims[1]*extDims[2]];
+
+  //open file
+  NcFile file(this->FileName);
+  NcVar* variable = file.get_var(arrayName);
+
+  // start to read in data
+  if(periodic && !periodicOnly)
+    {
+      std::cout << "periodic && !periodicOnly" << std::endl;
+
+      //adjust dims
+      readDims[1] = readDims[1]-1;
+
+      //adjust the start point
+      variable->set_cur(readStart);
+
+      //read the file
+      variable->get(array, readDims);
+
+    }
+  else if(periodicOnly)
+    {
+      std::cout << "periodicOnly" << std::endl;
+
+      //set periodic only
+      readDims[1] = 1;
+      readStart[1] = 0;
+      readStart[2] = 0;
+      readStart[3] = 0;
+
+      //set read location
+      variable->set_cur(readStart);
+
+      //read the file
+      variable->get(array, readDims);
+
+    }
+  else
+    {
+      std::cout << "!periodic" << std::endl;
+
+      //set read location as stated
+      variable->set_cur(readStart);
+
+      //read as stated
+      variable->get(array, readDims);
+
+    }
+
+  //fix periodic boundary if necesary
+  if(periodic && !periodicRead && !periodicOnly)
+    {
+      std::cout << "periodic && !periodicRead && !periodicOnly" << std::endl;
+
+      //copy periodic data from begining to end
+      size_t wedgeSize = (extDims[0]*extDims[1]);
+      size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
+
+      for(int x = 0; x < wedgeSize; x++)
+        {
+          //copy the wedge
+          array[wedgeLoc] = array[x];
+
+          //advance index
+          wedgeLoc++;
+        }
+
+    }
+  else if (periodic && periodicRead && !periodicOnly)
+    {
+      std::cout << "periodic && periodicRead && !periodicOnly" << std::endl;
+
+      //read in periodic data and place at end of array
+      size_t wedgeSize = extDims[0]*extDims[1];
+      size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
+
+      double * wedge = new double[wedgeSize];
+
+      //start at 0,0,0
+      readStart[1] = 0;
+      readStart[2] = 0;
+      readStart[3] = 0;
+
+      //restrict to phi = 1 dimension
+      readDims[1] = 1;
+
+      //set start
+      variable->set_cur(readStart);
+
+      //read data
+      variable->get(wedge, readDims);
+
+      //populate wedge to array
+      for(int x = 0; x < wedgeSize; x++)
+        {
+          //copy the wedge
+          array[wedgeLoc] = wedge[x];
+
+          //advance index
+          wedgeLoc++;
+        }
+
+      //free temp memory
+      delete [] wedge; wedge = NULL;
+
+    }
+
+
+  //close file
+  file.close();
+
+  std::cout << "returning array" << std::endl;
+
+  return array;
+
+}
+
 //-- Return 0 for failure, 1 for success --//
 /* You will want to over-ride this method to
  * Populate the system with your own arrays */
