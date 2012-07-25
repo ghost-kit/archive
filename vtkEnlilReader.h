@@ -7,25 +7,6 @@
 #include<vtkstd/string>
 #include<vtkstd/vector>
 
-#define CALL_NETCDF(call)\
-{\
-  int errorcode = call;\
-  if(errorcode != NC_NOERR)\
-{\
-  vtkErrorMacro(<< "netCDF Error: " << nc_strerror(errorcode));\
-  return 0;\
-  }\
-  }
-
-#define CALL_NETCDF_NO_FEEDBACK(call)\
-{\
-  int errorcode = call;\
-  if(errorcode != NC_NOERR)\
-{\
-  return 0;\
-  }\
-  }
-
 
 class vtkDataArraySelection;
 class vtkCallbackCommand;

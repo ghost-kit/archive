@@ -836,9 +836,9 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
 
   nc_type type;
 
-  char attname[256];
+  char* attname;
 
-  char    attvalc[256];
+  char*    attvalc;
   int     attvali;
   double  attvald;
 
@@ -849,8 +849,8 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
   if(status)
     {
 
-      CALL_NETCDF(nc_open(this->FileName, NC_NOWRITE, &ncFileID));
-      CALL_NETCDF(nc_inq_natts(ncFileID, &natts));
+      NcFile file(this->FileName);
+      natts = file.num_atts();
 
       for(int q=0; q < natts; q++)
         {
@@ -858,8 +858,8 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
           vtkIntArray *MetaInt = vtkIntArray::New();
           vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
 
-          CALL_NETCDF(nc_inq_attname(ncFileID, NC_GLOBAL, q, attname));
-          CALL_NETCDF(nc_inq_atttype(ncFileID, NC_GLOBAL, attname, &type));
+          attname = (char*)file.get_att(q)->name();
+          type = file.get_att(q)->type();
 
           switch(type)
             {
@@ -867,8 +867,8 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               break;
 
             case 2: //text
-              this->clearString(attvalc,256);
-              CALL_NETCDF(nc_get_att_text(ncFileID, NC_GLOBAL, attname, attvalc));
+
+              attvalc = file.get_att(q)->as_string(0);
 
               MetaString->SetName(attname);
               MetaString->SetNumberOfComponents(1);
@@ -882,7 +882,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               break;
 
             case 4: //int
-              CALL_NETCDF(nc_get_att_int(ncFileID, NC_GLOBAL, attname, &attvali));
+              attvali = file.get_att(q)->as_int(0);
 
               MetaInt->SetName(attname);
               MetaInt->SetNumberOfComponents(1);
@@ -895,7 +895,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
               break;
 
             case 6: //double
-              CALL_NETCDF(nc_get_att_double(ncFileID, NC_GLOBAL, attname, &attvald));
+              attvald = file.get_att(q)->as_double(0);
 
               MetaDouble->SetName(attname);
               MetaDouble->SetNumberOfComponents(1);
@@ -906,8 +906,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
             }
         }
 
-      CALL_NETCDF(nc_close(ncFileID));
-
+      file.close();
     }
 
   return 1;
