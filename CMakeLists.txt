@@ -12,7 +12,7 @@ INCLUDE(${PARAVIEW_USE_FILE})
 
 ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0"
   SERVER_MANAGER_XML vtkEnlilReader.xml
-  SERVER_MANAGER_SOURCES vtkEnlilReader.cxx
+  SERVER_MANAGER_SOURCES vtkEnlilReaderCore.cxx
   SOURCES vtkEnlilReaderHelper.cxx vtkEnlilReaderUser.cxx vtkEnlilReaderIO.cxx
   GUI_RESOURCE_FILES vtkEnlilGUI.xml)
 
