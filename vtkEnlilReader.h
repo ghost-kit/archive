@@ -84,11 +84,6 @@ public:
   void EnableAllPointArrays();
   void EnableAllCellArrays();
 
-  // Description:
-  // We intercept the requests to check for which port
-  // information is being requested for and if there is
-  // a REQUEST_DATA_NOT_GENERATED request then we mark
-  // which ports won't have data generated for that request.
   virtual int ProcessRequest(vtkInformation *request,
                              vtkInformationVector **inInfo,
                              vtkInformationVector *outInfo);

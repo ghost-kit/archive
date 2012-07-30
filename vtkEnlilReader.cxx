@@ -157,10 +157,20 @@ int vtkEnlilReader::GetCellArrayStatus(const char *name)
  */
 void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 {
-  if(status == 1)
-    this->PointDataArraySelection->EnableArray(name);
+  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+
+  if(status)
+    {
+      this->PointDataArraySelection->EnableArray(name);
+    }
   else
-    this->PointDataArraySelection->DisableArray(name);
+    {
+      this->PointDataArraySelection->DisableArray(name);
+    }
+
+  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
+
+  this->Modified();
 
 }
 
@@ -175,6 +185,11 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
   else
     this->CellDataArraySelection->DisableArray(name);
 
+  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+
+
+  this->Modified();
+
 }
 
 /*
@@ -184,6 +199,10 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
 void vtkEnlilReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
+
+  std::cout << __FUNCTION__ << " Called " << std::endl;
+
+  this->Modified();
 }
 
 /*
@@ -193,6 +212,11 @@ void vtkEnlilReader::DisableAllPointArrays()
 void vtkEnlilReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
+
+  std::cout << __FUNCTION__ << " Called " << std::endl;
+
+
+  this->Modified();
 }
 
 /*
@@ -202,6 +226,11 @@ void vtkEnlilReader::DisableAllCellArrays()
 void vtkEnlilReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
+
+  std::cout << __FUNCTION__ << " Called " << std::endl;
+
+
+  this->Modified();
 }
 
 /*
@@ -211,7 +240,10 @@ void vtkEnlilReader::EnableAllPointArrays()
 void vtkEnlilReader::EnableAllCellArrays()
 {
   this->CellDataArraySelection->EnableAllArrays();
-  //  this->Modified();
+
+  std::cout << __FUNCTION__ << " Called " << std::endl;
+
+  this->Modified();
 }
 //=============== END SELECTIVE READER METHODS================
 
@@ -254,14 +286,13 @@ int vtkEnlilReader::RequestInformation(
   if(status)
     {
       //
-      if(this->CellDataArraySelection->GetNumberOfArrays() != 0 ||
-         this->PointDataArraySelection->GetNumberOfArrays() != 0)
+      if(this->CellDataArraySelection->GetNumberOfArrays() == 0 &&
+         this->PointDataArraySelection->GetNumberOfArrays() == 0)
         {
-          this->CellDataArraySelection->RemoveAllArrays();
-          this->PointDataArraySelection->RemoveAllArrays();
+          //Set the Names of the Arrays
+          this->PopulateArrays();
         }
-      //Set the Names of the Arrays
-      this->PopulateArrays();
+
 
       //Set the Whole Extents and Time
       this->PopulateDataInformation();
@@ -382,7 +413,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
         {
           //Load the current Cell array
           vtkstd::string array = vtkstd::string(this->CellDataArraySelection->GetArrayName(c));
-          if(CellDataArraySelection->ArrayIsEnabled(array.c_str()))
+          if(this->CellDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
               this->LoadArrayValues(array, outputVector);
             }
@@ -394,8 +425,9 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
 
           //Load the current Point array
-          if(PointDataArraySelection->ArrayIsEnabled(array.c_str()))
+          if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
+
               this->LoadArrayValues(array, outputVector);
               this->SetProgress(progress);
               progress += 0.1;
@@ -537,17 +569,29 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
   bool periodicRead = false;
   bool periodicOnly = false;
 
+  this->printExtents(extents, (char*)"Loading Extents: ");
+
   if(extents[5] == this->WholeExtent[5])
     {
       periodic = true;
+//      std::cout << "Set Periodic" << std::endl;
+
       if(extents[4] > 0)
         {
           periodicRead = true;
+//          std::cout << "Set Periodic Read" << std::endl;
           if(extents[4] == this->WholeExtent[5])
             {
               periodicOnly = true;
+//              std::cout << "Set Periodic Only" << std::endl;
+
             }
         }
+    }
+  else
+    {
+//      std::cout << "Non-Periodic" << std::endl;
+
     }
 
   // allocate memory for complete array
@@ -595,7 +639,7 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 
     }
 
-  //fix periodic boundary if necesary
+  // fix periodic boundary if necesary
   if(periodic && !periodicRead && !periodicOnly)
     {
       //copy periodic data from begining to end
@@ -612,7 +656,7 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
         }
 
     }
-  else if (periodic && periodicRead && !periodicOnly)
+  else if (periodic && periodicRead && !periodicOnly)  /*periodicRead &&*/
     {
       //read in periodic data and place at end of array
       size_t wedgeSize = extDims[0]*extDims[1];
@@ -621,12 +665,20 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
       double * wedge = new double[wedgeSize];
 
       //start at 0,0,0
+      readStart[0] = 0;
       readStart[1] = 0;
-      readStart[2] = 0;
-      readStart[3] = 0;
+      readStart[2] = extents[2];
+      readStart[3] = extents[0];
 
       //restrict to phi = 1 dimension
       readDims[1] = 1;
+
+//      std::cout << "Reading from start: " << readStart[0] << ":" << readStart[1] << ":" << readStart[2] << ":"
+//                << readStart[3] << std::endl;
+
+//      std::cout << "Reading Dimensions: " << readDims[0] << ":" << readDims[1] << ":" << readDims[2] << ":"
+//                << readDims[3] << std::endl;
+
 
       //set start
       variable->set_cur(readStart);
