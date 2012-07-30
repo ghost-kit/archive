@@ -84,11 +84,7 @@ public:
   void EnableAllPointArrays();
   void EnableAllCellArrays();
 
-  virtual int ProcessRequest(vtkInformation *request,
-                             vtkInformationVector **inInfo,
-                             vtkInformationVector *outInfo);
-
-protected:
+  protected:
 
   vtkEnlilReader();
   ~vtkEnlilReader();
@@ -96,6 +92,7 @@ protected:
   char* FileName;            // Base file name
   int GridScaleType;
   bool gridClean;
+  int numberOfArrays;
 
   // Extent information
   vtkIdType NumberOfTuples;  // Number of tuples in subextent
@@ -134,6 +131,7 @@ protected:
   vtkCallbackCommand* SelectionObserver;
 
   // Load a variable from data file
+
   int GenerateGrid();
   int LoadVariableData(vtkInformationVector *outputVector);
   int LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector);
@@ -165,8 +163,8 @@ protected:
   void addPointArray(char* name);
   void addPointArray(char* name1, char* name2, char* name3);
   void extractDimensions(int dims[], int extent[]);
-  void setExtents(int extentToSet[], int sourceExtent[]);
-  void setExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6);
+  void setMyExtents(int extentToSet[], int sourceExtent[]);
+  void setMyExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6);
   void printExtents(int extent[], char* description);
 
   bool eq(int extent1[], int extent2[]);

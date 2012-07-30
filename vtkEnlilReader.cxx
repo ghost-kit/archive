@@ -58,6 +58,7 @@ vtkEnlilReader::vtkEnlilReader()
   //configure array status selectors
   this->PointDataArraySelection = vtkDataArraySelection::New();
   this->CellDataArraySelection  = vtkDataArraySelection::New();
+  this->numberOfArrays = 0;
 
   //Configure sytem array interfaces
   this->Points = NULL;
@@ -65,8 +66,8 @@ vtkEnlilReader::vtkEnlilReader()
   this->gridClean = false;
   this->infoClean = false;
 
-  this->setExtents(this->WholeExtent, nulExtent);
-  this->setExtents(this->SubExtent, nulExtent);
+  this->setMyExtents(this->WholeExtent, nulExtent);
+  this->setMyExtents(this->SubExtent, nulExtent);
 
   this->SelectionObserver = vtkCallbackCommand::New();
   this->SelectionObserver->SetCallback(&vtkEnlilReader::SelectionCallback);
@@ -157,7 +158,7 @@ int vtkEnlilReader::GetCellArrayStatus(const char *name)
  */
 void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 {
-  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+//  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
 
   if(status)
     {
@@ -168,7 +169,7 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
       this->PointDataArraySelection->DisableArray(name);
     }
 
-  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
+//  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
 
   this->Modified();
 
@@ -185,7 +186,7 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
   else
     this->CellDataArraySelection->DisableArray(name);
 
-  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+//  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
 
 
   this->Modified();
@@ -200,7 +201,7 @@ void vtkEnlilReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
 
-  std::cout << __FUNCTION__ << " Called " << std::endl;
+//  std::cout << __FUNCTION__ << " Called " << std::endl;
 
   this->Modified();
 }
@@ -213,7 +214,7 @@ void vtkEnlilReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
 
-  std::cout << __FUNCTION__ << " Called " << std::endl;
+//  std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
   this->Modified();
@@ -227,7 +228,7 @@ void vtkEnlilReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
 
-  std::cout << __FUNCTION__ << " Called " << std::endl;
+//  std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
   this->Modified();
@@ -241,7 +242,7 @@ void vtkEnlilReader::EnableAllCellArrays()
 {
   this->CellDataArraySelection->EnableAllArrays();
 
-  std::cout << __FUNCTION__ << " Called " << std::endl;
+//  std::cout << __FUNCTION__ << " Called " << std::endl;
 
   this->Modified();
 }
@@ -261,15 +262,6 @@ int vtkEnlilReader::CanReadFile(const char *filename)
 }
 
 //--
-int vtkEnlilReader::ProcessRequest(
-    vtkInformation *reqInfo,
-    vtkInformationVector **inInfo,
-    vtkInformationVector *outInfo)
-{
-  return this->Superclass::ProcessRequest(reqInfo, inInfo, outInfo);
-}
-
-//--
 int vtkEnlilReader::RequestInformation(
     vtkInformation* request,
     vtkInformationVector** inputVector,
@@ -286,17 +278,33 @@ int vtkEnlilReader::RequestInformation(
   if(status)
     {
       //
-      if(this->CellDataArraySelection->GetNumberOfArrays() == 0 &&
-         this->PointDataArraySelection->GetNumberOfArrays() == 0)
+      if(this->numberOfArrays == 0)
         {
+          if(this->PointDataArraySelection->GetNumberOfArrays() != 0)
+            {
+              this->PointDataArraySelection->RemoveAllArrays();
+              std::cout << "Removed Erroneous point Arrays" << std::endl;
+            }
+          if(this->CellDataArraySelection->GetNumberOfArrays() !=0)
+            {
+              this->CellDataArraySelection->RemoveAllArrays();
+              std::cout << "Removed Erroneus Cell Arrays" << std::endl;
+            }
+
           //Set the Names of the Arrays
           this->PopulateArrays();
+
+          std::cout << "Arrays Populated" << std::endl;
+
         }
+
+//      std::cout << "Now Populating Data Information" << std::endl;
 
 
       //Set the Whole Extents and Time
       this->PopulateDataInformation();
 
+//      std::cout << "Data Information Populated" << std::endl;
 
       /*Set Information*/
       //Set Time
@@ -318,6 +326,9 @@ int vtkEnlilReader::RequestInformation(
             vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
             this->WholeExtent,
             6);
+
+//      std::cout << "Finished Request Information" << std::endl;
+
     }
   return 1;
 }
@@ -328,11 +339,14 @@ int vtkEnlilReader::RequestData(
     vtkInformationVector** inputVector,
     vtkInformationVector* outputVector)
 {
+  std::cout << __FUNCTION__ << " Start" << std::endl;
+
   this->SetProgress(0);
 
   //Import the MetaData
   this->LoadMetaData(outputVector);
 
+  std::cout << __FUNCTION__ <<  " Loaded MetaData" << std::endl;
   this->SetProgress(.05);
 
   //Import the actual Data
@@ -340,6 +354,7 @@ int vtkEnlilReader::RequestData(
 
   this->SetProgress(1.00);
 
+  std::cout << __FUNCTION__ << " Stop" << std::endl;
   return 1;
 
 }
@@ -385,7 +400,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       if(!this->eq(this->SubExtent, newExtent))
         {
           // Set the SubExtents to the NewExtents
-          this->setExtents(this->SubExtent, newExtent);
+          this->setMyExtents(this->SubExtent, newExtent);
 
           // The extents have changes, so mark grid dirty.
           this->gridClean = false;
@@ -427,7 +442,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           //Load the current Point array
           if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-
+              std::cout << "Loading Data: " << array << " status: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str()) << std::endl;
               this->LoadArrayValues(array, outputVector);
               this->SetProgress(progress);
               progress += 0.1;
@@ -465,6 +480,10 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       DataArray->SetNumberOfComponents(3);  //3-Dim Vector
 
       //read in the arrays
+      std::cout << "Reading Vector: " << array
+                << " Arrays: " << this->VectorVariableMap[array][0]
+                << " : " << this->VectorVariableMap[array][1]
+                << " : " << this->VectorVariableMap[array][2] << std::endl;
       newArrayR
           = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
 
@@ -833,9 +852,6 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
 int vtkEnlilReader::PopulateArrays()
 {
 
-  /*Open File and Find array names*/
-  NcFile file(this->FileName);
-
   this->addPointArray((char*)"D");
   this->addPointArray((char*)"DP");
   this->addPointArray((char*)"T");
@@ -843,7 +859,8 @@ int vtkEnlilReader::PopulateArrays()
   this->addPointArray((char*)"B1", (char*)"B2", (char*)"B3");
   this->addPointArray((char*)"V1", (char*)"V2", (char*)"V3");
 
-  file.close();
+  this->numberOfArrays = 6;
+
   return 1;
 }
 
@@ -971,7 +988,7 @@ int vtkEnlilReader::PopulateDataInformation()
   data.close();
 
   //Populate Extents
-  this->setExtents(this->WholeExtent,
+  this->setMyExtents(this->WholeExtent,
                    0, this->Dimension[0]-1,
                    0, this->Dimension[1]-1,
                    0, this->Dimension[2]-1);
@@ -999,7 +1016,7 @@ void vtkEnlilReader::printExtents(int extent[], char* description)
                extent[5] << std::endl;
 }
 
-void vtkEnlilReader::setExtents(int extentToSet[], int sourceExtent[])
+void vtkEnlilReader::setMyExtents(int extentToSet[], int sourceExtent[])
 {
   extentToSet[0] = sourceExtent[0];
   extentToSet[1] = sourceExtent[1];
@@ -1010,7 +1027,7 @@ void vtkEnlilReader::setExtents(int extentToSet[], int sourceExtent[])
 
 }
 
-void vtkEnlilReader::setExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6)
+void vtkEnlilReader::setMyExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6)
 {
   extentToSet[0] = dim1;
   extentToSet[1] = dim2;
