@@ -158,7 +158,7 @@ int vtkEnlilReader::GetCellArrayStatus(const char *name)
  */
 void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 {
-//  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+  //  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
 
   if(status)
     {
@@ -169,7 +169,7 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
       this->PointDataArraySelection->DisableArray(name);
     }
 
-//  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
+  //  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
 
   this->Modified();
 
@@ -186,7 +186,7 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
   else
     this->CellDataArraySelection->DisableArray(name);
 
-//  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+  //  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
 
 
   this->Modified();
@@ -201,7 +201,7 @@ void vtkEnlilReader::DisableAllPointArrays()
 {
   this->PointDataArraySelection->DisableAllArrays();
 
-//  std::cout << __FUNCTION__ << " Called " << std::endl;
+  //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
   this->Modified();
 }
@@ -214,7 +214,7 @@ void vtkEnlilReader::DisableAllCellArrays()
 {
   this->CellDataArraySelection->DisableAllArrays();
 
-//  std::cout << __FUNCTION__ << " Called " << std::endl;
+  //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
   this->Modified();
@@ -228,7 +228,7 @@ void vtkEnlilReader::EnableAllPointArrays()
 {
   this->PointDataArraySelection->EnableAllArrays();
 
-//  std::cout << __FUNCTION__ << " Called " << std::endl;
+  //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
   this->Modified();
@@ -242,7 +242,7 @@ void vtkEnlilReader::EnableAllCellArrays()
 {
   this->CellDataArraySelection->EnableAllArrays();
 
-//  std::cout << __FUNCTION__ << " Called " << std::endl;
+  //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
   this->Modified();
 }
@@ -298,13 +298,13 @@ int vtkEnlilReader::RequestInformation(
 
         }
 
-//      std::cout << "Now Populating Data Information" << std::endl;
+      //      std::cout << "Now Populating Data Information" << std::endl;
 
 
       //Set the Whole Extents and Time
       this->PopulateDataInformation();
 
-//      std::cout << "Data Information Populated" << std::endl;
+      //      std::cout << "Data Information Populated" << std::endl;
 
       /*Set Information*/
       //Set Time
@@ -327,7 +327,7 @@ int vtkEnlilReader::RequestInformation(
             this->WholeExtent,
             6);
 
-//      std::cout << "Finished Request Information" << std::endl;
+      //      std::cout << "Finished Request Information" << std::endl;
 
     }
   return 1;
@@ -442,7 +442,20 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           //Load the current Point array
           if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-              std::cout << "Loading Data: " << array << " status: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str()) << std::endl;
+//              std::cout << "Loading Data: " << array << " status: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str()) << std::endl;
+
+              //when loading from state fiile, we may get some junk marking us to read bad data
+              if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
+                {
+                  //                  this->SetPointArrayStatus(array.c_str(), 0);
+                  //                  continue;
+
+                  std::cout << "Bad SubExtents" << std::endl;
+                  this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
+                  this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
+
+                }
+
               this->LoadArrayValues(array, outputVector);
               this->SetProgress(progress);
               progress += 0.1;
@@ -480,10 +493,10 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       DataArray->SetNumberOfComponents(3);  //3-Dim Vector
 
       //read in the arrays
-      std::cout << "Reading Vector: " << array
-                << " Arrays: " << this->VectorVariableMap[array][0]
-                << " : " << this->VectorVariableMap[array][1]
-                << " : " << this->VectorVariableMap[array][2] << std::endl;
+//      std::cout << "Reading Vector: " << array
+//                << " Arrays: " << this->VectorVariableMap[array][0]
+//                << " : " << this->VectorVariableMap[array][1]
+//                << " : " << this->VectorVariableMap[array][2] << std::endl;
       newArrayR
           = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
 
@@ -588,28 +601,28 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
   bool periodicRead = false;
   bool periodicOnly = false;
 
-  this->printExtents(extents, (char*)"Loading Extents: ");
+//  this->printExtents(extents, (char*)"Loading Extents: ");
 
   if(extents[5] == this->WholeExtent[5])
     {
       periodic = true;
-//      std::cout << "Set Periodic" << std::endl;
+      //      std::cout << "Set Periodic" << std::endl;
 
       if(extents[4] > 0)
         {
           periodicRead = true;
-//          std::cout << "Set Periodic Read" << std::endl;
+          //          std::cout << "Set Periodic Read" << std::endl;
           if(extents[4] == this->WholeExtent[5])
             {
               periodicOnly = true;
-//              std::cout << "Set Periodic Only" << std::endl;
+              //              std::cout << "Set Periodic Only" << std::endl;
 
             }
         }
     }
   else
     {
-//      std::cout << "Non-Periodic" << std::endl;
+      //      std::cout << "Non-Periodic" << std::endl;
 
     }
 
@@ -692,11 +705,11 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
       //restrict to phi = 1 dimension
       readDims[1] = 1;
 
-//      std::cout << "Reading from start: " << readStart[0] << ":" << readStart[1] << ":" << readStart[2] << ":"
-//                << readStart[3] << std::endl;
+      //      std::cout << "Reading from start: " << readStart[0] << ":" << readStart[1] << ":" << readStart[2] << ":"
+      //                << readStart[3] << std::endl;
 
-//      std::cout << "Reading Dimensions: " << readDims[0] << ":" << readDims[1] << ":" << readDims[2] << ":"
-//                << readDims[3] << std::endl;
+      //      std::cout << "Reading Dimensions: " << readDims[0] << ":" << readDims[1] << ":" << readDims[2] << ":"
+      //                << readDims[3] << std::endl;
 
 
       //set start
@@ -989,9 +1002,9 @@ int vtkEnlilReader::PopulateDataInformation()
 
   //Populate Extents
   this->setMyExtents(this->WholeExtent,
-                   0, this->Dimension[0]-1,
-                   0, this->Dimension[1]-1,
-                   0, this->Dimension[2]-1);
+                     0, this->Dimension[0]-1,
+                     0, this->Dimension[1]-1,
+                     0, this->Dimension[2]-1);
 
   //Set Time step Information
   this->NumberOfTimeSteps = 1;
@@ -1046,12 +1059,23 @@ bool vtkEnlilReader::eq(int extent1[], int extent2[])
 
 bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
 {
-  return extToCheck[0] < 0 || (extToCheck[0] > extStandard[0])
-      || extToCheck[1] < 0 || (extToCheck[1] > extStandard[1])
-      || extToCheck[2] < 0 || (extToCheck[2] > extStandard[2])
-      || extToCheck[3] < 0 || (extToCheck[3] > extStandard[3])
-      || extToCheck[4] < 0 || (extToCheck[4] > extStandard[4])
-      || extToCheck[5] < 0 || (extToCheck[5] > extStandard[5]);
+  if(extToCheck[0] >= 0)
+    {
+      if(extToCheck[2] >= 0)
+        {
+          if(extToCheck[4] >= 0)
+            {
+              if(extToCheck[1] <= extStandard[1] &&
+                 extToCheck[3] <= extStandard[3] &&
+                 extToCheck[5] <= extStandard[5])
+                {
+                  return false;
+                }
+            }
+        }
+    }
+
+  return true;
 
 }
 
