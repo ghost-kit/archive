@@ -396,6 +396,12 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //get new extent request
       fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), newExtent);
 
+      //get number of ghost cells needed
+      int ghostLevels = fieldInfo->Get(
+            vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_GHOST_LEVELS());
+
+      std::cout << "Number of Ghost Levels Needed: " << ghostLevels << std::endl;
+
       //check to see if exents have changed
       if(!this->eq(this->SubExtent, newExtent))
         {
