@@ -159,6 +159,11 @@ public:
 
   double* read3dPartialToArray(char *array, int extents[]);
   double* readGridPartialToArray(char *arrayName, int subExtents[], bool periodic);
+  void loadArrayMetaData(const char *array,
+                         const char *title,
+                         vtkInformationVector* outputVector,
+                         bool vector = false);
+
 
   void addPointArray(char* name);
   void addPointArray(char* name1, char* name2, char* name3);

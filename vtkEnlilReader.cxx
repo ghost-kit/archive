@@ -442,14 +442,9 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
           //Load the current Point array
           if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-//              std::cout << "Loading Data: " << array << " status: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str()) << std::endl;
-
               //when loading from state fiile, we may get some junk marking us to read bad data
               if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
                 {
-                  //                  this->SetPointArrayStatus(array.c_str(), 0);
-                  //                  continue;
-
                   std::cout << "Bad SubExtents" << std::endl;
                   this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
                   this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
@@ -493,10 +488,6 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       DataArray->SetNumberOfComponents(3);  //3-Dim Vector
 
       //read in the arrays
-//      std::cout << "Reading Vector: " << array
-//                << " Arrays: " << this->VectorVariableMap[array][0]
-//                << " : " << this->VectorVariableMap[array][1]
-//                << " : " << this->VectorVariableMap[array][2] << std::endl;
       newArrayR
           = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
 
@@ -505,6 +496,9 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
 
       newArrayP
           = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
+
+      //get vector meta-data
+      this->loadArrayMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
 
 
       // convert from spherical to cartesian
@@ -558,6 +552,10 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
       //get data array
       newArray
           = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
+
+      //Load meta data for array
+      this->loadArrayMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
+
 
       //insert points
       int k;
@@ -859,6 +857,115 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
   return array;
 }
 
+void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
+                                       vtkInformationVector *outputVector,
+                                       bool vector)
+{
+
+  vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
+  int status = this->checkStatus(Data, (char*)"(MetaData)Structured Grid Data Object");
+
+  if(!status)
+    {
+      std::cerr << "Failed to get Data Structure in " << __FUNCTION__ << std::endl;
+    }
+
+  //open the file
+  NcFile file(this->FileName);
+  NcVar* variable = file.get_var(array);
+  NcType attType;
+
+  vtkstd::string* attname = NULL;
+  char* attSval = NULL;
+
+  double  attDval = 0.0;
+  int     attIval = 0;
+
+  vtkstd::string placeholder = vtkstd::string(title);
+  placeholder.append(" ");
+
+  vtkstd::string outputName;
+
+  //determine if any meta-data exists for array
+  int count = variable->num_atts();
+
+  //if so, load the meta data into arrays
+  for(int x = 0; x < count; x++)
+    {
+      attname = new vtkstd::string(variable->get_att(x)->name());
+      attType = variable->get_att(x)->type();
+
+      outputName.clear();
+      outputName.assign(placeholder.c_str());
+      outputName.append(attname->c_str());
+
+      vtkStringArray *MetaString = vtkStringArray::New();
+      vtkIntArray *MetaInt = vtkIntArray::New();
+      vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
+
+      std::cout << "Adding Attribute: " << outputName << std::endl;
+
+      switch(attType)
+        {
+        case ncByte:
+
+          std::cout << "Type: Byte" << std::endl;
+          std::cout << "Not implimented" << std::endl;
+          break;
+
+        case ncChar:
+
+          attSval = variable->get_att(x)->as_string(0);
+
+          MetaString->SetName(outputName.c_str());
+          MetaString->SetNumberOfComponents(1);
+          MetaString->InsertNextValue(attSval);
+
+          Data->GetFieldData()->AddArray(MetaString);
+          MetaString->Delete();
+          break;
+
+        case ncShort:
+          std::cout << "Type: Short" << std::endl;
+          std::cout << "Not implimented" << std::endl;
+          break;
+
+        case ncInt:
+
+          attIval = variable->get_att(x)->as_int(0);
+
+          MetaInt->SetName(outputName.c_str());
+          MetaInt->SetNumberOfComponents(1);
+          MetaInt->InsertNextValue(attIval);
+
+          Data->GetFieldData()->AddArray(MetaInt);
+          MetaInt->Delete();
+          break;
+
+        case ncFloat:
+          std::cout << "Type: Float" << std::endl;
+          std::cout << "Not implimented" << std::endl;
+          break;
+
+        case ncDouble:
+
+          attDval = variable->get_att(x)->as_double(0);
+
+          MetaDouble->SetName(outputName.c_str());
+          MetaDouble->SetNumberOfComponents(1);
+          MetaDouble->InsertNextValue(attDval);
+
+          Data->GetFieldData()->AddArray(MetaDouble);
+          MetaDouble->Delete();
+          break;
+
+        }
+
+    }
+
+  //populate to field data
+}
+
 //-- Return 0 for failure, 1 for success --//
 /* You will want to over-ride this method to
  * Populate the system with your own arrays */
@@ -884,7 +991,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
   int ncSDSID = 0;
   int natts = 0;
 
-  nc_type type;
+  NcType type;
 
   char* attname;
 
