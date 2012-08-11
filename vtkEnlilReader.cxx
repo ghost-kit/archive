@@ -649,8 +649,8 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
       //set periodic only
       readDims[1] = 1;
       readStart[1] = 0;
-      readStart[2] = 0;
-      readStart[3] = 0;
+      readStart[2] = extents[2];
+      readStart[3] = extents[0];
 
       //set read location
       variable->set_cur(readStart);
