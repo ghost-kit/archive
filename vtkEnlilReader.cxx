@@ -1096,6 +1096,7 @@ int vtkEnlilReader::PopulateDataInformation()
   NcDim* dims_x = data.get_dim(0);
   NcDim* dims_y = data.get_dim(1);
   NcDim* dims_z = data.get_dim(2);
+  NcAtt* mjd_start = data.get_att("refdate_mjd");
 
   NcVar* time = data.get_var("TIME");
 
@@ -1103,7 +1104,10 @@ int vtkEnlilReader::PopulateDataInformation()
   this->Dimension[1] = (int)dims_y->size();
   this->Dimension[2] = (int)dims_z->size()+1;
 
-  int Time = time->as_double(0);
+  int Time = mjd_start->as_double(0) + time->as_double(0);
+
+  std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
+  std::cout << "Time: " << time->as_double(0) << std::endl;
 
   data.close();
 
