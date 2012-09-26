@@ -103,12 +103,29 @@ void DateTime::incrementFractionOfDay(const double &delta_frac)
 {
   fractionOfDay += delta_frac;
 
-  // make sure we don't cross a day boundary
-  if (fractionOfDay >= 1.0){
+  // make sure we don't cross a day boundary (ADDED BY JJM, 26 SEP 2012 - Negative day crossing)
+  if (fractionOfDay >= 1.0 || fractionOfDay <= -1.0){
     double elapsedDays = 0.0;
     fractionOfDay = modf(fractionOfDay, &elapsedDays);
+
+    //if we have a negative fraction of day
+    if(fractionOfDay < 0)
+    {
+        //adjust the fraction of day so we have the positive (1-fraction) fraction of day
+        fractionOfDay = (1.0 + fractionOfDay);
+
+        //we need to be on the day before (elapsed days + fraction of days  = original negative fraction)
+        elapsedDays --;
+    }
+
+    //update mjd with elapsed days
     mjd += elapsedDays;
+
+
+
   }
+
+
 
   // Phew. That sure was a frack of a day!
 }
@@ -215,6 +232,9 @@ void DateTime::updateMJD(void)
   // add the fractional part of a day
   fractionOfDay = 0.0;
   incrementFractionOfDay( secOfDay() / 86400.0 ); // 86400 = 24*60*60 = # of seconds in a day.
+
+  //we need to update the YMDHMS after updating the MJD for this to work with negative deltas
+  updateYMDHMS();
 }
 
 ////////////////////////////////////////////////////////////////////////

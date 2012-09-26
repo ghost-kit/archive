@@ -116,6 +116,8 @@ public:
   double getMinutesSinceEpoch(void) const { return 1440*this->getMJD(); } // 1440 = 24*60
   /// Get the number of seconds elapsed since Epoch date
   double getSecondsSinceEpoch(void) const { return 86400*this->getMJD(); } // 86400 = 24*60*60
+  /// Get Seconds of Day
+  double getSecondsOfDay(void) const { return secOfDay(); }
 
   /// Get the day of the year
   size_t getDayOfYear(void) const { return dayOfYear(); }
