@@ -104,7 +104,7 @@ void DateTime::incrementFractionOfDay(const double &delta_frac)
   fractionOfDay += delta_frac;
 
   // make sure we don't cross a day boundary (ADDED BY JJM, 26 SEP 2012 - Negative day crossing)
-  if (fractionOfDay >= 1.0 || fractionOfDay <= -1.0){
+  if (fractionOfDay >= 1.0 || fractionOfDay < 0){
     double elapsedDays = 0.0;
     fractionOfDay = modf(fractionOfDay, &elapsedDays);
 
