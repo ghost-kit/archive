@@ -38,6 +38,8 @@
 #include "vtk_netcdfcpp.h"
 #include <iostream>
 
+#include "DateTime.h"
+
 vtkStandardNewMacro(vtkEnlilReader)
 
 
@@ -1104,10 +1106,26 @@ int vtkEnlilReader::PopulateDataInformation()
   this->Dimension[1] = (int)dims_y->size();
   this->Dimension[2] = (int)dims_z->size()+1;
 
-  int Time = mjd_start->as_double(0) + time->as_double(0);
+  DateTime refDate(mjd_start->as_double(0));
+
+  double epochSeconds = refDate.getSecondsSinceEpoch();
+  epochSeconds += time->as_double(0);
+
+  refDate.incrementSeconds(time->as_double(0));
+
+  std::cout << "Date: " << refDate.getDateTimeString() << std::endl;
+
 
   std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
   std::cout << "Time: " << time->as_double(0) << std::endl;
+
+  std::cout << "SOD: " << refDate.getSecondsOfDay() << std::endl;
+  std::cout << "Increment: " << refDate.getSecondsOfDay()/86400.0 << std::endl;
+
+
+
+  double Time = refDate.getMJD();
+
 
   data.close();
 
