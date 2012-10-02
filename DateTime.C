@@ -103,29 +103,12 @@ void DateTime::incrementFractionOfDay(const double &delta_frac)
 {
   fractionOfDay += delta_frac;
 
-  // make sure we don't cross a day boundary (ADDED BY JJM, 26 SEP 2012 - Negative day crossing)
-  if (fractionOfDay >= 1.0 || fractionOfDay < 0){
+  // make sure we don't cross a day boundary
+  if (fractionOfDay >= 1.0){
     double elapsedDays = 0.0;
     fractionOfDay = modf(fractionOfDay, &elapsedDays);
-
-    //if we have a negative fraction of day
-    if(fractionOfDay < 0)
-    {
-        //adjust the fraction of day so we have the positive (1-fraction) fraction of day
-        fractionOfDay = (1.0 + fractionOfDay);
-
-        //we need to be on the day before (elapsed days + fraction of days  = original negative fraction)
-        elapsedDays --;
-    }
-
-    //update mjd with elapsed days
     mjd += elapsedDays;
-
-
-
   }
-
-
 
   // Phew. That sure was a frack of a day!
 }
@@ -197,7 +180,8 @@ double DateTime::secOfDay(void) const
  */
 void DateTime::updateMJD(void)
 {
-  verifyYMDHMS();
+  // If YMDHMS has any goofy values (ie. negative seconds), verify/correct it:
+  setValidYMDHMS();
 
   long alpha;
   long julianDate;
@@ -232,9 +216,6 @@ void DateTime::updateMJD(void)
   // add the fractional part of a day
   fractionOfDay = 0.0;
   incrementFractionOfDay( secOfDay() / 86400.0 ); // 86400 = 24*60*60 = # of seconds in a day.
-
-  //we need to update the YMDHMS after updating the MJD for this to work with negative deltas
-  updateYMDHMS();
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -323,24 +304,43 @@ void DateTime::updateYMDHMS(void)
  *
  * 3.    December 32, 2007 is really January 1, 2008
  */
-void DateTime::verifyYMDHMS(void)
+void DateTime::setValidYMDHMS(const long &year, const long &month, const long &day, const long &hours, const long &minutes, const double &seconds)
 {
+  long year_i = year;
+  long month_i = month;
+  long day_i = day;
+  long hours_i = hours;
+  long minutes_i = minutes;
+  double seconds_d = seconds;
+  
   /***** Check seconds *****/
-  while (seconds >= 60.0){
-    seconds -= 60.0;
-    minutes++;
+  while (seconds_d >= 60.0){
+    seconds_d -= 60.0;
+    minutes_i++;
   }
-
+  while (seconds_d < 0){
+    seconds_d += 60.0;
+    minutes_i--;
+  }
+  
   /***** Check minutes *****/
-  while (minutes >= 60){
-    minutes -= 60;
-    hours++;
+  while (minutes_i >= 60){
+    minutes_i -= 60;
+    hours_i++;
+  }
+  while (minutes_i < 0){
+    minutes_i += 60;
+    hours_i--;
   }
 
   /***** Check hours *****/
-  while (hours >= 24){
-    hours -= 24;
-    day++;
+  while (hours_i >= 24){
+    hours_i -= 24;
+    day_i++;
+  }
+  while (hours_i < 0){
+    hours_i += 24;
+    day_i--;
   }
 
   /***** Check days *****/
@@ -355,22 +355,51 @@ void DateTime::verifyYMDHMS(void)
    * Source: http://en.wikipedia.org/wiki/Leap_year
    */
   bool isLeapYear = false;
-  if (  ( (year%4) == 0 ) && ( (year%100) != 0 )  )
+  if (  ( (year_i%4) == 0 ) && ( (year_i%100) != 0 )  )
     isLeapYear = true;
-  if ( (year%400) == 400 )
+  if ( (year_i%400) == 400 )
     isLeapYear = true;
 
   // note: false=0 and true=1 
-  while (day >  DAYS_PER_MONTH[isLeapYear][month%12]){
-    day = day - DAYS_PER_MONTH[isLeapYear][month%12];
-    month++;
+  while (day_i >  DAYS_PER_MONTH[isLeapYear][month_i%12]){
+    day_i = day_i - DAYS_PER_MONTH[isLeapYear][month_i%12];
+    month_i++;
+  }
+  
+  // We can only have positive numbers of days!
+  while (day_i < 0){
+    month_i--;
+
+    if (month_i <= 0){
+      month_i += 12;
+      year_i--;
+      if (  ( (year_i%4) == 0 ) && ( (year_i%100) != 0 )  )
+	isLeapYear = true;
+      if ( (year_i%400) == 400 )
+	isLeapYear = true;
+    }
+
+    day_i += DAYS_PER_MONTH[isLeapYear][month_i%12];
   }
 
+
   /***** check months *****/
-  while (month > 12){
-    month -= 12;
-    year++;
+  while (month_i > 12){
+    month_i -= 12;
+    year_i++;
   }
+
+  /*  What does it mean to decrement the date by 1 month?  Is -1
+   *  month == 28, 29, 30 or 31 days?  
+   */
+  assert (month_i > 0);
+
+  this->year = size_t(year_i);
+  this->month = size_t(month_i);
+  this->day = size_t(day_i);
+  this->hours = size_t(hours_i);
+  this->minutes = size_t(minutes_i); 
+  this->seconds = seconds_d;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -408,9 +437,9 @@ std::string DateTime::getDateTimeString(void) const
     out << minutes << "-";
 
   if (seconds < 10.0)
-    out << "0" << (size_t) seconds << "Z";
+    out << "0" << (size_t) seconds ;
   else
-    out << (size_t) seconds << "Z";
+    out << (size_t) seconds ;
 
   return out.str();
 }

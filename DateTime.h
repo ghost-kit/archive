@@ -66,15 +66,19 @@ public:
   /// Increment the current MJD by delta_MJD and update YYYY-MM-DD @ HH:MM:SS
   void incrementMJD(const double &delta_MJD);
   /// Increment the current year by delta_YEAR and update modified julian date
-  void incrementYear(const size_t &delta_YEAR) { year += delta_YEAR; updateMJD(); }
+  void incrementYear(const long &delta_YEAR) { setValidYMDHMS(long(year)+delta_YEAR, month, day, hours, minutes, seconds); updateMJD(); }
   /// Increment the current month by delta_MONTH and update modified julian date
+  /** Note you cannot decrement a month because it's not obvious what
+      that means: how many days do you want to decrement?  
+      Is -1 month == -28, -29, -30, or -31 days? */
   void incrementMonth(const size_t &delta_MONTH) { month += delta_MONTH; updateMJD(); }
   /// Increment the current day by delta_DAY and update modified julian date
-  void incrementDay(const size_t &delta_DAY) { day += delta_DAY; updateMJD(); }
+  void incrementDay(const long &delta_DAY) { mjd += delta_DAY; updateYMDHMS(); }
+  //void incrementDay(const long &delta_DAY) { setValidYMDHMS(year, month, day+delta_DAY, hours, minutes, seconds); updateMJD(); }
   /// Increment the current hours by delta_HOURS and update modified julian date
-  void incrementHours(const size_t &delta_HOURS) { hours += delta_HOURS; updateMJD(); }
+  void incrementHours(const long &delta_HOURS) { setValidYMDHMS(year, month, day, hours+delta_HOURS, minutes, seconds); updateMJD(); }
   /// Increment the current minutes by delta_MINUTES and update modified julian date
-  void incrementMinutes(const size_t &delta_MINUTES) { minutes += delta_MINUTES; updateMJD(); }
+  void incrementMinutes(const long &delta_MINUTES) { setValidYMDHMS(year, month, day, hours, minutes+delta_MINUTES, seconds); updateMJD(); }
   /// Increment the current seconds by delta_SECONDS and update modified julian date
   void incrementSeconds(const double &delta_SECONDS) { seconds += delta_SECONDS; updateMJD(); }
 
@@ -140,7 +144,8 @@ private:
   void updateMJD(void);
   void updateYMDHMS(void);
   
-  void verifyYMDHMS(void);
+  void setValidYMDHMS(void) { setValidYMDHMS((long) year, (long) month, (long) day, (long) hours, (long) minutes, seconds); }
+  void setValidYMDHMS(const long &year, const long &month, const long &day, const long &hours, const long &minutes, const double &seconds);
 
   /// Modified Julian Date
   double mjd; 

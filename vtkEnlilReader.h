@@ -117,11 +117,14 @@ public:
   vtkstd::map<vtkstd::string, vtkstd::vector<vtkstd::string> > VectorVariableMap;
   vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
 
+  vtkstd::string dateString;
   //ETX
 
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
   double* TimeSteps;        // Actual times available for request
+
+
 
   // Selected field of interest
   vtkDataArraySelection* PointDataArraySelection;

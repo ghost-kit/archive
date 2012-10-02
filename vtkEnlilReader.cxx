@@ -1008,6 +1008,25 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
   if(status)
     {
 
+      //date string
+      vtkStringArray *DateString = vtkStringArray::New();
+      DateString->SetName("DateString");
+      DateString->SetNumberOfComponents(1);
+      DateString->InsertNextValue(this->dateString);
+
+      Data->GetFieldData()->AddArray(DateString);
+      DateString->Delete();
+
+      //mjd is encoded as TIME already.  Do we want to put in here as well?
+      vtkDoubleArray *currentMJD = vtkDoubleArray::New();
+      currentMJD->SetName("MJD");
+      currentMJD->SetNumberOfComponents(1);
+      currentMJD->InsertNextValue(this->TimeSteps[0]);
+
+      Data->GetFieldData()->AddArray(currentMJD);
+      currentMJD->Delete();
+
+      //get metadate from file
       NcFile file(this->FileName);
       natts = file.num_atts();
 
@@ -1113,14 +1132,16 @@ int vtkEnlilReader::PopulateDataInformation()
 
   refDate.incrementSeconds(time->as_double(0));
 
-  std::cout << "Date: " << refDate.getDateTimeString() << std::endl;
+  this->dateString.assign(refDate.getDateTimeString());
+
+//  std::cout << "Date: " << refDate.getDateTimeString() << std::endl;
 
 
-  std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
-  std::cout << "Time: " << time->as_double(0) << std::endl;
+//  std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
+//  std::cout << "Time: " << time->as_double(0) << std::endl;
 
-  std::cout << "SOD: " << refDate.getSecondsOfDay() << std::endl;
-  std::cout << "Increment: " << refDate.getSecondsOfDay()/86400.0 << std::endl;
+//  std::cout << "SOD: " << refDate.getSecondsOfDay() << std::endl;
+//  std::cout << "Increment: " << refDate.getSecondsOfDay()/86400.0 << std::endl;
 
 
 
