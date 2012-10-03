@@ -1017,6 +1017,16 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
       Data->GetFieldData()->AddArray(DateString);
       DateString->Delete();
 
+      //Load Physical Time
+      vtkDoubleArray *physTime = vtkDoubleArray::New();
+      physTime->SetName("Physical Time");
+      physTime->SetNumberOfComponents(1);
+      physTime->InsertNextValue(this->physicalTime);
+
+      Data->GetFieldData()->AddArray(physTime);
+      physTime->Delete();
+
+
       //mjd is encoded as TIME already.  Do we want to put in here as well?
       vtkDoubleArray *currentMJD = vtkDoubleArray::New();
       currentMJD->SetName("MJD");
@@ -1120,6 +1130,8 @@ int vtkEnlilReader::PopulateDataInformation()
   NcAtt* mjd_start = data.get_att("refdate_mjd");
 
   NcVar* time = data.get_var("TIME");
+
+  this->physicalTime = time->as_double(0);
 
   this->Dimension[0] = (int)dims_x->size();
   this->Dimension[1] = (int)dims_y->size();

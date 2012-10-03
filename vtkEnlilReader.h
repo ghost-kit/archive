@@ -123,7 +123,7 @@ public:
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
   double* TimeSteps;        // Actual times available for request
-
+  double physicalTime;
 
 
   // Selected field of interest
