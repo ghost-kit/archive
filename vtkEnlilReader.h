@@ -3,9 +3,11 @@
 
 
 #include "vtkStructuredGridAlgorithm.h"
-#include<vtkstd/map>
-#include<vtkstd/string>
-#include<vtkstd/vector>
+#include "vtkIOParallelNetCDFModule.h" // For export macro
+
+#include<map>
+#include<string>
+#include<vector>
 
 
 class vtkDataArraySelection;
@@ -36,7 +38,7 @@ namespace GRID_SCALE
 
 
 /** READER PRIME **/
-class VTK_PARALLEL_EXPORT vtkEnlilReader : public vtkStructuredGridAlgorithm
+class VTKIOPARALLELNETCDF_EXPORT vtkEnlilReader : public vtkStructuredGridAlgorithm
 {
 
 public:
@@ -112,12 +114,12 @@ public:
   vtkDoubleArray* Radius;   // Radius Grid Data
 
   //BTX
-  vtkstd::vector<vtkstd::string> MetaDataNames;
-  vtkstd::map<vtkstd::string, vtkstd::string> ScalarVariableMap;
-  vtkstd::map<vtkstd::string, vtkstd::vector<vtkstd::string> > VectorVariableMap;
-  vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
+  std::vector<std::string> MetaDataNames;
+  std::map<std::string, std::string> ScalarVariableMap;
+  std::map<std::string, std::vector<std::string> > VectorVariableMap;
+  std::vector<std::vector<double> > sphericalGridCoords;
 
-  vtkstd::string dateString;
+  std::string dateString;
   //ETX
 
   // Time step information
@@ -137,7 +139,7 @@ public:
 
   int GenerateGrid();
   int LoadVariableData(vtkInformationVector *outputVector);
-  int LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector);
+  int LoadArrayValues(std::string array, vtkInformationVector* outputVector);
 
   int getSerialNumber()
   {

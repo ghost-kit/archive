@@ -429,7 +429,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
         {
           //Load the current Cell array
-          vtkstd::string array = vtkstd::string(this->CellDataArraySelection->GetArrayName(c));
+          std::string array = std::string(this->CellDataArraySelection->GetArrayName(c));
           if(this->CellDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
               this->LoadArrayValues(array, outputVector);
@@ -439,7 +439,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
       //Load Point Data
       for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
         {
-          vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
+          std::string array = std::string(this->PointDataArraySelection->GetArrayName(c));
 
           //Load the current Point array
           if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
@@ -464,11 +464,11 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 }
 
 //-- Return 0 for Failure, 1 for Success --//
-int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector)
+int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* outputVector)
 {
 
   bool vector
-      = (this->VectorVariableMap.find(vtkstd::string(array)) != this->VectorVariableMap.end());
+      = (this->VectorVariableMap.find(std::string(array)) != this->VectorVariableMap.end());
 
   double xyz[3] = {0.0, 0.0, 0.0};
 
@@ -877,16 +877,16 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
   NcVar* variable = file.get_var(array);
   NcType attType;
 
-  vtkstd::string* attname = NULL;
+  std::string* attname = NULL;
   char* attSval = NULL;
 
   double  attDval = 0.0;
   int     attIval = 0;
 
-  vtkstd::string placeholder = vtkstd::string(title);
+  std::string placeholder = std::string(title);
   placeholder.append(" ");
 
-  vtkstd::string outputName;
+  std::string outputName;
 
   //determine if any meta-data exists for array
   int count = variable->num_atts();
@@ -894,7 +894,7 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
   //if so, load the meta data into arrays
   for(int x = 0; x < count; x++)
     {
-      attname = new vtkstd::string(variable->get_att(x)->name());
+      attname = new std::string(variable->get_att(x)->name());
       attType = variable->get_att(x)->type();
 
       outputName.clear();
@@ -1254,8 +1254,8 @@ void vtkEnlilReader::addPointArray(char* name)
   try
   {
     // look up the "Long Name" of the variable
-    vtkstd::string varname = file.get_var(name)->get_att("long_name")->as_string(0);
-    this->ScalarVariableMap[varname] = vtkstd::string(name);
+    std::string varname = file.get_var(name)->get_att("long_name")->as_string(0);
+    this->ScalarVariableMap[varname] = std::string(name);
 
     // Add it to the point grid
     this->PointDataArraySelection->AddArray(varname.c_str());
@@ -1278,17 +1278,17 @@ void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
   try
   {
     //get the long name of the first variable in the vector
-    vtkstd::string varname1 = file.get_var(name1)->get_att("long_name")->as_string(0);
+    std::string varname1 = file.get_var(name1)->get_att("long_name")->as_string(0);
 
     //remove the vector component of the name
     size_t pos = varname1.find("-");
-    vtkstd::string varname2 = varname1.substr(pos+1);
+    std::string varname2 = varname1.substr(pos+1);
 
     //ensure that first work is capitalized
     varname2[0] = toupper((unsigned char) varname2[0]);
 
     //add components of vector to vector map
-    vtkstd::vector<vtkstd::string> nameArray;
+    std::vector<std::string> nameArray;
     nameArray.push_back(name1);
     nameArray.push_back(name2);
     nameArray.push_back(name3);
@@ -1357,9 +1357,9 @@ int vtkEnlilReader::GenerateGrid()
       X3 = this->readGridPartialToArray((char*)"X3", X3_extents, true);
 
       // Populate the Spherical Grid Coordinates (to be used in calcs later)
-      vtkstd::vector<double> R(X1, X1 + this->SubDimension[0]);
-      vtkstd::vector<double> T(X2, X2 + this->SubDimension[1]);
-      vtkstd::vector<double> P(X3, X3 + this->SubDimension[2]);
+      std::vector<double> R(X1, X1 + this->SubDimension[0]);
+      std::vector<double> T(X2, X2 + this->SubDimension[1]);
+      std::vector<double> P(X3, X3 + this->SubDimension[2]);
 
       this->sphericalGridCoords.push_back(R);
       this->sphericalGridCoords.push_back(T);

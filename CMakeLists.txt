@@ -16,7 +16,6 @@ ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0"
   SOURCES DateTime.C
   GUI_RESOURCE_FILES vtkEnlilGUI.xml)
 
-SET(KIT_LIBS vtkNetCDF_cxx)
 
-Target_LINK_LIBRARIES(vtkEnlilReader ${ParaView_LIBRARIES} ${KIT_LIBS})
+Target_LINK_LIBRARIES(vtkEnlilReader vtkNetCDF_cxx vtkRenderingMatplotlib ${ParaView_LIBRARIES})
 
