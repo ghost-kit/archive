@@ -1,0 +1,59 @@
+   <!-- ==================================================================== -->
+   <SourceProxy name="TimeToTextConvertor" class="vtkTimeToTextConvertor"
+     label="Annotate Time Filter" >
+     <Documentation
+	short_help="Show data time as text."
+	long_help="Shows input data time as text annnotation in the view." >
+	The Annotate Time filter can be used to show the data time in a text annotation.
+     </Documentation>
+     <InputProperty
+	 name="Input"
+	 command="SetInputConnection">
+       <ProxyGroupDomain name="groups">
+	 <Group name="sources"/>
+	 <Group name="filters"/>
+       </ProxyGroupDomain>
+       <Documentation>
+	 This property specifies the input dataset for which to display the time.
+       </Documentation>
+     </InputProperty>
+     <StringVectorProperty
+       name="Format"
+       command="SetFormat"
+       number_of_elements="1"
+       default_values="Time: %f">
+       <Documentation>
+	 The value of this property is a format string used to display the input time. The format string is specified using printf style.
+       </Documentation>
+     </StringVectorProperty>
+
+      <DoubleVectorProperty
+	 name="Shift"
+	 command="SetShift"
+	 number_of_elements="1"
+	 default_values="0.0" >
+	<DoubleRangeDomain name="range"/>
+	<Documentation>
+	  The amount of time the input is shifted (after scaling).
+	</Documentation>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+	 name="Scale"
+	 command="SetScale"
+	 number_of_elements="1"
+	 default_values="1.0" >
+	<DoubleRangeDomain name="range"/>
+	<Documentation>
+	  The factor by which the input time is scaled.
+	</Documentation>
+      </DoubleVectorProperty>
+
+     <Hints>
+       <Visibility replace_input="0" />
+       <OutputPort name="Output-0" index="0" type="text" />
+     </Hints>
+
+   <!-- End of TimeToTextConvertor -->
+   </SourceProxy>
+
