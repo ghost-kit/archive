@@ -3,6 +3,7 @@
 
 
 #include "vtkStructuredGridAlgorithm.h"
+#include "cxform.h"
 #include<vtkstd/map>
 #include<vtkstd/string>
 #include<vtkstd/vector>
@@ -55,8 +56,8 @@ public:
 
   vtkGetMacro(GridScaleType, int)
 
-  vtkSetStringMacro(FileName)
-  vtkGetStringMacro(FileName)
+//  vtkSetStringMacro(FileName)
+//  vtkGetStringMacro(FileName)
 
   vtkSetVector6Macro(WholeExtent, int)
   vtkGetVector6Macro(WholeExtent, int)
@@ -83,6 +84,13 @@ public:
 
   void EnableAllPointArrays();
   void EnableAllCellArrays();
+
+  void AddFileName(const char* fname);
+  void RemoveAllFileNames();
+  unsigned int GetNumberOfFileNames();
+  const char *GetFileName(unsigned int idx);
+
+  vtkGetStringMacro(CurrentFileName);
 
   protected:
 
@@ -118,6 +126,7 @@ public:
   vtkstd::vector<vtkstd::vector<double> > sphericalGridCoords;
 
   vtkstd::string dateString;
+  vtkstd::vector<vtkstd::string> fileNames;
   //ETX
 
   // Time step information
@@ -125,6 +134,8 @@ public:
   double* TimeSteps;        // Actual times available for request
   double physicalTime;
 
+  char* CurrentFileName;
+  void SetCurrentFileName(const char* fname);
 
   // Selected field of interest
   vtkDataArraySelection* PointDataArraySelection;

@@ -361,6 +361,29 @@ int vtkEnlilReader::RequestData(
 
 }
 
+
+//Methods for file series
+
+void vtkEnlilReader::AddFileName(const char *fname)
+{
+    this->fileNames.push_back(fname);
+}
+
+const char* vtkEnlilReader::GetFileName(unsigned int idx)
+{
+    return this->fileNames[idx].c_str();
+}
+
+void vtkEnlilReader::RemoveAllFileNames()
+{
+    this->fileNames.clear();
+}
+
+unsigned int vtkEnlilReader::GetNumberOfFileNames()
+{
+    return this->fileNames.size();
+}
+
 //=================== END CORE METHODS =======================
 
 //-- Callback
