@@ -56,8 +56,8 @@ public:
 
   vtkGetMacro(GridScaleType, int)
 
-//  vtkSetStringMacro(FileName)
-//  vtkGetStringMacro(FileName)
+  vtkSetStringMacro(FileName)
+  vtkGetStringMacro(FileName)
 
   vtkSetVector6Macro(WholeExtent, int)
   vtkGetVector6Macro(WholeExtent, int)

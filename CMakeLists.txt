@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT("Enlil Reader 2.0")
 
-SET(ParaView_DIR /Volumes/Data/Development/ParaView-src/PV314-Build/ParaView-build)
+SET(ParaView_DIR /Volumes/Data/Development/ParaView-src/pvbuild/)
 
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
     set(CMAKE_EXE_LINKER_FLAGS "-s")  ## Strip binary

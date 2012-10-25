@@ -1,10 +1,11 @@
 <ServerManagerConfiguration>
 
 
-  <ProxyGroup name="internal_sources">
+  <ProxyGroup name="sources">
     <SourceProxy
        name="vtkEnlilReader"
-       class="vtkEnlilReader">
+       class="vtkEnlilReader"
+       file_name_method="SetFileName">
 
       <OutputPort name="Fields" index="0" />
       <OutputPort name="MetaData" index="1" />
@@ -109,16 +110,9 @@
            file_description="***GENERIC*** Data File"/>
       </Hints>
 
-    </SourceProxy>
-
-  </ProxyGroup>
 
 
-  <ProxyGroup name="sources">
-    <SourceProxy name="vtkEnlilReader"
-      si_class="vtkSIFileSeriesReaderProxy"
-      class="vtkFileSeriesReader"
-      file_name_method="SetFileName">
+
 
       <Documentation>
         This Property makes it possible to open a series of files based on the integered input files.
@@ -131,9 +125,7 @@
         file_description="Enlil Model Data File"/>
       </Hints>
 
-      <SubProxy>
-        <Proxy name="Reader"
-        proxygroup="internal_sources" proxyname="vtkEnlilReader" />
+
         <ExposedProperties>
 <!-- exposed components -->
           <Property name="GridScaleFactor" />
@@ -145,7 +137,6 @@
           <Property name="PointArrayStatus" />
 
         </ExposedProperties>
-      </SubProxy>
 
       <StringVectorProperty name="FileNameInfo"
         command="GetCurrentFileName"
