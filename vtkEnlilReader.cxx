@@ -48,46 +48,52 @@ vtkStandardNewMacro(vtkEnlilReader)
 //---------------------------------------------------------------
 vtkEnlilReader::vtkEnlilReader()
 {
-  int nulExtent[6] = {0,0,0,0,0,0};
-  this->FileName = NULL;
+    int nulExtent[6] = {0,0,0,0,0,0};
+    this->FileName = NULL;
 
-  //set the number of output ports you will need
-  this->SetNumberOfOutputPorts(1);
+    //set the number of output ports you will need
+    this->SetNumberOfOutputPorts(1);
 
-  //set the number of input ports (Default 0)
-  this->SetNumberOfInputPorts(0);
+    //set the number of input ports (Default 0)
+    this->SetNumberOfInputPorts(0);
 
-  //configure array status selectors
-  this->PointDataArraySelection = vtkDataArraySelection::New();
-  this->CellDataArraySelection  = vtkDataArraySelection::New();
-  this->numberOfArrays = 0;
+    //configure array status selectors
+    this->PointDataArraySelection = vtkDataArraySelection::New();
+    this->CellDataArraySelection  = vtkDataArraySelection::New();
+    this->numberOfArrays = 0;
 
-  //Configure sytem array interfaces
-  this->Points = NULL;
-  this->Radius = NULL;
-  this->gridClean = false;
-  this->infoClean = false;
+    //Configure sytem array interfaces
+    this->Points = NULL;
+    this->Radius = NULL;
+    this->gridClean = false;
+    this->infoClean = false;
 
-  this->setMyExtents(this->WholeExtent, nulExtent);
-  this->setMyExtents(this->SubExtent, nulExtent);
+    this->timesCalulated = false;
+    this->timeRange[0] = 0;
+    this->timeRange[1] = 0;
 
-  this->SelectionObserver = vtkCallbackCommand::New();
-  this->SelectionObserver->SetCallback(&vtkEnlilReader::SelectionCallback);
-  this->SelectionObserver->SetClientData(this);
-  this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
-  this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
+    this->fileNames.clear();
+
+    this->setMyExtents(this->WholeExtent, nulExtent);
+    this->setMyExtents(this->SubExtent, nulExtent);
+
+    this->SelectionObserver = vtkCallbackCommand::New();
+    this->SelectionObserver->SetCallback(&vtkEnlilReader::SelectionCallback);
+    this->SelectionObserver->SetClientData(this);
+    this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
+    this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
 }
 
 //--
 vtkEnlilReader::~vtkEnlilReader()
 {
-  this->PointDataArraySelection->Delete();
-  this->CellDataArraySelection->Delete();
+    this->PointDataArraySelection->Delete();
+    this->CellDataArraySelection->Delete();
 
-  if(this->gridClean)
-    this->Points->Delete();
+    if(this->gridClean)
+        this->Points->Delete();
 
-  this->SelectionObserver->Delete();
+    this->SelectionObserver->Delete();
 }
 
 //-------------------------------------------------------------
@@ -106,7 +112,7 @@ vtkEnlilReader::~vtkEnlilReader()
  */
 int vtkEnlilReader::GetNumberOfPointArrays()
 {
-  return this->PointDataArraySelection->GetNumberOfArrays();
+    return this->PointDataArraySelection->GetNumberOfArrays();
 }
 
 /*
@@ -115,7 +121,7 @@ int vtkEnlilReader::GetNumberOfPointArrays()
  */
 int vtkEnlilReader::GetNumberOfCellArrays()
 {
-  return this->CellDataArraySelection->GetNumberOfArrays();
+    return this->CellDataArraySelection->GetNumberOfArrays();
 }
 
 /*
@@ -124,7 +130,7 @@ int vtkEnlilReader::GetNumberOfCellArrays()
  */
 const char* vtkEnlilReader::GetPointArrayName(int index)
 {
-  return this->PointDataArraySelection->GetArrayName(index);
+    return this->PointDataArraySelection->GetArrayName(index);
 }
 
 /*
@@ -133,7 +139,7 @@ const char* vtkEnlilReader::GetPointArrayName(int index)
  */
 const char* vtkEnlilReader::GetCellArrayName(int index)
 {
-  return this->CellDataArraySelection->GetArrayName(index);
+    return this->CellDataArraySelection->GetArrayName(index);
 }
 
 /*
@@ -142,7 +148,7 @@ const char* vtkEnlilReader::GetCellArrayName(int index)
  */
 int vtkEnlilReader::GetPointArrayStatus(const char *name)
 {
-  return this->PointDataArraySelection->GetArraySetting(name);
+    return this->PointDataArraySelection->GetArraySetting(name);
 }
 
 /*
@@ -151,7 +157,7 @@ int vtkEnlilReader::GetPointArrayStatus(const char *name)
  */
 int vtkEnlilReader::GetCellArrayStatus(const char *name)
 {
-  return this->CellDataArraySelection->GetArraySetting(name);
+    return this->CellDataArraySelection->GetArraySetting(name);
 }
 
 /*
@@ -160,20 +166,20 @@ int vtkEnlilReader::GetCellArrayStatus(const char *name)
  */
 void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 {
-  //  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+    //  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
 
-  if(status)
+    if(status)
     {
-      this->PointDataArraySelection->EnableArray(name);
+        this->PointDataArraySelection->EnableArray(name);
     }
-  else
+    else
     {
-      this->PointDataArraySelection->DisableArray(name);
+        this->PointDataArraySelection->DisableArray(name);
     }
 
-  //  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
+    //  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
 
-  this->Modified();
+    this->Modified();
 
 }
 
@@ -183,15 +189,15 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
  */
 void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
 {
-  if(status == 1)
-    this->CellDataArraySelection->EnableArray(name);
-  else
-    this->CellDataArraySelection->DisableArray(name);
+    if(status == 1)
+        this->CellDataArraySelection->EnableArray(name);
+    else
+        this->CellDataArraySelection->DisableArray(name);
 
-  //  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
+    //  std::cout << __FUNCTION__ << " Called with status: " << status << std::endl;
 
 
-  this->Modified();
+    this->Modified();
 
 }
 
@@ -201,11 +207,11 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
  */
 void vtkEnlilReader::DisableAllPointArrays()
 {
-  this->PointDataArraySelection->DisableAllArrays();
+    this->PointDataArraySelection->DisableAllArrays();
 
-  //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
-  this->Modified();
+    this->Modified();
 }
 
 /*
@@ -214,12 +220,12 @@ void vtkEnlilReader::DisableAllPointArrays()
  */
 void vtkEnlilReader::DisableAllCellArrays()
 {
-  this->CellDataArraySelection->DisableAllArrays();
+    this->CellDataArraySelection->DisableAllArrays();
 
-  //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
-  this->Modified();
+    this->Modified();
 }
 
 /*
@@ -228,12 +234,12 @@ void vtkEnlilReader::DisableAllCellArrays()
  */
 void vtkEnlilReader::EnableAllPointArrays()
 {
-  this->PointDataArraySelection->EnableAllArrays();
+    this->PointDataArraySelection->EnableAllArrays();
 
-  //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
-  this->Modified();
+    this->Modified();
 }
 
 /*
@@ -242,11 +248,11 @@ void vtkEnlilReader::EnableAllPointArrays()
  */
 void vtkEnlilReader::EnableAllCellArrays()
 {
-  this->CellDataArraySelection->EnableAllArrays();
+    this->CellDataArraySelection->EnableAllArrays();
 
-  //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    //  std::cout << __FUNCTION__ << " Called " << std::endl;
 
-  this->Modified();
+    this->Modified();
 }
 //=============== END SELECTIVE READER METHODS================
 
@@ -259,105 +265,113 @@ void vtkEnlilReader::EnableAllCellArrays()
 
 int vtkEnlilReader::CanReadFile(const char *filename)
 {
-  //This doesn't really do anything right now...
-  return 1;
+    //This doesn't really do anything right now...
+    return 1;
 }
 
 //--
 int vtkEnlilReader::RequestInformation(
-    vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector)
+        vtkInformation* request,
+        vtkInformationVector** inputVector,
+        vtkInformationVector* outputVector)
 {
-  int status = 0;
+    int status = 0;
 
-  // Array names and extents
-  vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
-  status = this->checkStatus(
-        DataOutputInfo,
-        (char*)" Array Name: Data Info Output Information");
+    // Array names and extents
+    vtkInformation* DataOutputInfo = outputVector->GetInformationObject(0);
+    status = this->checkStatus(
+                DataOutputInfo,
+                (char*)" Array Name: Data Info Output Information");
 
-  if(status)
+    std::cout << "Number of Files: " << this->GetNumberOfFileNames() << std::endl;
+
+    for(int g = 0; g < this->GetNumberOfFileNames(); g++)
     {
-      //
-      if(this->numberOfArrays == 0)
+        std::cout << "FileName: " << this->fileNames[g] << std::endl;
+    }
+
+    //need to build the counts for time steps, and time intervals.
+
+    //Set the Whole Extents and Time
+    this->calculateTimeSteps();
+
+
+
+    this->CurrentFileName = (char*) this->fileNames[0].c_str();
+    this->FileName = CurrentFileName;
+
+    if(status)
+    {
+        //
+        if(this->numberOfArrays == 0)
         {
-          if(this->PointDataArraySelection->GetNumberOfArrays() != 0)
+            if(this->PointDataArraySelection->GetNumberOfArrays() != 0)
             {
-              this->PointDataArraySelection->RemoveAllArrays();
-              std::cout << "Removed Erroneous point Arrays" << std::endl;
+                this->PointDataArraySelection->RemoveAllArrays();
+                std::cout << "Removed Erroneous point Arrays" << std::endl;
             }
-          if(this->CellDataArraySelection->GetNumberOfArrays() !=0)
+            if(this->CellDataArraySelection->GetNumberOfArrays() !=0)
             {
-              this->CellDataArraySelection->RemoveAllArrays();
-              std::cout << "Removed Erroneus Cell Arrays" << std::endl;
+                this->CellDataArraySelection->RemoveAllArrays();
+                std::cout << "Removed Erroneus Cell Arrays" << std::endl;
             }
 
-          //Set the Names of the Arrays
-          this->PopulateArrays();
+            //Set the Names of the Arrays
+            this->PopulateArrays();
 
-          std::cout << "Arrays Populated" << std::endl;
+            std::cout << "Arrays Populated" << std::endl;
 
         }
 
-      //      std::cout << "Now Populating Data Information" << std::endl;
+        /*Set Information*/
+        //Set Time
+        double timeRange[2]
+                = {this->TimeSteps[0], this->TimeSteps[0]};
 
+        DataOutputInfo->Set(
+                    vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+                    this->TimeSteps,
+                    this->NumberOfTimeSteps);
 
-      //Set the Whole Extents and Time
-      this->PopulateDataInformation();
+        DataOutputInfo->Set(
+                    vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
+                    timeRange,
+                    2);
 
-      //      std::cout << "Data Information Populated" << std::endl;
+        //Set Extents
+        DataOutputInfo->Set(
+                    vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
+                    this->WholeExtent,
+                    6);
 
-      /*Set Information*/
-      //Set Time
-      double timeRange[2]
-          = {this->TimeSteps[0], this->TimeSteps[0]};
-
-      DataOutputInfo->Set(
-            vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-            this->TimeSteps,
-            1);
-
-      DataOutputInfo->Set(
-            vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
-            timeRange,
-            2);
-
-      //Set Extents
-      DataOutputInfo->Set(
-            vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),
-            this->WholeExtent,
-            6);
-
-      //      std::cout << "Finished Request Information" << std::endl;
 
     }
-  return 1;
+    return 1;
 }
 
 //--
 int vtkEnlilReader::RequestData(
-    vtkInformation* request,
-    vtkInformationVector** inputVector,
-    vtkInformationVector* outputVector)
+        vtkInformation* request,
+        vtkInformationVector** inputVector,
+        vtkInformationVector* outputVector)
 {
-  std::cout << __FUNCTION__ << " Start" << std::endl;
+    std::cout << __FUNCTION__ << " Start" << std::endl;
 
-  this->SetProgress(0);
+    this->SetProgress(0);
 
-  //Import the MetaData
-  this->LoadMetaData(outputVector);
+    //Import the MetaData
+    this->LoadMetaData(outputVector);
 
-  std::cout << __FUNCTION__ <<  " Loaded MetaData" << std::endl;
-  this->SetProgress(.05);
+    std::cout << __FUNCTION__ <<  " Loaded MetaData" << std::endl;
+    this->SetProgress(.05);
 
-  //Import the actual Data
-  this->LoadVariableData(outputVector);
+    //Import the actual Data
+    this->LoadVariableData(outputVector);
 
-  this->SetProgress(1.00);
+    this->SetProgress(1.00);
 
-  std::cout << __FUNCTION__ << " Stop" << std::endl;
-  return 1;
+    std::cout << __FUNCTION__ << " Stop" << std::endl;
+    return 1;
 
 }
 
@@ -388,12 +402,12 @@ unsigned int vtkEnlilReader::GetNumberOfFileNames()
 
 //-- Callback
 void vtkEnlilReader::SelectionCallback(
-    vtkObject*,
-    unsigned long vtkNotUsed(eventid),
-    void* clientdata,
-    void* vtkNotUsed(calldata))
+        vtkObject*,
+        unsigned long vtkNotUsed(eventid),
+        void* clientdata,
+        void* vtkNotUsed(calldata))
 {
-  static_cast<vtkEnlilReader*>(clientdata)->Modified();
+    static_cast<vtkEnlilReader*>(clientdata)->Modified();
 }
 
 
@@ -409,197 +423,197 @@ void vtkEnlilReader::SelectionCallback(
 //-- Return 0 for failure, 1 for success --//
 int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 {
-  int newExtent[6];
+    int newExtent[6];
 
-  vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 0);
-  vtkInformation* fieldInfo = outputVector->GetInformationObject(0);
+    vtkStructuredGrid* Data = vtkStructuredGrid::GetData(outputVector, 0);
+    vtkInformation* fieldInfo = outputVector->GetInformationObject(0);
 
-  int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
+    int status = this->checkStatus(Data, (char*)"Data Array Structured Grid");
 
-  if(status)
+    if(status)
     {
-      //get new extent request
-      fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), newExtent);
+        //get new extent request
+        fieldInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), newExtent);
 
-      //check to see if exents have changed
-      if(!this->eq(this->SubExtent, newExtent))
+        //check to see if exents have changed
+        if(!this->eq(this->SubExtent, newExtent))
         {
-          // Set the SubExtents to the NewExtents
-          this->setMyExtents(this->SubExtent, newExtent);
+            // Set the SubExtents to the NewExtents
+            this->setMyExtents(this->SubExtent, newExtent);
 
-          // The extents have changes, so mark grid dirty.
-          this->gridClean = false;
+            // The extents have changes, so mark grid dirty.
+            this->gridClean = false;
         }
 
-      //set the extents provided to Paraview
-      Data->SetExtent(this->SubExtent);
+        //set the extents provided to Paraview
+        Data->SetExtent(this->SubExtent);
 
-      //Calculate Sub Dimensions
-      this->extractDimensions(this->SubDimension, this->SubExtent);
+        //Calculate Sub Dimensions
+        this->extractDimensions(this->SubDimension, this->SubExtent);
 
-      //Generate the Grid
-      this->GenerateGrid();
+        //Generate the Grid
+        this->GenerateGrid();
 
-      //set points and radius
-      Data->SetPoints(this->Points);
-      Data->GetPointData()->AddArray(this->Radius);
+        //set points and radius
+        Data->SetPoints(this->Points);
+        Data->GetPointData()->AddArray(this->Radius);
 
-      //Load Variables
-      int c = 0;
-      double progress = 0.05;
+        //Load Variables
+        int c = 0;
+        double progress = 0.05;
 
-      //Load Cell Data
-      for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
+        //Load Cell Data
+        for(c = 0; c < this->CellDataArraySelection->GetNumberOfArrays(); c++)
         {
-          //Load the current Cell array
-          vtkstd::string array = vtkstd::string(this->CellDataArraySelection->GetArrayName(c));
-          if(this->CellDataArraySelection->ArrayIsEnabled(array.c_str()))
+            //Load the current Cell array
+            vtkstd::string array = vtkstd::string(this->CellDataArraySelection->GetArrayName(c));
+            if(this->CellDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-              this->LoadArrayValues(array, outputVector);
+                this->LoadArrayValues(array, outputVector);
             }
         }
 
-      //Load Point Data
-      for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
+        //Load Point Data
+        for(c=0; c < this->PointDataArraySelection->GetNumberOfArrays(); c++)
         {
-          vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
+            vtkstd::string array = vtkstd::string(this->PointDataArraySelection->GetArrayName(c));
 
-          //Load the current Point array
-          if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
+            //Load the current Point array
+            if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-              //when loading from state fiile, we may get some junk marking us to read bad data
-              if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
+                //when loading from state fiile, we may get some junk marking us to read bad data
+                if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
                 {
-                  std::cout << "Bad SubExtents" << std::endl;
-                  this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
-                  this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
+                    std::cout << "Bad SubExtents" << std::endl;
+                    this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
+                    this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
 
                 }
 
-              this->LoadArrayValues(array, outputVector);
-              this->SetProgress(progress);
-              progress += 0.1;
+                this->LoadArrayValues(array, outputVector);
+                this->SetProgress(progress);
+                progress += 0.1;
             }
         }
     }
 
-  return 1;
+    return 1;
 }
 
 //-- Return 0 for Failure, 1 for Success --//
 int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector)
 {
 
-  bool vector
-      = (this->VectorVariableMap.find(vtkstd::string(array)) != this->VectorVariableMap.end());
+    bool vector
+            = (this->VectorVariableMap.find(vtkstd::string(array)) != this->VectorVariableMap.end());
 
-  double xyz[3] = {0.0, 0.0, 0.0};
+    double xyz[3] = {0.0, 0.0, 0.0};
 
-  //get data from system
-  vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
+    //get data from system
+    vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
 
-  //set up array to be added
-  vtkDoubleArray *DataArray = vtkDoubleArray::New();
-  DataArray->SetName(array.c_str());
+    //set up array to be added
+    vtkDoubleArray *DataArray = vtkDoubleArray::New();
+    DataArray->SetName(array.c_str());
 
-  if(vector)      //load as a vector
+    if(vector)      //load as a vector
     {
-      //need three arrays for vector reads
-      double* newArrayR;
-      double* newArrayT;
-      double* newArrayP;
+        //need three arrays for vector reads
+        double* newArrayR;
+        double* newArrayT;
+        double* newArrayP;
 
-      //configure DataArray
-      DataArray->SetNumberOfComponents(3);  //3-Dim Vector
+        //configure DataArray
+        DataArray->SetNumberOfComponents(3);  //3-Dim Vector
 
-      //read in the arrays
-      newArrayR
-          = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
+        //read in the arrays
+        newArrayR
+                = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
 
-      newArrayT
-          = this->read3dPartialToArray((char*)this->VectorVariableMap[array][1].c_str(), this->SubExtent);
+        newArrayT
+                = this->read3dPartialToArray((char*)this->VectorVariableMap[array][1].c_str(), this->SubExtent);
 
-      newArrayP
-          = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
+        newArrayP
+                = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
 
-      //get vector meta-data
-      this->loadArrayMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
+        //get vector meta-data
+        this->loadArrayMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
 
 
-      // convert from spherical to cartesian
-      int loc=0;
-      int i,j,k;
-      for(k=0; k<this->SubDimension[2]; k++)
+        // convert from spherical to cartesian
+        int loc=0;
+        int i,j,k;
+        for(k=0; k<this->SubDimension[2]; k++)
         {
-          for(j=0; j<this->SubDimension[1]; j++)
+            for(j=0; j<this->SubDimension[1]; j++)
             {
-              for(i=0; i<this->SubDimension[0]; i++)
+                for(i=0; i<this->SubDimension[0]; i++)
 
                 {
 
-                  xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
-                  xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
-                  xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
+                    xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                    xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                    xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
 
-                  xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
-                  xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
-                  xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
+                    xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                    xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                    xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
 
-                  xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
-                  xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
+                    xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
+                    xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
 
-                  DataArray->InsertNextTuple(xyz);
+                    DataArray->InsertNextTuple(xyz);
 
-                  loc++;
+                    loc++;
 
                 }
             }
         }
-      //Add array to grid
-      Data->GetPointData()->AddArray(DataArray);
-      DataArray->Delete();
+        //Add array to grid
+        Data->GetPointData()->AddArray(DataArray);
+        DataArray->Delete();
 
-      //free temporary memory
-      delete [] newArrayR; newArrayR = NULL;
-      delete [] newArrayP; newArrayP = NULL;
-      delete [] newArrayT; newArrayT = NULL;
+        //free temporary memory
+        delete [] newArrayR; newArrayR = NULL;
+        delete [] newArrayP; newArrayP = NULL;
+        delete [] newArrayT; newArrayT = NULL;
 
     }
-  else
+    else
     {
-      //load as a scalar
-      //configure DataArray
-      DataArray->SetNumberOfComponents(1);  //Scalar
+        //load as a scalar
+        //configure DataArray
+        DataArray->SetNumberOfComponents(1);  //Scalar
 
-      //array pointers
-      double* newArray;
+        //array pointers
+        double* newArray;
 
-      //get data array
-      newArray
-          = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
+        //get data array
+        newArray
+                = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
 
-      //Load meta data for array
-      this->loadArrayMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
+        //Load meta data for array
+        this->loadArrayMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
 
 
-      //insert points
-      int k;
-      for(k=0; k<this->SubDimension[2]*this->SubDimension[1]*this->SubDimension[0]; k++)
+        //insert points
+        int k;
+        for(k=0; k<this->SubDimension[2]*this->SubDimension[1]*this->SubDimension[0]; k++)
         {
-          DataArray->InsertNextValue(newArray[k]);
+            DataArray->InsertNextValue(newArray[k]);
         }
 
-      //Add array to grid
-      Data->GetPointData()->AddArray(DataArray);
-      DataArray->Delete();
+        //Add array to grid
+        Data->GetPointData()->AddArray(DataArray);
+        DataArray->Delete();
 
-      //free temporary memory
-      delete [] newArray; newArray = NULL;
+        //free temporary memory
+        delete [] newArray; newArray = NULL;
 
     }
 
 
-  return 1;
+    return 1;
 }
 
 //-- returns array read via partial IO limited by extents --//
@@ -607,159 +621,159 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
  *  condition that does not exist sequentially in file */
 double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 {
-  int extDims[3] = {0,0,0};
-  size_t readDims[4]   = {1,1,1,1};
-  long readStart[4]  = {0,extents[4],extents[2],extents[0]};
+    int extDims[3] = {0,0,0};
+    size_t readDims[4]   = {1,1,1,1};
+    long readStart[4]  = {0,extents[4],extents[2],extents[0]};
 
-  // get dimensions from extents
-  this->extractDimensions(extDims, extents);
+    // get dimensions from extents
+    this->extractDimensions(extDims, extents);
 
-  // Enlil encodes in reverse, so reverse the order, add fourth dimension 1st.
-  readDims[1] = extDims[2];
-  readDims[2] = extDims[1];
-  readDims[3] = extDims[0];
+    // Enlil encodes in reverse, so reverse the order, add fourth dimension 1st.
+    readDims[1] = extDims[2];
+    readDims[2] = extDims[1];
+    readDims[3] = extDims[0];
 
-  //find all conditions that need to be accounted for
-  bool periodic = false;
-  bool periodicRead = false;
-  bool periodicOnly = false;
+    //find all conditions that need to be accounted for
+    bool periodic = false;
+    bool periodicRead = false;
+    bool periodicOnly = false;
 
-//  this->printExtents(extents, (char*)"Loading Extents: ");
+    //  this->printExtents(extents, (char*)"Loading Extents: ");
 
-  if(extents[5] == this->WholeExtent[5])
+    if(extents[5] == this->WholeExtent[5])
     {
-      periodic = true;
-      //      std::cout << "Set Periodic" << std::endl;
+        periodic = true;
+        //      std::cout << "Set Periodic" << std::endl;
 
-      if(extents[4] > 0)
+        if(extents[4] > 0)
         {
-          periodicRead = true;
-          //          std::cout << "Set Periodic Read" << std::endl;
-          if(extents[4] == this->WholeExtent[5])
+            periodicRead = true;
+            //          std::cout << "Set Periodic Read" << std::endl;
+            if(extents[4] == this->WholeExtent[5])
             {
-              periodicOnly = true;
-              //              std::cout << "Set Periodic Only" << std::endl;
+                periodicOnly = true;
+                //              std::cout << "Set Periodic Only" << std::endl;
 
             }
         }
     }
-  else
+    else
     {
-      //      std::cout << "Non-Periodic" << std::endl;
+        //      std::cout << "Non-Periodic" << std::endl;
 
     }
 
-  // allocate memory for complete array
-  double *array = new double[extDims[0]*extDims[1]*extDims[2]];
+    // allocate memory for complete array
+    double *array = new double[extDims[0]*extDims[1]*extDims[2]];
 
-  //open file
-  NcFile file(this->FileName);
-  NcVar* variable = file.get_var(arrayName);
+    //open file
+    NcFile file(this->FileName);
+    NcVar* variable = file.get_var(arrayName);
 
-  // start to read in data
-  if(periodic && !periodicOnly)
+    // start to read in data
+    if(periodic && !periodicOnly)
     {
-      //adjust dims
-      readDims[1] = readDims[1]-1;
+        //adjust dims
+        readDims[1] = readDims[1]-1;
 
-      //adjust the start point
-      variable->set_cur(readStart);
+        //adjust the start point
+        variable->set_cur(readStart);
 
-      //read the file
-      variable->get(array, readDims);
+        //read the file
+        variable->get(array, readDims);
 
     }
-  else if(periodicOnly)
+    else if(periodicOnly)
     {
-      //set periodic only
-      readDims[1] = 1;
-      readStart[1] = 0;
-      readStart[2] = extents[2];
-      readStart[3] = extents[0];
+        //set periodic only
+        readDims[1] = 1;
+        readStart[1] = 0;
+        readStart[2] = extents[2];
+        readStart[3] = extents[0];
 
-      //set read location
-      variable->set_cur(readStart);
+        //set read location
+        variable->set_cur(readStart);
 
-      //read the file
-      variable->get(array, readDims);
+        //read the file
+        variable->get(array, readDims);
 
     }
-  else
+    else
     {
-      //set read location as stated
-      variable->set_cur(readStart);
+        //set read location as stated
+        variable->set_cur(readStart);
 
-      //read as stated
-      variable->get(array, readDims);
+        //read as stated
+        variable->get(array, readDims);
 
     }
 
-  // fix periodic boundary if necesary
-  if(periodic && !periodicRead && !periodicOnly)
+    // fix periodic boundary if necesary
+    if(periodic && !periodicRead && !periodicOnly)
     {
-      //copy periodic data from begining to end
-      size_t wedgeSize = (extDims[0]*extDims[1]);
-      size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
+        //copy periodic data from begining to end
+        size_t wedgeSize = (extDims[0]*extDims[1]);
+        size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
 
-      for(int x = 0; x < wedgeSize; x++)
+        for(int x = 0; x < wedgeSize; x++)
         {
-          //copy the wedge
-          array[wedgeLoc] = array[x];
+            //copy the wedge
+            array[wedgeLoc] = array[x];
 
-          //advance index
-          wedgeLoc++;
+            //advance index
+            wedgeLoc++;
         }
 
     }
-  else if (periodic && periodicRead && !periodicOnly)  /*periodicRead &&*/
+    else if (periodic && periodicRead && !periodicOnly)  /*periodicRead &&*/
     {
-      //read in periodic data and place at end of array
-      size_t wedgeSize = extDims[0]*extDims[1];
-      size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
+        //read in periodic data and place at end of array
+        size_t wedgeSize = extDims[0]*extDims[1];
+        size_t wedgeLoc  = (extDims[0]*extDims[1])*(extDims[2]-1);
 
-      double * wedge = new double[wedgeSize];
+        double * wedge = new double[wedgeSize];
 
-      //start at 0,0,0
-      readStart[0] = 0;
-      readStart[1] = 0;
-      readStart[2] = extents[2];
-      readStart[3] = extents[0];
+        //start at 0,0,0
+        readStart[0] = 0;
+        readStart[1] = 0;
+        readStart[2] = extents[2];
+        readStart[3] = extents[0];
 
-      //restrict to phi = 1 dimension
-      readDims[1] = 1;
+        //restrict to phi = 1 dimension
+        readDims[1] = 1;
 
-      //      std::cout << "Reading from start: " << readStart[0] << ":" << readStart[1] << ":" << readStart[2] << ":"
-      //                << readStart[3] << std::endl;
+        //      std::cout << "Reading from start: " << readStart[0] << ":" << readStart[1] << ":" << readStart[2] << ":"
+        //                << readStart[3] << std::endl;
 
-      //      std::cout << "Reading Dimensions: " << readDims[0] << ":" << readDims[1] << ":" << readDims[2] << ":"
-      //                << readDims[3] << std::endl;
+        //      std::cout << "Reading Dimensions: " << readDims[0] << ":" << readDims[1] << ":" << readDims[2] << ":"
+        //                << readDims[3] << std::endl;
 
 
-      //set start
-      variable->set_cur(readStart);
+        //set start
+        variable->set_cur(readStart);
 
-      //read data
-      variable->get(wedge, readDims);
+        //read data
+        variable->get(wedge, readDims);
 
-      //populate wedge to array
-      for(int x = 0; x < wedgeSize; x++)
+        //populate wedge to array
+        for(int x = 0; x < wedgeSize; x++)
         {
-          //copy the wedge
-          array[wedgeLoc] = wedge[x];
+            //copy the wedge
+            array[wedgeLoc] = wedge[x];
 
-          //advance index
-          wedgeLoc++;
+            //advance index
+            wedgeLoc++;
         }
 
-      //free temp memory
-      delete [] wedge; wedge = NULL;
+        //free temp memory
+        delete [] wedge; wedge = NULL;
     }
 
 
-  //close file
-  file.close();
+    //close file
+    file.close();
 
-  return array;
+    return array;
 
 }
 
@@ -768,118 +782,118 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
  *  condition that does not exist sequentially in file */
 double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[], bool isPeriodic = false)
 {
-  int     extDim = subExtents[1]-subExtents[0]+1;;
-  size_t  readDims[2]  = {1,extDim};
-  long    readStart[2] = {0,subExtents[0]};
+    int     extDim = subExtents[1]-subExtents[0]+1;;
+    size_t  readDims[2]  = {1,extDim};
+    long    readStart[2] = {0,subExtents[0]};
 
-  //Find conditions that need to be handled
-  bool periodic = false;
-  bool periodicRead = false;
-  bool periodicOnly = false;
+    //Find conditions that need to be handled
+    bool periodic = false;
+    bool periodicRead = false;
+    bool periodicOnly = false;
 
-  //if isPeriodic is set, then we are looking at phi
-  if(isPeriodic)
+    //if isPeriodic is set, then we are looking at phi
+    if(isPeriodic)
     {
-      if(subExtents[1] == this->WholeExtent[5])
+        if(subExtents[1] == this->WholeExtent[5])
         {
-          periodic = true;
-          if(subExtents[0] > 0)
+            periodic = true;
+            if(subExtents[0] > 0)
             {
-              periodicRead = true;
-              if(subExtents[0] == this->WholeExtent[5])
+                periodicRead = true;
+                if(subExtents[0] == this->WholeExtent[5])
                 {
-                  periodicOnly = true;
+                    periodicOnly = true;
                 }
             }
         }
     }
 
-  //allocate Memory for complete array
-  double *array = new double[extDim];
+    //allocate Memory for complete array
+    double *array = new double[extDim];
 
-  //Open file
-  NcFile file(this->FileName);
-  NcVar* variable = file.get_var(arrayName);
+    //Open file
+    NcFile file(this->FileName);
+    NcVar* variable = file.get_var(arrayName);
 
-  //start to read in data
-  if(periodic && !periodicOnly)
+    //start to read in data
+    if(periodic && !periodicOnly)
     {
 
-      //adjust dims
-      readDims[1] = readDims[1]-1;
+        //adjust dims
+        readDims[1] = readDims[1]-1;
 
-      //adjust the start point
-      variable->set_cur(readStart);
+        //adjust the start point
+        variable->set_cur(readStart);
 
-      //read the file
-      variable->get(array, readDims);
+        //read the file
+        variable->get(array, readDims);
 
     }
-  else if(periodicOnly)
+    else if(periodicOnly)
     {
 
-      //set periodic only
-      readDims[1] = 1;
-      readStart[1] = 0;
+        //set periodic only
+        readDims[1] = 1;
+        readStart[1] = 0;
 
-      //set read location
-      variable->set_cur(readStart);
+        //set read location
+        variable->set_cur(readStart);
 
-      //read the file
-      variable->get(array, readDims);
+        //read the file
+        variable->get(array, readDims);
 
     }
-  else
+    else
     {
-      //set read location as stated
-      variable->set_cur(readStart);
+        //set read location as stated
+        variable->set_cur(readStart);
 
-      //read as stated
-      variable->get(array, readDims);
+        //read as stated
+        variable->get(array, readDims);
     }
 
-  //fix periodic boundary if necesary
-  if(periodic && !periodicRead && !periodicOnly)
-    {
-
-      //copy periodic data from begining to end
-      array[extDim-1] = array[0];
-
-    }
-  else if (periodic && periodicRead && !periodicOnly)
+    //fix periodic boundary if necesary
+    if(periodic && !periodicRead && !periodicOnly)
     {
 
-      //read in periodic data and place at end of array
-      size_t wedgeSize = 1;
-      size_t wedgeLoc  = (extDim-1);
+        //copy periodic data from begining to end
+        array[extDim-1] = array[0];
 
-      double * wedge = new double[wedgeSize];
+    }
+    else if (periodic && periodicRead && !periodicOnly)
+    {
 
-      //start at 0,0,0
-      readStart[1] = 0;
+        //read in periodic data and place at end of array
+        size_t wedgeSize = 1;
+        size_t wedgeLoc  = (extDim-1);
 
-      //restrict to phi = 1 dimension
-      readDims[1] = 1;
+        double * wedge = new double[wedgeSize];
 
-      //set start
-      variable->set_cur(readStart);
+        //start at 0,0,0
+        readStart[1] = 0;
 
-      //read data
-      variable->get(wedge, readDims);
+        //restrict to phi = 1 dimension
+        readDims[1] = 1;
 
-      //populate wedge to array
+        //set start
+        variable->set_cur(readStart);
 
-      array[wedgeLoc] = wedge[0];
+        //read data
+        variable->get(wedge, readDims);
 
-      //free temp memory
-      delete [] wedge; wedge = NULL;
+        //populate wedge to array
+
+        array[wedgeLoc] = wedge[0];
+
+        //free temp memory
+        delete [] wedge; wedge = NULL;
     }
 
-  //close the file
-  file.close();
+    //close the file
+    file.close();
 
-  //return completed array
-  return array;
+    //return completed array
+    return array;
 }
 
 void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
@@ -887,108 +901,108 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
                                        bool vector)
 {
 
-  vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
-  int status = this->checkStatus(Data, (char*)"(MetaData)Structured Grid Data Object");
+    vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
+    int status = this->checkStatus(Data, (char*)"(MetaData)Structured Grid Data Object");
 
-  if(!status)
+    if(!status)
     {
-      std::cerr << "Failed to get Data Structure in " << __FUNCTION__ << std::endl;
+        std::cerr << "Failed to get Data Structure in " << __FUNCTION__ << std::endl;
     }
 
-  //open the file
-  NcFile file(this->FileName);
-  NcVar* variable = file.get_var(array);
-  NcType attType;
+    //open the file
+    NcFile file(this->FileName);
+    NcVar* variable = file.get_var(array);
+    NcType attType;
 
-  vtkstd::string* attname = NULL;
-  char* attSval = NULL;
+    vtkstd::string* attname = NULL;
+    char* attSval = NULL;
 
-  double  attDval = 0.0;
-  int     attIval = 0;
+    double  attDval = 0.0;
+    int     attIval = 0;
 
-  vtkstd::string placeholder = vtkstd::string(title);
-  placeholder.append(" ");
+    vtkstd::string placeholder = vtkstd::string(title);
+    placeholder.append(" ");
 
-  vtkstd::string outputName;
+    vtkstd::string outputName;
 
-  //determine if any meta-data exists for array
-  int count = variable->num_atts();
+    //determine if any meta-data exists for array
+    int count = variable->num_atts();
 
-  //if so, load the meta data into arrays
-  for(int x = 0; x < count; x++)
+    //if so, load the meta data into arrays
+    for(int x = 0; x < count; x++)
     {
-      attname = new vtkstd::string(variable->get_att(x)->name());
-      attType = variable->get_att(x)->type();
+        attname = new vtkstd::string(variable->get_att(x)->name());
+        attType = variable->get_att(x)->type();
 
-      outputName.clear();
-      outputName.assign(placeholder.c_str());
-      outputName.append(attname->c_str());
+        outputName.clear();
+        outputName.assign(placeholder.c_str());
+        outputName.append(attname->c_str());
 
-      vtkStringArray *MetaString = vtkStringArray::New();
-      vtkIntArray *MetaInt = vtkIntArray::New();
-      vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
+        vtkStringArray *MetaString = vtkStringArray::New();
+        vtkIntArray *MetaInt = vtkIntArray::New();
+        vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
 
-      std::cout << "Adding Attribute: " << outputName << std::endl;
+        std::cout << "Adding Attribute: " << outputName << std::endl;
 
-      switch(attType)
+        switch(attType)
         {
         case ncByte:
 
-          std::cout << "Type: Byte" << std::endl;
-          std::cout << "Not implimented" << std::endl;
-          break;
+            std::cout << "Type: Byte" << std::endl;
+            std::cout << "Not implimented" << std::endl;
+            break;
 
         case ncChar:
 
-          attSval = variable->get_att(x)->as_string(0);
+            attSval = variable->get_att(x)->as_string(0);
 
-          MetaString->SetName(outputName.c_str());
-          MetaString->SetNumberOfComponents(1);
-          MetaString->InsertNextValue(attSval);
+            MetaString->SetName(outputName.c_str());
+            MetaString->SetNumberOfComponents(1);
+            MetaString->InsertNextValue(attSval);
 
-          Data->GetFieldData()->AddArray(MetaString);
-          MetaString->Delete();
-          break;
+            Data->GetFieldData()->AddArray(MetaString);
+            MetaString->Delete();
+            break;
 
         case ncShort:
-          std::cout << "Type: Short" << std::endl;
-          std::cout << "Not implimented" << std::endl;
-          break;
+            std::cout << "Type: Short" << std::endl;
+            std::cout << "Not implimented" << std::endl;
+            break;
 
         case ncInt:
 
-          attIval = variable->get_att(x)->as_int(0);
+            attIval = variable->get_att(x)->as_int(0);
 
-          MetaInt->SetName(outputName.c_str());
-          MetaInt->SetNumberOfComponents(1);
-          MetaInt->InsertNextValue(attIval);
+            MetaInt->SetName(outputName.c_str());
+            MetaInt->SetNumberOfComponents(1);
+            MetaInt->InsertNextValue(attIval);
 
-          Data->GetFieldData()->AddArray(MetaInt);
-          MetaInt->Delete();
-          break;
+            Data->GetFieldData()->AddArray(MetaInt);
+            MetaInt->Delete();
+            break;
 
         case ncFloat:
-          std::cout << "Type: Float" << std::endl;
-          std::cout << "Not implimented" << std::endl;
-          break;
+            std::cout << "Type: Float" << std::endl;
+            std::cout << "Not implimented" << std::endl;
+            break;
 
         case ncDouble:
 
-          attDval = variable->get_att(x)->as_double(0);
+            attDval = variable->get_att(x)->as_double(0);
 
-          MetaDouble->SetName(outputName.c_str());
-          MetaDouble->SetNumberOfComponents(1);
-          MetaDouble->InsertNextValue(attDval);
+            MetaDouble->SetName(outputName.c_str());
+            MetaDouble->SetNumberOfComponents(1);
+            MetaDouble->InsertNextValue(attDval);
 
-          Data->GetFieldData()->AddArray(MetaDouble);
-          MetaDouble->Delete();
-          break;
+            Data->GetFieldData()->AddArray(MetaDouble);
+            MetaDouble->Delete();
+            break;
 
         }
 
     }
 
-  //populate to field data
+    //populate to field data
 }
 
 //-- Return 0 for failure, 1 for success --//
@@ -997,343 +1011,409 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
 int vtkEnlilReader::PopulateArrays()
 {
 
-  this->addPointArray((char*)"D");
-  this->addPointArray((char*)"DP");
-  this->addPointArray((char*)"T");
-  this->addPointArray((char*)"BP");
-  this->addPointArray((char*)"B1", (char*)"B2", (char*)"B3");
-  this->addPointArray((char*)"V1", (char*)"V2", (char*)"V3");
+    this->addPointArray((char*)"D");
+    this->addPointArray((char*)"DP");
+    this->addPointArray((char*)"T");
+    this->addPointArray((char*)"BP");
+    this->addPointArray((char*)"B1", (char*)"B2", (char*)"B3");
+    this->addPointArray((char*)"V1", (char*)"V2", (char*)"V3");
 
-  this->numberOfArrays = 6;
+    this->numberOfArrays = 6;
 
-  return 1;
+    return 1;
 }
 
 //-- Meta Data Population
 int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
 {
-  int ncFileID = 0;
-  int ncSDSID = 0;
-  int natts = 0;
+    int ncFileID = 0;
+    int ncSDSID = 0;
+    int natts = 0;
 
-  NcType type;
+    NcType type;
 
-  char* attname;
+    char* attname;
 
-  char*    attvalc;
-  int     attvali;
-  double  attvald;
+    char*    attvalc;
+    int     attvali;
+    double  attvald;
 
-  vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
-  int status = this->checkStatus(Data, (char*)"(MetaData)Structured Grid Data Object");
+    vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
+    int status = this->checkStatus(Data, (char*)"(MetaData)Structured Grid Data Object");
 
 
-  if(status)
+    if(status)
     {
 
-      //date string
-      vtkStringArray *DateString = vtkStringArray::New();
-      DateString->SetName("DateString");
-      DateString->SetNumberOfComponents(1);
-      DateString->InsertNextValue(this->dateString);
+        //date string
+        vtkStringArray *DateString = vtkStringArray::New();
+        DateString->SetName("DateString");
+        DateString->SetNumberOfComponents(1);
+        DateString->InsertNextValue(this->dateString);
 
-      Data->GetFieldData()->AddArray(DateString);
-      DateString->Delete();
+        Data->GetFieldData()->AddArray(DateString);
+        DateString->Delete();
 
-      //Load Physical Time
-      vtkDoubleArray *physTime = vtkDoubleArray::New();
-      physTime->SetName("Physical Time");
-      physTime->SetNumberOfComponents(1);
-      physTime->InsertNextValue(this->physicalTime);
+        //Load Physical Time
+        vtkDoubleArray *physTime = vtkDoubleArray::New();
+        physTime->SetName("Physical Time");
+        physTime->SetNumberOfComponents(1);
+        physTime->InsertNextValue(this->physicalTime);
 
-      Data->GetFieldData()->AddArray(physTime);
-      physTime->Delete();
+        Data->GetFieldData()->AddArray(physTime);
+        physTime->Delete();
 
 
-      //mjd is encoded as TIME already.  Do we want to put in here as well?
-      vtkDoubleArray *currentMJD = vtkDoubleArray::New();
-      currentMJD->SetName("MJD");
-      currentMJD->SetNumberOfComponents(1);
-      currentMJD->InsertNextValue(this->TimeSteps[0]);
+        //mjd is encoded as TIME already.  Do we want to put in here as well?
+        vtkDoubleArray *currentMJD = vtkDoubleArray::New();
+        currentMJD->SetName("MJD");
+        currentMJD->SetNumberOfComponents(1);
+        currentMJD->InsertNextValue(this->TimeSteps[0]);
 
-      Data->GetFieldData()->AddArray(currentMJD);
-      currentMJD->Delete();
+        Data->GetFieldData()->AddArray(currentMJD);
+        currentMJD->Delete();
 
-      //get metadate from file
-      NcFile file(this->FileName);
-      natts = file.num_atts();
+        //get metadate from file
+        NcFile file(this->FileName);
+        natts = file.num_atts();
 
-      for(int q=0; q < natts; q++)
+        for(int q=0; q < natts; q++)
         {
-          vtkStringArray *MetaString = vtkStringArray::New();
-          vtkIntArray *MetaInt = vtkIntArray::New();
-          vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
+            vtkStringArray *MetaString = vtkStringArray::New();
+            vtkIntArray *MetaInt = vtkIntArray::New();
+            vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
 
-          attname = (char*)file.get_att(q)->name();
-          type = file.get_att(q)->type();
+            attname = (char*)file.get_att(q)->name();
+            type = file.get_att(q)->type();
 
-          switch(type)
+            switch(type)
             {
             case 1:
-              break;
+                break;
 
             case 2: //text
 
-              attvalc = file.get_att(q)->as_string(0);
+                attvalc = file.get_att(q)->as_string(0);
 
-              MetaString->SetName(attname);
-              MetaString->SetNumberOfComponents(1);
-              MetaString->InsertNextValue(attvalc);
+                MetaString->SetName(attname);
+                MetaString->SetNumberOfComponents(1);
+                MetaString->InsertNextValue(attvalc);
 
-              Data->GetFieldData()->AddArray(MetaString);
-              MetaString->Delete();
-              break;
+                Data->GetFieldData()->AddArray(MetaString);
+                MetaString->Delete();
+                break;
 
             case 3:
-              break;
+                break;
 
             case 4: //int
-              attvali = file.get_att(q)->as_int(0);
+                attvali = file.get_att(q)->as_int(0);
 
-              MetaInt->SetName(attname);
-              MetaInt->SetNumberOfComponents(1);
-              MetaInt->InsertNextValue(attvali);
+                MetaInt->SetName(attname);
+                MetaInt->SetNumberOfComponents(1);
+                MetaInt->InsertNextValue(attvali);
 
-              Data->GetFieldData()->AddArray(MetaInt);
-              MetaInt->Delete();
+                Data->GetFieldData()->AddArray(MetaInt);
+                MetaInt->Delete();
 
-              break;
+                break;
 
             case 5:
-              break;
+                break;
 
             case 6: //double
-              attvald = file.get_att(q)->as_double(0);
+                attvald = file.get_att(q)->as_double(0);
 
-              MetaDouble->SetName(attname);
-              MetaDouble->SetNumberOfComponents(1);
-              MetaDouble->InsertNextValue(attvald);
+                MetaDouble->SetName(attname);
+                MetaDouble->SetNumberOfComponents(1);
+                MetaDouble->InsertNextValue(attvald);
 
-              Data->GetFieldData()->AddArray(MetaDouble);
-              MetaDouble->Delete();
-              break;
+                Data->GetFieldData()->AddArray(MetaDouble);
+                MetaDouble->Delete();
+                break;
             }
         }
 
-      file.close();
+        file.close();
     }
 
-  return 1;
+    return 1;
 }
 
 int vtkEnlilReader::checkStatus(void *Object, char *name)
 {
-  if(Object == NULL)
+    if(Object == NULL)
     {
-      std::cerr << "ERROR: " << name
-                << " has failed to initialize"
-                << std::endl;
+        std::cerr << "ERROR: " << name
+                  << " has failed to initialize"
+                  << std::endl;
 
-      return 0;
+        return 0;
     }
 
-  return 1;
+    return 1;
 }
 
 //-- Return 0 for failure, 1 for success --//
 /* Over-ride this method to provide the
  * extents of your data */
-int vtkEnlilReader::PopulateDataInformation()
+int vtkEnlilReader::calculateTimeSteps()
 {
 
-  NcFile data(this->FileName);
-  NcDim* dims_x = data.get_dim(0);
-  NcDim* dims_y = data.get_dim(1);
-  NcDim* dims_z = data.get_dim(2);
-  NcAtt* mjd_start = data.get_att("refdate_mjd");
+    /* Find Time Range.
+     * We need to open all files, calculate the time, and store locally.
+     * We need to keep track of current file
+     * We don't want to re-calculate the times, just keep them available mapped to their file names
+     * We also need to calculate the time range so ParaView knows what time steps we have.
+     */
 
-  NcVar* time = data.get_var("TIME");
+    if(this->timesCalulated == false)
+    {
 
-  this->physicalTime = time->as_double(0);
+        //calculate number of time steps
+        //  This is easy, as there is one time step per file.
+        this->NumberOfTimeSteps = this->fileNames.size();
 
-  this->Dimension[0] = (int)dims_x->size();
-  this->Dimension[1] = (int)dims_y->size();
-  this->Dimension[2] = (int)dims_z->size()+1;
+        std::cout << "Number of Time Steps: " << this->NumberOfTimeSteps << std::endl;
 
-  DateTime refDate(mjd_start->as_double(0));
+        //the hard part... open all of the files, map them to their calculated times
 
-  double epochSeconds = refDate.getSecondsSinceEpoch();
-  epochSeconds += time->as_double(0);
+        this->TimeSteps = new double[this->NumberOfTimeSteps];
 
-  refDate.incrementSeconds(time->as_double(0));
+        //get the dimensions of the grid
+        NcFile grid(this->fileNames[0].c_str());
+        NcDim* dims_x = grid.get_dim(0);
+        NcDim* dims_y = grid.get_dim(1);
+        NcDim* dims_z = grid.get_dim(2);
 
-  this->dateString.assign(refDate.getDateTimeString());
+        //Populate Dimensions
+        this->Dimension[0] = (int)dims_x->size();
+        this->Dimension[1] = (int)dims_y->size();
+        this->Dimension[2] = (int)dims_z->size()+1;
 
-//  std::cout << "Date: " << refDate.getDateTimeString() << std::endl;
+        //Populate Extents
+        this->setMyExtents(this->WholeExtent,
+                           0, this->Dimension[0]-1,
+                           0, this->Dimension[1]-1,
+                           0, this->Dimension[2]-1);
+
+        //done with grid, thus we now close it
+        grid.close();
+
+        for (int x = 0; x < this->NumberOfTimeSteps; x++)
+        {
+            NcFile data(this->fileNames[x].c_str());
+            NcVar* time = data.get_var("TIME");
+            NcAtt* mjd_start = data.get_att("refdate_mjd");
+
+            this->physicalTime = time->as_double(0);
+
+            DateTime refDate(mjd_start->as_double(0));
+            double epochSeconds = refDate.getSecondsSinceEpoch();
+            epochSeconds += time->as_double(0);
+
+            refDate.incrementSeconds(time->as_double(0));
+
+            this->TimeSteps[x] = refDate.getMJD();
+
+            data.close();
+
+            std::cout << "[" << x << "] MJD: " << this->TimeSteps[x] << std::endl;
+        }
+
+        //calculate time range
+        this->timeRange[0] = this->TimeSteps[0];
+        this->timeRange[1] = this->TimeSteps[this->NumberOfTimeSteps-1];
 
 
-//  std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
-//  std::cout << "Time: " << time->as_double(0) << std::endl;
+        this->timesCalulated = true;
+    }
 
-//  std::cout << "SOD: " << refDate.getSecondsOfDay() << std::endl;
-//  std::cout << "Increment: " << refDate.getSecondsOfDay()/86400.0 << std::endl;
+    //  NcFile data(this->FileName);
+    //  NcDim* dims_x = data.get_dim(0);
+    //  NcDim* dims_y = data.get_dim(1);
+    //  NcDim* dims_z = data.get_dim(2);
+    //  NcAtt* mjd_start = data.get_att("refdate_mjd");
+
+    //  NcVar* time = data.get_var("TIME");
+
+    //  this->physicalTime = time->as_double(0);
+
+    //  this->Dimension[0] = (int)dims_x->size();
+    //  this->Dimension[1] = (int)dims_y->size();
+    //  this->Dimension[2] = (int)dims_z->size()+1;
+
+    //  DateTime refDate(mjd_start->as_double(0));
+
+    //  double epochSeconds = refDate.getSecondsSinceEpoch();
+    //  epochSeconds += time->as_double(0);
+
+    //  refDate.incrementSeconds(time->as_double(0));
+
+    //  this->dateString.assign(refDate.getDateTimeString());
 
 
+    //  std::cout << "Date: " << refDate.getDateTimeString() << std::endl;
 
-  double Time = refDate.getMJD();
+    //  std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
+    //  std::cout << "Time: " << time->as_double(0) << std::endl;
 
+    //  std::cout << "SOD: " << refDate.getSecondsOfDay() << std::endl;
+    //  std::cout << "Increment: " << refDate.getSecondsOfDay()/86400.0 << std::endl;
 
-  data.close();
+    //  double Time = refDate.getMJD();
 
-  //Populate Extents
-  this->setMyExtents(this->WholeExtent,
-                     0, this->Dimension[0]-1,
-                     0, this->Dimension[1]-1,
-                     0, this->Dimension[2]-1);
+    //  data.close();
 
-  //Set Time step Information
-  this->NumberOfTimeSteps = 1;
-  this->TimeSteps = new double[this->NumberOfTimeSteps];
-  this->TimeSteps[0] = Time;
+    //  //Populate Extents
+    //  this->setMyExtents(this->WholeExtent,
+    //                     0, this->Dimension[0]-1,
+    //                     0, this->Dimension[1]-1,
+    //                     0, this->Dimension[2]-1);
 
-  //We just populated info, so we are clean
-  this->infoClean = true;
+    //  //Set Time step Information
+    //  this->NumberOfTimeSteps = 1;
+    //  this->TimeSteps = new double[this->NumberOfTimeSteps];
+    //  this->TimeSteps[0] = Time;
 
-  return 1;
+    //  //We just populated info, so we are clean
+    //  this->infoClean = true;
+
+    return 1;
 }
 
 //-- print extents --//
 void vtkEnlilReader::printExtents(int extent[], char* description)
 {
-  std::cout << description << " "
-            << extent[0] << " " <<
-               extent[1] << " " <<
-               extent[2] << " " <<
-               extent[3] << " " <<
-               extent[4] << " " <<
-               extent[5] << std::endl;
+    std::cout << description << " "
+              << extent[0] << " " <<
+                 extent[1] << " " <<
+                 extent[2] << " " <<
+                 extent[3] << " " <<
+                 extent[4] << " " <<
+                 extent[5] << std::endl;
 }
 
 void vtkEnlilReader::setMyExtents(int extentToSet[], int sourceExtent[])
 {
-  extentToSet[0] = sourceExtent[0];
-  extentToSet[1] = sourceExtent[1];
-  extentToSet[2] = sourceExtent[2];
-  extentToSet[3] = sourceExtent[3];
-  extentToSet[4] = sourceExtent[4];
-  extentToSet[5] = sourceExtent[5];
+    extentToSet[0] = sourceExtent[0];
+    extentToSet[1] = sourceExtent[1];
+    extentToSet[2] = sourceExtent[2];
+    extentToSet[3] = sourceExtent[3];
+    extentToSet[4] = sourceExtent[4];
+    extentToSet[5] = sourceExtent[5];
 
 }
 
 void vtkEnlilReader::setMyExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6)
 {
-  extentToSet[0] = dim1;
-  extentToSet[1] = dim2;
-  extentToSet[2] = dim3;
-  extentToSet[3] = dim4;
-  extentToSet[4] = dim5;
-  extentToSet[5] = dim6;
+    extentToSet[0] = dim1;
+    extentToSet[1] = dim2;
+    extentToSet[2] = dim3;
+    extentToSet[3] = dim4;
+    extentToSet[4] = dim5;
+    extentToSet[5] = dim6;
 }
 
 bool vtkEnlilReader::eq(int extent1[], int extent2[])
 {
-  return (extent1[0] == extent2[0] && extent1[1] == extent2[1]
-          && extent1[2] == extent2[2] && extent1[3] == extent2[3]
-          && extent1[4] == extent2[4] && extent1[5] == extent2[5]);
+    return (extent1[0] == extent2[0] && extent1[1] == extent2[1]
+            && extent1[2] == extent2[2] && extent1[3] == extent2[3]
+            && extent1[4] == extent2[4] && extent1[5] == extent2[5]);
 }
 
 bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
 {
-  if(extToCheck[0] >= 0)
+    if(extToCheck[0] >= 0)
     {
-      if(extToCheck[2] >= 0)
+        if(extToCheck[2] >= 0)
         {
-          if(extToCheck[4] >= 0)
+            if(extToCheck[4] >= 0)
             {
-              if(extToCheck[1] <= extStandard[1] &&
-                 extToCheck[3] <= extStandard[3] &&
-                 extToCheck[5] <= extStandard[5])
+                if(extToCheck[1] <= extStandard[1] &&
+                        extToCheck[3] <= extStandard[3] &&
+                        extToCheck[5] <= extStandard[5])
                 {
-                  return false;
+                    return false;
                 }
             }
         }
     }
 
-  return true;
+    return true;
 
 }
 
 void vtkEnlilReader::extractDimensions(int dims[], int extent[])
 {
-  dims[0] = extent[1] - extent[0]+1;
-  dims[1] = extent[3] - extent[2]+1;
-  dims[2] = extent[5] - extent[4]+1;
+    dims[0] = extent[1] - extent[0]+1;
+    dims[1] = extent[3] - extent[2]+1;
+    dims[2] = extent[5] - extent[4]+1;
 }
 
 void vtkEnlilReader::addPointArray(char* name)
 {
-  NcFile file(this->FileName);
-  try
-  {
-    // look up the "Long Name" of the variable
-    vtkstd::string varname = file.get_var(name)->get_att("long_name")->as_string(0);
-    this->ScalarVariableMap[varname] = vtkstd::string(name);
+    NcFile file(this->FileName);
+    try
+    {
+        // look up the "Long Name" of the variable
+        vtkstd::string varname = file.get_var(name)->get_att("long_name")->as_string(0);
+        this->ScalarVariableMap[varname] = vtkstd::string(name);
 
-    // Add it to the point grid
-    this->PointDataArraySelection->AddArray(varname.c_str());
-  }
-  catch (...)
-  {
-    std::cerr << "Failed to retrieve variable " << name
-              << ". Verify variable name." << std::endl;
+        // Add it to the point grid
+        this->PointDataArraySelection->AddArray(varname.c_str());
+    }
+    catch (...)
+    {
+        std::cerr << "Failed to retrieve variable " << name
+                  << ". Verify variable name." << std::endl;
+
+        file.close();
+        return;
+    }
 
     file.close();
-    return;
-  }
-
-  file.close();
 }
 
 void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
 {
-  NcFile file(this->FileName);
-  try
-  {
-    //get the long name of the first variable in the vector
-    vtkstd::string varname1 = file.get_var(name1)->get_att("long_name")->as_string(0);
+    NcFile file(this->FileName);
+    try
+    {
+        //get the long name of the first variable in the vector
+        vtkstd::string varname1 = file.get_var(name1)->get_att("long_name")->as_string(0);
 
-    //remove the vector component of the name
-    size_t pos = varname1.find("-");
-    vtkstd::string varname2 = varname1.substr(pos+1);
+        //remove the vector component of the name
+        size_t pos = varname1.find("-");
+        vtkstd::string varname2 = varname1.substr(pos+1);
 
-    //ensure that first work is capitalized
-    varname2[0] = toupper((unsigned char) varname2[0]);
+        //ensure that first work is capitalized
+        varname2[0] = toupper((unsigned char) varname2[0]);
 
-    //add components of vector to vector map
-    vtkstd::vector<vtkstd::string> nameArray;
-    nameArray.push_back(name1);
-    nameArray.push_back(name2);
-    nameArray.push_back(name3);
-    this->VectorVariableMap[varname2] = nameArray;
+        //add components of vector to vector map
+        vtkstd::vector<vtkstd::string> nameArray;
+        nameArray.push_back(name1);
+        nameArray.push_back(name2);
+        nameArray.push_back(name3);
+        this->VectorVariableMap[varname2] = nameArray;
 
-    //add array to point array name list
-    this->PointDataArraySelection->AddArray(varname2.c_str());
-
-
+        //add array to point array name list
+        this->PointDataArraySelection->AddArray(varname2.c_str());
 
 
-  }
-  catch(...)
-  {
-    std::cerr << "Failed to retrieve variable "
-              << name1 << " or " << name2 << " or " << name3
-              << ". Verify variable names." << std::endl;
 
+
+    }
+    catch(...)
+    {
+        std::cerr << "Failed to retrieve variable "
+                  << name1 << " or " << name2 << " or " << name3
+                  << ". Verify variable names." << std::endl;
+
+        file.close();
+        return;
+    }
     file.close();
-    return;
-  }
-  file.close();
 }
 
 //-- Return 0 for failure, 1 for success --//
@@ -1342,82 +1422,82 @@ void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
 int vtkEnlilReader::GenerateGrid()
 {
 
-  int i = 0;
-  int j = 0;
-  int k = 0;
+    int i = 0;
+    int j = 0;
+    int k = 0;
 
-  const int GridScale = this->GetGridScaleType();
+    const int GridScale = this->GetGridScaleType();
 
-  double *X1;
-  double *X2;
-  double *X3;
+    double *X1;
+    double *X2;
+    double *X3;
 
-  int X1_extents[2] = {this->SubExtent[0], this->SubExtent[1]};
-  int X2_extents[2] = {this->SubExtent[2], this->SubExtent[3]};
-  int X3_extents[2] = {this->SubExtent[4], this->SubExtent[5]};
+    int X1_extents[2] = {this->SubExtent[0], this->SubExtent[1]};
+    int X2_extents[2] = {this->SubExtent[2], this->SubExtent[3]};
+    int X3_extents[2] = {this->SubExtent[4], this->SubExtent[5]};
 
-  //build the grid if it is dirty (modified in application)
-  if(!this->gridClean)
+    //build the grid if it is dirty (modified in application)
+    if(!this->gridClean)
     {
-      if(this->Points != NULL)
+        if(this->Points != NULL)
         {
-          this->Points->Delete();
-          this->Radius->Delete();
-          this->sphericalGridCoords.clear();
+            this->Points->Delete();
+            this->Radius->Delete();
+            this->sphericalGridCoords.clear();
         }
 
-      //build the Grid
-      this->Points = vtkPoints::New();
+        //build the Grid
+        this->Points = vtkPoints::New();
 
-      //build the Radius Array
-      this->Radius = vtkDoubleArray::New();
-      this->Radius->SetName("Radius");
-      this->Radius->SetNumberOfComponents(1);
+        //build the Radius Array
+        this->Radius = vtkDoubleArray::New();
+        this->Radius->SetName("Radius");
+        this->Radius->SetNumberOfComponents(1);
 
-      // read data from file
-      X1 = this->readGridPartialToArray((char*)"X1", X1_extents, false);
-      X2 = this->readGridPartialToArray((char*)"X2", X2_extents, false);
-      X3 = this->readGridPartialToArray((char*)"X3", X3_extents, true);
+        // read data from file
+        X1 = this->readGridPartialToArray((char*)"X1", X1_extents, false);
+        X2 = this->readGridPartialToArray((char*)"X2", X2_extents, false);
+        X3 = this->readGridPartialToArray((char*)"X3", X3_extents, true);
 
-      // Populate the Spherical Grid Coordinates (to be used in calcs later)
-      vtkstd::vector<double> R(X1, X1 + this->SubDimension[0]);
-      vtkstd::vector<double> T(X2, X2 + this->SubDimension[1]);
-      vtkstd::vector<double> P(X3, X3 + this->SubDimension[2]);
+        // Populate the Spherical Grid Coordinates (to be used in calcs later)
+        vtkstd::vector<double> R(X1, X1 + this->SubDimension[0]);
+        vtkstd::vector<double> T(X2, X2 + this->SubDimension[1]);
+        vtkstd::vector<double> P(X3, X3 + this->SubDimension[2]);
 
-      this->sphericalGridCoords.push_back(R);
-      this->sphericalGridCoords.push_back(T);
-      this->sphericalGridCoords.push_back(P);
+        this->sphericalGridCoords.push_back(R);
+        this->sphericalGridCoords.push_back(T);
+        this->sphericalGridCoords.push_back(P);
 
-      // Generate the grid based on the R-P-T coordinate system.
-      double xyz[3] = { 0, 0, 0 };
-      for (k = 0; k < this->SubDimension[2]; k++)
+        // Generate the grid based on the R-P-T coordinate system.
+        double xyz[3] = { 0, 0, 0 };
+        for (k = 0; k < this->SubDimension[2]; k++)
         {
-          for (j = 0; j < this->SubDimension[1]; j++)
+            for (j = 0; j < this->SubDimension[1]; j++)
             {
-              for (i = 0; i < this->SubDimension[0]; i++)
+                for (i = 0; i < this->SubDimension[0]; i++)
                 {
-                  xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k]))
-                      / GRID_SCALE::ScaleFactor[GridScale];
-                  xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k]))
-                      / GRID_SCALE::ScaleFactor[GridScale];
-                  xyz[2] = (X1[i] * cos(X2[j]))
-                      / GRID_SCALE::ScaleFactor[GridScale];
+                    xyz[0] = (X1[i] * sin(X2[j]) * cos(X3[k]))
+                            / GRID_SCALE::ScaleFactor[GridScale];
+                    xyz[1] = (X1[i] * sin(X2[j]) * sin(X3[k]))
+                            / GRID_SCALE::ScaleFactor[GridScale];
+                    xyz[2] = (X1[i] * cos(X2[j]))
+                            / GRID_SCALE::ScaleFactor[GridScale];
 
-                  //insert point information into the grid
-                  this->Points->InsertNextPoint(xyz);
+                    //insert point information into the grid
+                    this->Points->InsertNextPoint(xyz);
 
-                  // insert radius value into radius array.
-                  // Scaled by grid scale factor
-                  this->Radius->InsertNextValue(
-                        X1[i] / GRID_SCALE::ScaleFactor[GridScale]);
+                    // insert radius value into radius array.
+                    // Scaled by grid scale factor
+                    this->Radius->InsertNextValue(
+                                X1[i] / GRID_SCALE::ScaleFactor[GridScale]);
                 }
             }
         }
 
-      //grid just created, so clean by definition.
-      this->gridClean=true;
+        //grid just created, so clean by definition.
+        this->gridClean=true;
     }
-  return 1;
+    return 1;
 }
 
 //=================== END USER METHODS =========================
@@ -1429,15 +1509,15 @@ int vtkEnlilReader::GenerateGrid()
 int vtkEnlilReader::FillOutputPortInformation(int port, vtkInformation* info)
 {
 
-  if (port==0)
+    if (port==0)
     {
-      info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
+        info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkStructuredGrid");
 
-      return this->Superclass::FillInputPortInformation(port, info);
+        return this->Superclass::FillInputPortInformation(port, info);
 
     }
 
-  return 1;
+    return 1;
 }
 
 //================= END PORT CONFIGURATION ===================
@@ -1447,5 +1527,5 @@ int vtkEnlilReader::FillOutputPortInformation(int port, vtkInformation* info)
 //------------------------------------------------------------
 void vtkEnlilReader::PrintSelf(ostream &os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os, indent);
+    this->Superclass::PrintSelf(os, indent);
 }

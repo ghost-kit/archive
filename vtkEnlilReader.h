@@ -132,7 +132,9 @@ public:
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
   double* TimeSteps;        // Actual times available for request
+  double timeRange[2];
   double physicalTime;
+  bool timesCalulated;
 
   char* CurrentFileName;
   void SetCurrentFileName(const char* fname);
@@ -168,7 +170,7 @@ public:
   // Request Information Helpers
   int PopulateArrays();
   int LoadMetaData(vtkInformationVector* outputVector);
-  int PopulateDataInformation();
+  int calculateTimeSteps();
   int checkStatus(void* Object, char* name);
 
   double* read3dPartialToArray(char *array, int extents[]);

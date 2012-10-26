@@ -5,18 +5,11 @@
     <SourceProxy
        name="vtkEnlilReader"
        class="vtkEnlilReader"
-       file_name_method="SetFileName">
+       file_name_method="AddFileName">
 
       <OutputPort name="Fields" index="0" />
       <OutputPort name="MetaData" index="1" />
 
-      <StringVectorProperty
-         name="FileName"
-         animateable="0"
-         command="SetFileName"
-         number_of_elements="1">
-        <FileListDomain name="files"/>
-      </StringVectorProperty>
 
       <IntVectorProperty
          name="GridScaleFactor"
