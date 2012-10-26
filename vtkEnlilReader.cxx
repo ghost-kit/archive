@@ -366,6 +366,10 @@ int vtkEnlilReader::RequestData(
     double requestedTimeValue = this->getRequestedTime(outputVector);
 
     this->CurrentFileName = (char*)this->time2fileMap[requestedTimeValue].c_str();
+    this->CurrentPhysicalTime = this->time2physicaltimeMap[requestedTimeValue];
+    this->CurrentDateTimeString = (char*) this->time2datestringMap[requestedTimeValue].c_str();
+
+    //hack to be fixed
     this->FileName = this->CurrentFileName;
 
     //Import the MetaData
@@ -394,6 +398,7 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
     if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
     {
         requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+        current_MJD = requestedTimeValue;
 
         std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
     }
@@ -562,7 +567,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
                 = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
 
         //get vector meta-data
-        this->loadArrayMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
+        this->loadVarMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
 
 
         // convert from spherical to cartesian
@@ -618,7 +623,7 @@ int vtkEnlilReader::LoadArrayValues(vtkstd::string array, vtkInformationVector* 
                 = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
 
         //Load meta data for array
-        this->loadArrayMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
+        this->loadVarMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
 
 
         //insert points
@@ -921,7 +926,7 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
     return array;
 }
 
-void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
+void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
                                        vtkInformationVector *outputVector,
                                        bool vector)
 {
@@ -946,7 +951,7 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
     int     attIval = 0;
 
     vtkstd::string placeholder = vtkstd::string(title);
-    placeholder.append(" ");
+    placeholder.append("_");
 
     vtkstd::string outputName;
 
@@ -1074,7 +1079,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
         vtkStringArray *DateString = vtkStringArray::New();
         DateString->SetName("DateString");
         DateString->SetNumberOfComponents(1);
-        DateString->InsertNextValue(this->dateString);
+        DateString->InsertNextValue(this->CurrentDateTimeString);
 
         Data->GetFieldData()->AddArray(DateString);
         DateString->Delete();
@@ -1083,7 +1088,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
         vtkDoubleArray *physTime = vtkDoubleArray::New();
         physTime->SetName("PhysicalTime");
         physTime->SetNumberOfComponents(1);
-        physTime->InsertNextValue(this->physicalTime);
+        physTime->InsertNextValue(this->CurrentPhysicalTime);
 
         Data->GetFieldData()->AddArray(physTime);
         physTime->Delete();
@@ -1093,7 +1098,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
         vtkDoubleArray *currentMJD = vtkDoubleArray::New();
         currentMJD->SetName("MJD");
         currentMJD->SetNumberOfComponents(1);
-        currentMJD->InsertNextValue(this->TimeSteps[0]);
+        currentMJD->InsertNextValue(this->current_MJD);
 
         Data->GetFieldData()->AddArray(currentMJD);
         currentMJD->Delete();
@@ -1212,8 +1217,6 @@ int vtkEnlilReader::calculateTimeSteps()
             NcVar* time = data.get_var("TIME");
             NcAtt* mjd_start = data.get_att("refdate_mjd");
 
-            this->physicalTime = time->as_double(0);
-
             DateTime refDate(mjd_start->as_double(0));
             double epochSeconds = refDate.getSecondsSinceEpoch();
             epochSeconds += time->as_double(0);
@@ -1222,10 +1225,15 @@ int vtkEnlilReader::calculateTimeSteps()
 
             this->TimeSteps[x] = refDate.getMJD();
 
+            //populate physical time map
+            this->time2physicaltimeMap[this->TimeSteps[x]] = time->as_double(0);
             data.close();
 
-            //populate map
+            //populate file map
             this->time2fileMap[this->TimeSteps[x]] = this->fileNames[x];
+
+            //populate datestring map
+            this->time2datestringMap[this->TimeSteps[x]].assign(refDate.getDateTimeString());
 
             std::cout << "[" << x << "] MJD: " << this->TimeSteps[x] << std::endl;
         }

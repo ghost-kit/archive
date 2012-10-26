@@ -130,13 +130,17 @@ protected:
   vtkstd::vector<vtkstd::string> fileNames;
 
   vtkstd::map<double,vtkstd::string> time2fileMap;
+  vtkstd::map<double,double> time2physicaltimeMap;
+  vtkstd::map<double,vtkstd::string> time2datestringMap;
   //ETX
 
   // Time step information
   int NumberOfTimeSteps;    // Number of time steps
   double* TimeSteps;        // Actual times available for request
   double timeRange[2];
-  double physicalTime;
+  double CurrentPhysicalTime;
+  double current_MJD;
+  char* CurrentDateTimeString;
   bool timesCalulated;
 
   char* CurrentFileName;
@@ -181,7 +185,7 @@ protected:
 
   double* read3dPartialToArray(char *array, int extents[]);
   double* readGridPartialToArray(char *arrayName, int subExtents[], bool periodic);
-  void loadArrayMetaData(const char *array,
+  void loadVarMetaData(const char *array,
                          const char *title,
                          vtkInformationVector* outputVector,
                          bool vector = false);
