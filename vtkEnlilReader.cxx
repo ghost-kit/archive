@@ -295,14 +295,17 @@ int vtkEnlilReader::RequestInformation(
     //Set the Whole Extents and Time
     this->calculateTimeSteps();
 
+    //Setup the grid date
+    this->PopulateGridData();
 
-
+    //find requested timestep, and provide to ParaView
+    //TODO: Redirect all internal filename requests to CurrentFileName after this point
     this->CurrentFileName = (char*) this->fileNames[0].c_str();
     this->FileName = CurrentFileName;
 
     if(status)
     {
-        //
+        //Work Around for restore state problems
         if(this->numberOfArrays == 0)
         {
             if(this->PointDataArraySelection->GetNumberOfArrays() != 0)
@@ -359,6 +362,12 @@ int vtkEnlilReader::RequestData(
 
     this->SetProgress(0);
 
+    //need to determine the current requested file
+    double requestedTimeValue = this->getRequestedTime(outputVector);
+
+    this->CurrentFileName = (char*)this->time2fileMap[requestedTimeValue].c_str();
+    this->FileName = this->CurrentFileName;
+
     //Import the MetaData
     this->LoadMetaData(outputVector);
 
@@ -375,6 +384,22 @@ int vtkEnlilReader::RequestData(
 
 }
 
+//Get the Requested Time Step
+double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
+{
+    vtkInformation* outInfo = outputVector->GetInformationObject(0);
+
+    double requestedTimeValue = 0;
+
+    if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+    {
+        requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+
+        std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
+    }
+
+    return requestedTimeValue;
+}
 
 //Methods for file series
 
@@ -1056,7 +1081,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
 
         //Load Physical Time
         vtkDoubleArray *physTime = vtkDoubleArray::New();
-        physTime->SetName("Physical Time");
+        physTime->SetName("PhysicalTime");
         physTime->SetNumberOfComponents(1);
         physTime->InsertNextValue(this->physicalTime);
 
@@ -1077,6 +1102,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
         NcFile file(this->FileName);
         natts = file.num_atts();
 
+        //TODO: Need to strip spaces from meta-data names and reformat them with underscores
         for(int q=0; q < natts; q++)
         {
             vtkStringArray *MetaString = vtkStringArray::New();
@@ -1180,26 +1206,6 @@ int vtkEnlilReader::calculateTimeSteps()
 
         this->TimeSteps = new double[this->NumberOfTimeSteps];
 
-        //get the dimensions of the grid
-        NcFile grid(this->fileNames[0].c_str());
-        NcDim* dims_x = grid.get_dim(0);
-        NcDim* dims_y = grid.get_dim(1);
-        NcDim* dims_z = grid.get_dim(2);
-
-        //Populate Dimensions
-        this->Dimension[0] = (int)dims_x->size();
-        this->Dimension[1] = (int)dims_y->size();
-        this->Dimension[2] = (int)dims_z->size()+1;
-
-        //Populate Extents
-        this->setMyExtents(this->WholeExtent,
-                           0, this->Dimension[0]-1,
-                           0, this->Dimension[1]-1,
-                           0, this->Dimension[2]-1);
-
-        //done with grid, thus we now close it
-        grid.close();
-
         for (int x = 0; x < this->NumberOfTimeSteps; x++)
         {
             NcFile data(this->fileNames[x].c_str());
@@ -1218,6 +1224,9 @@ int vtkEnlilReader::calculateTimeSteps()
 
             data.close();
 
+            //populate map
+            this->time2fileMap[this->TimeSteps[x]] = this->fileNames[x];
+
             std::cout << "[" << x << "] MJD: " << this->TimeSteps[x] << std::endl;
         }
 
@@ -1225,62 +1234,38 @@ int vtkEnlilReader::calculateTimeSteps()
         this->timeRange[0] = this->TimeSteps[0];
         this->timeRange[1] = this->TimeSteps[this->NumberOfTimeSteps-1];
 
-
         this->timesCalulated = true;
     }
 
-    //  NcFile data(this->FileName);
-    //  NcDim* dims_x = data.get_dim(0);
-    //  NcDim* dims_y = data.get_dim(1);
-    //  NcDim* dims_z = data.get_dim(2);
-    //  NcAtt* mjd_start = data.get_att("refdate_mjd");
-
-    //  NcVar* time = data.get_var("TIME");
-
-    //  this->physicalTime = time->as_double(0);
-
-    //  this->Dimension[0] = (int)dims_x->size();
-    //  this->Dimension[1] = (int)dims_y->size();
-    //  this->Dimension[2] = (int)dims_z->size()+1;
-
-    //  DateTime refDate(mjd_start->as_double(0));
-
-    //  double epochSeconds = refDate.getSecondsSinceEpoch();
-    //  epochSeconds += time->as_double(0);
-
-    //  refDate.incrementSeconds(time->as_double(0));
-
-    //  this->dateString.assign(refDate.getDateTimeString());
-
-
-    //  std::cout << "Date: " << refDate.getDateTimeString() << std::endl;
-
-    //  std::cout << "MJD: " << mjd_start->as_double(0) << std::endl;
-    //  std::cout << "Time: " << time->as_double(0) << std::endl;
-
-    //  std::cout << "SOD: " << refDate.getSecondsOfDay() << std::endl;
-    //  std::cout << "Increment: " << refDate.getSecondsOfDay()/86400.0 << std::endl;
-
-    //  double Time = refDate.getMJD();
-
-    //  data.close();
-
-    //  //Populate Extents
-    //  this->setMyExtents(this->WholeExtent,
-    //                     0, this->Dimension[0]-1,
-    //                     0, this->Dimension[1]-1,
-    //                     0, this->Dimension[2]-1);
-
-    //  //Set Time step Information
-    //  this->NumberOfTimeSteps = 1;
-    //  this->TimeSteps = new double[this->NumberOfTimeSteps];
-    //  this->TimeSteps[0] = Time;
-
-    //  //We just populated info, so we are clean
-    //  this->infoClean = true;
-
     return 1;
 }
+
+//this function populates the grid data.  used to be calcuated with time steps, but
+//  the new timestep handling routine makes more sense to not include this.
+void vtkEnlilReader::PopulateGridData()
+{
+    //get the dimensions of the grid
+    NcFile grid(this->fileNames[0].c_str());
+    NcDim* dims_x = grid.get_dim(0);
+    NcDim* dims_y = grid.get_dim(1);
+    NcDim* dims_z = grid.get_dim(2);
+
+    //Populate Dimensions
+    this->Dimension[0] = (int)dims_x->size();
+    this->Dimension[1] = (int)dims_y->size();
+    this->Dimension[2] = (int)dims_z->size()+1;
+
+    //Populate Extents
+    this->setMyExtents(this->WholeExtent,
+                       0, this->Dimension[0]-1,
+                       0, this->Dimension[1]-1,
+                       0, this->Dimension[2]-1);
+
+    //done with grid, thus we now close it
+    grid.close();
+
+}
+
 
 //-- print extents --//
 void vtkEnlilReader::printExtents(int extent[], char* description)

@@ -92,7 +92,8 @@ public:
 
   vtkGetStringMacro(CurrentFileName);
 
-  protected:
+
+protected:
 
   vtkEnlilReader();
   ~vtkEnlilReader();
@@ -127,6 +128,8 @@ public:
 
   vtkstd::string dateString;
   vtkstd::vector<vtkstd::string> fileNames;
+
+  vtkstd::map<double,vtkstd::string> time2fileMap;
   //ETX
 
   // Time step information
@@ -152,6 +155,8 @@ public:
   int LoadVariableData(vtkInformationVector *outputVector);
   int LoadArrayValues(vtkstd::string array, vtkInformationVector* outputVector);
 
+  void PopulateGridData();
+
   int getSerialNumber()
   {
     static int number = 0;
@@ -168,6 +173,7 @@ public:
 
 
   // Request Information Helpers
+  double getRequestedTime(vtkInformationVector *outputVector);
   int PopulateArrays();
   int LoadMetaData(vtkInformationVector* outputVector);
   int calculateTimeSteps();
