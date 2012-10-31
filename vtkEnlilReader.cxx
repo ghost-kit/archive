@@ -877,16 +877,39 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
   NcVar* variable = file.get_var(array);
   NcType attType;
 
+  std::string outputName;
+  std::string parser;
+  std::string title2parse;
+
+  int g=0;
+  int length;
+
+
   std::string* attname = NULL;
   char* attSval = NULL;
 
   double  attDval = 0.0;
   int     attIval = 0;
 
-  std::string placeholder = std::string(title);
+
+  //reparse title
+  title2parse.assign(title);
+  length = title2parse.size();
+
+  for(g=0; g<length; g++)
+  {
+      if(title2parse[g] == ' ')
+      {
+          title2parse[g] = '_';
+      }
+  }
+
+
+
+  std::string placeholder = title2parse;
   placeholder.append("_");
 
-  std::string outputName;
+
 
   //determine if any meta-data exists for array
   int count = variable->num_atts();
@@ -895,11 +918,29 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
   for(int x = 0; x < count; x++)
     {
       attname = new std::string(variable->get_att(x)->name());
+
+      parser.assign(attname->c_str());
+
+      //parse out spaces
+      length = parser.size();
+
+      for(g=0; g<length; g++)
+      {
+          if(parser[g] == ' ')
+          {
+              parser[g] = '_';
+          }
+      }
+
+      std::cout << "ParsedString: " << parser << std::endl;
+
+
+
       attType = variable->get_att(x)->type();
 
       outputName.clear();
       outputName.assign(placeholder.c_str());
-      outputName.append(attname->c_str());
+      outputName.append(parser.c_str());
 
       vtkStringArray *MetaString = vtkStringArray::New();
       vtkIntArray *MetaInt = vtkIntArray::New();
