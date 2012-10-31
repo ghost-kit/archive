@@ -884,7 +884,7 @@ void vtkEnlilReader::loadArrayMetaData(const char *array, const char* title,
   int     attIval = 0;
 
   std::string placeholder = std::string(title);
-  placeholder.append(" ");
+  placeholder.append("_");
 
   std::string outputName;
 
@@ -1019,7 +1019,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
 
       //Load Physical Time
       vtkDoubleArray *physTime = vtkDoubleArray::New();
-      physTime->SetName("Physical Time");
+      physTime->SetName("Physical_Time");
       physTime->SetNumberOfComponents(1);
       physTime->InsertNextValue(this->physicalTime);
 
