@@ -136,8 +136,10 @@ protected:
   //ETX
 
   // Time step information
-  int NumberOfTimeSteps;    // Number of time steps
-  double* TimeSteps;        // Actual times available for request
+  int NumberOfTimeSteps;                 // Number of time steps
+  std::vector<double> TimeSteps;        // Actual times available for request
+
+
   double timeRange[2];
   double CurrentPhysicalTime;
   double current_MJD;

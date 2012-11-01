@@ -333,7 +333,7 @@ int vtkEnlilReader::RequestInformation(
 
         DataOutputInfo->Set(
                     vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-                    this->TimeSteps,
+                    this->TimeSteps.data(),
                     this->NumberOfTimeSteps);
 
         DataOutputInfo->Set(
@@ -388,6 +388,10 @@ int vtkEnlilReader::RequestData(
 
 }
 
+
+
+
+
 //Get the Requested Time Step
 double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 {
@@ -398,27 +402,63 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
     if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
         requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-        current_MJD = requestedTimeValue;
 
-        if(requestedTimeValue == 0)
+        double upper =0;
+        double lower =0;
+        int x=0;
+
+        //find the first time step where the value is greater than requested
+        while(this->TimeSteps[x] < requestedTimeValue && x < this->NumberOfTimeSteps)
         {
-            requestedTimeValue = this->TimeSteps[0];
-            current_MJD = requestedTimeValue;
+            x++;
         }
 
-        std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
-    }
-    else
-    {
-        requestedTimeValue = this->TimeSteps[0];
+        upper = this->TimeSteps[x];
+
+        if(TimeSteps[x] == requestedTimeValue)
+        {
+            //don't need to do anything
+        }
+        else if(x > 0)
+        {
+            //we will need to decide which one to use, so we need the lower level
+            lower = this->TimeSteps[x-1];
+
+            //lets determine which value to use
+            double midpoint = (lower+upper)/2;
+            if(requestedTimeValue > midpoint)
+            {
+                //requested time step in the upper half
+                requestedTimeValue = upper;
+            }
+            else
+            {
+                //requested time step in the lower half
+                requestedTimeValue = lower;
+            }
+        }
+        else
+        {
+            //if the first value is greater, we use the first value.
+            requestedTimeValue = this->TimeSteps[0];
+        }
+
+        //set the modified julian date
         current_MJD = requestedTimeValue;
 
         std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
-
     }
+
 
     return requestedTimeValue;
 }
+
+
+
+
+
+
+
 
 //Methods for file series
 
@@ -965,7 +1005,7 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
     int     attIval = 0;
 
     std::string placeholder = std::string(title);
-    placeholder.append("_");
+    placeholder.append(" ");
 
     std::string outputName;
 
@@ -1223,8 +1263,6 @@ int vtkEnlilReader::calculateTimeSteps()
 
         //the hard part... open all of the files, map them to their calculated times
 
-        this->TimeSteps = new double[this->NumberOfTimeSteps];
-
         for (int x = 0; x < this->NumberOfTimeSteps; x++)
         {
             NcFile data(this->fileNames[x].c_str());
@@ -1237,7 +1275,7 @@ int vtkEnlilReader::calculateTimeSteps()
 
             refDate.incrementSeconds(time->as_double(0));
 
-            this->TimeSteps[x] = refDate.getMJD();
+            this->TimeSteps.push_back(refDate.getMJD());
 
             //populate physical time map
             this->time2physicaltimeMap[this->TimeSteps[x]] = time->as_double(0);
