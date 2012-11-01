@@ -328,18 +328,29 @@ int vtkEnlilReader::RequestInformation(
 
         /*Set Information*/
         //Set Time
-        double timeRange[2]
-                = {this->TimeSteps[0], this->TimeSteps[0]};
 
-        DataOutputInfo->Set(
-                    vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-                    this->TimeSteps.data(),
-                    this->NumberOfTimeSteps);
+        // Special case: if the time range is a single value, supress it.  This is
+        // most likely from a data set that is a single file with no time anyway.
+        // Even if it is not, how much value added is there for a single time value?
+        //  This section is adapted from the ParaView vtkFileSeriesReader
+        if (this->timeRange[0] >= this->timeRange[1])
+        {
+            DataOutputInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+            DataOutputInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+        }
+        else
+        {
+            DataOutputInfo->Set(
+                        vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+                        this->TimeSteps.data(),
+                        this->NumberOfTimeSteps);
 
-        DataOutputInfo->Set(
-                    vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
-                    timeRange,
-                    2);
+            DataOutputInfo->Set(
+                        vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
+                        timeRange,
+                        2);
+
+        }
 
         //Set Extents
         DataOutputInfo->Set(
@@ -465,6 +476,7 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 void vtkEnlilReader::AddFileName(const char *fname)
 {
     this->fileNames.push_back(fname);
+    this->Modified();
 }
 
 const char* vtkEnlilReader::GetFileName(unsigned int idx)
@@ -475,6 +487,7 @@ const char* vtkEnlilReader::GetFileName(unsigned int idx)
 void vtkEnlilReader::RemoveAllFileNames()
 {
     this->fileNames.clear();
+    this->Modified();
 }
 
 unsigned int vtkEnlilReader::GetNumberOfFileNames()
@@ -722,28 +735,29 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
     bool periodicRead = false;
     bool periodicOnly = false;
 
-    //  this->printExtents(extents, (char*)"Loading Extents: ");
+    // this->printExtents(extents, (char*)"Loading Extents: ");
 
     if(extents[5] == this->WholeExtent[5])
     {
         periodic = true;
-        //      std::cout << "Set Periodic" << std::endl;
+        // std::cout << "Set Periodic" << std::endl;
 
         if(extents[4] > 0)
         {
             periodicRead = true;
-            //          std::cout << "Set Periodic Read" << std::endl;
+            // std::cout << "Set Periodic Read" << std::endl;
             if(extents[4] == this->WholeExtent[5])
             {
                 periodicOnly = true;
-                //              std::cout << "Set Periodic Only" << std::endl;
+                // std::cout << "Set Periodic Only" << std::endl;
 
             }
         }
     }
     else
     {
-        //      std::cout << "Non-Periodic" << std::endl;
+        //  std::cout << "Non-Periodic" << std::endl;
+        //  dont need to do anything
 
     }
 
@@ -825,13 +839,6 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 
         //restrict to phi = 1 dimension
         readDims[1] = 1;
-
-        //      std::cout << "Reading from start: " << readStart[0] << ":" << readStart[1] << ":" << readStart[2] << ":"
-        //                << readStart[3] << std::endl;
-
-        //      std::cout << "Reading Dimensions: " << readDims[0] << ":" << readDims[1] << ":" << readDims[2] << ":"
-        //                << readDims[3] << std::endl;
-
 
         //set start
         variable->set_cur(readStart);
@@ -980,9 +987,11 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
     return array;
 }
 
+
+//Loading Meta-Data from Variables
 void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
-                                       vtkInformationVector *outputVector,
-                                       bool vector)
+                                     vtkInformationVector *outputVector,
+                                     bool vector)
 {
 
     vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
@@ -1086,7 +1095,6 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
 
     }
 
-    //populate to field data
 }
 
 //-- Return 0 for failure, 1 for success --//
@@ -1225,6 +1233,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
     return 1;
 }
 
+//Status Check
 int vtkEnlilReader::checkStatus(void *Object, char *name)
 {
     if(Object == NULL)
@@ -1350,6 +1359,7 @@ void vtkEnlilReader::setMyExtents(int extentToSet[], int sourceExtent[])
 
 }
 
+//set exents to given array
 void vtkEnlilReader::setMyExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6)
 {
     extentToSet[0] = dim1;
@@ -1360,6 +1370,7 @@ void vtkEnlilReader::setMyExtents(int extentToSet[], int dim1, int dim2, int dim
     extentToSet[5] = dim6;
 }
 
+//check equality of extents
 bool vtkEnlilReader::eq(int extent1[], int extent2[])
 {
     return (extent1[0] == extent2[0] && extent1[1] == extent2[1]
@@ -1367,6 +1378,7 @@ bool vtkEnlilReader::eq(int extent1[], int extent2[])
             && extent1[4] == extent2[4] && extent1[5] == extent2[5]);
 }
 
+//check bounds of extents
 bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
 {
     if(extToCheck[0] >= 0)
@@ -1386,9 +1398,9 @@ bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
     }
 
     return true;
-
 }
 
+//get the dimensions from the extents provided
 void vtkEnlilReader::extractDimensions(int dims[], int extent[])
 {
     dims[0] = extent[1] - extent[0]+1;
@@ -1396,6 +1408,8 @@ void vtkEnlilReader::extractDimensions(int dims[], int extent[])
     dims[2] = extent[5] - extent[4]+1;
 }
 
+
+//add a point array
 void vtkEnlilReader::addPointArray(char* name)
 {
     NcFile file(this->FileName);
@@ -1444,9 +1458,6 @@ void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
 
         //add array to point array name list
         this->PointDataArraySelection->AddArray(varname2.c_str());
-
-
-
 
     }
     catch(...)
@@ -1546,7 +1557,6 @@ int vtkEnlilReader::GenerateGrid()
 }
 
 //=================== END USER METHODS =========================
-
 
 //--------------------------------------------------------------
 //    Output Port Configuration
