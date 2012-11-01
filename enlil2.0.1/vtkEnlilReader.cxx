@@ -400,7 +400,21 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
         requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
         current_MJD = requestedTimeValue;
 
+        if(requestedTimeValue == 0)
+        {
+            requestedTimeValue = this->TimeSteps[0];
+            current_MJD = requestedTimeValue;
+        }
+
         std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
+    }
+    else
+    {
+        requestedTimeValue = this->TimeSteps[0];
+        current_MJD = requestedTimeValue;
+
+        std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
+
     }
 
     return requestedTimeValue;
