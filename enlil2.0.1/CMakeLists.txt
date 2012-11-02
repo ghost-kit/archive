@@ -1,8 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT("Enlil Reader 2.0.1")
 
-#SET(ParaView_DIR /Volumes/Data/Development/ParaView-src/git-version/build)
-SET(ParaView_DIR /Volumes/Data/Development/ParaView/git-clean/build-13595/)
+SET(ParaView_DIR /Volumes/Data/Development/ParaView-src/git-version/build-2Nov12)
+#SET(ParaView_DIR /Volumes/Data/Development/ParaView/git-clean/build-13595/)
 
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
     set(CMAKE_EXE_LINKER_FLAGS "-s")  ## Strip binary

@@ -422,19 +422,19 @@ std::string DateTime::getDateTimeString(void) const
     out << month << "-"; 
 
   if (day < 10)
-    out << "0" << day << "T";
+    out << "0" << day << " ";
   else
-    out << day << "T";
+    out << day << " ";
 
   if (hours < 10)
-    out << "0" << hours << "-";
+    out << "0" << hours << ":";
   else
-    out << hours << "-";
+    out << hours << ":";
 
   if (minutes < 10)
-    out << "0" << minutes << "-";
+    out << "0" << minutes << ":";
   else
-    out << minutes << "-";
+    out << minutes << ":";
 
   if (seconds < 10.0)
     out << "0" << (size_t) seconds ;
