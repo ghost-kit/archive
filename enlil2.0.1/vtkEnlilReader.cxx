@@ -399,10 +399,6 @@ int vtkEnlilReader::RequestData(
 
 }
 
-
-
-
-
 //Get the Requested Time Step
 double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 {
@@ -463,12 +459,6 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 
     return requestedTimeValue;
 }
-
-
-
-
-
-
 
 
 //Methods for file series
