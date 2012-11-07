@@ -121,7 +121,6 @@ protected:
   vtkPoints* Points;        // Structured grid geometry
   vtkDoubleArray* Radius;   // Radius Grid Data
 
-  //BTX
   std::vector<std::string> MetaDataNames;
   std::map<std::string, std::string> ScalarVariableMap;
   std::map<std::string, std::vector<std::string> > VectorVariableMap;
@@ -133,12 +132,13 @@ protected:
   std::map<double,std::string> time2fileMap;
   std::map<double,double> time2physicaltimeMap;
   std::map<double,std::string> time2datestringMap;
-  //ETX
+
+  //this map holds the positions of artifacts based on time step
+  std::map< double, std::map<std::string, std::vector<double> > > positions;
 
   // Time step information
   int NumberOfTimeSteps;                 // Number of time steps
   std::vector<double> TimeSteps;        // Actual times available for request
-
 
   double timeRange[2];
   double CurrentPhysicalTime;
@@ -185,6 +185,8 @@ protected:
   int LoadMetaData(vtkInformationVector* outputVector);
   int calculateTimeSteps();
   int checkStatus(void* Object, char* name);
+
+  void calculateArtifacts();
 
   double* read3dPartialToArray(char *array, int extents[]);
   double* readGridPartialToArray(char *arrayName, int subExtents[], bool periodic);
