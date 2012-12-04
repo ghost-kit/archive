@@ -297,7 +297,7 @@ int vtkEnlilReader::RequestInformation(
     this->calculateTimeSteps();
 
     //calculate postitions of artifacts
-    this->calculateArtifacts();
+    //this->calculateArtifacts();
 
     //Setup the grid date
     this->PopulateGridData();
@@ -1085,6 +1085,8 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
             MetaDouble->Delete();
             break;
 
+        default:
+            break;
         }
 
     }
@@ -1218,6 +1220,9 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
                 Data->GetFieldData()->AddArray(MetaDouble);
                 MetaDouble->Delete();
                 break;
+
+            default:
+                break;
             }
         }
 
@@ -1243,40 +1248,40 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
 }
 
 //this function calculates the positions of artifacts in the system
-void vtkEnlilReader::calculateArtifacts()
-{
-    DateTime time;
+//void vtkEnlilReader::calculateArtifacts()
+//{
+//    DateTime time;
 
-    int retError;
-    int es;
+//    int retError;
+//    int es;
 
-    double jd;
-    Vec pos_in, pos_out;
+//    double jd;
+//    Vec pos_in, pos_out;
 
-    pos_in[0] = -1;
-    pos_in[1] = 0;
-    pos_in[2] = 0;
+//    pos_in[0] = -1;
+//    pos_in[1] = 0;
+//    pos_in[2] = 0;
 
-    //lets calculate all positions, just once (TODO: check we do this only once)
-    for(int x=0; x < this->NumberOfTimeSteps; x++)
-    {
-        time.setMJD(this->TimeSteps[x]);
-        jd = gregorian_calendar_to_jd(time.getYear(),
-                                      time.getMonth(),
-                                      time.getDay(),
-                                      time.getHour(),
-                                      time.getMinute(),
-                                      time.getSecond());
+//    //lets calculate all positions, just once (TODO: check we do this only once)
+//    for(int x=0; x < this->NumberOfTimeSteps; x++)
+//    {
+//        time.setMJD(this->TimeSteps[x]);
+//        jd = gregorian_calendar_to_jd(time.getYear(),
+//                                      time.getMonth(),
+//                                      time.getDay(),
+//                                      time.getHour(),
+//                                      time.getMinute(),
+//                                      time.getSecond());
 
-        es = date2es(time.getYear(),
-                     time.getMonth(),
-                     time.getDay(),
-                     time.getHour(),
-                     time.getMinute(),
-                     time.getSecond());
+//        es = date2es(time.getYear(),
+//                     time.getMonth(),
+//                     time.getDay(),
+//                     time.getHour(),
+//                     time.getMinute(),
+//                     time.getSecond());
 
-    }
-}
+//    }
+//}
 //-- Return 0 for failure, 1 for success --//
 /* Over-ride this method to provide the
  * extents of your data */

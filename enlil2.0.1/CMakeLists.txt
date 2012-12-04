@@ -1,8 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT("Enlil Reader 2.0.1")
 
-#SET(ParaView_DIR /Users/sysop/Developer/pv/build)
-SET(ParaView_DIR /Volumes/Data/Development/ParaView-src/git-version/build-2Nov12)
+SET(ParaView_DIR /Users/sysop/Developer/pv/superbuild2/paraview/src/paraview-build)
+#SET(ParaView_DIR /Volumes/Data/Development/ParaView-src/git-version/build-2Nov12)
 #SET(ParaView_DIR /Volumes/Data/Development/ParaView/git-clean/build-13595/)
 
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
@@ -31,3 +31,11 @@ SET(KIT_LIBS cxform vtkNetCDF_cxx)
 
 Target_LINK_LIBRARIES(vtkEnlilReader vtkRenderingMatplotlib ${ParaView_LIBRARIES} ${KIT_LIBS})
 
+
+add_custom_target(dist
+    COMMAND ${CMAKE_COMMAND}  -DBINARY_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -DINSTALL_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -DPARAVIEW_BINARY_DIR:PATH=${ParaView_DIR}
+                              -DTMP_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -Dbundle_name:STRING=${CMAKE_CURRENT_BINARY_DIR}/EnlilToolsPlugin.tgz
+                              -P ${CMAKE_CURRENT_LIST_DIR}/install_plugin.cmake)
