@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
-project(Clone1)
+project(SwFT)
 
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 if (NOT PARAVIEW_BUILD_QT_GUI)
   message(FATAL_ERROR
-    "Clone1 example requires PARAVIEW_BUILD_QT_GUI to be enabled. "
+    "SwFT requires PARAVIEW_BUILD_QT_GUI to be enabled. "
     "Please rebuild ParaView (or point to a different build of ParaView) "
     "with PARAVIEW_BUILD_QT_GUI set to TRUE")
 endif()
@@ -17,11 +17,17 @@ include(ParaViewBranding)
 #------------------------------------------------------------------------------
 # Add extra library containing custom code for the client.
 QT4_WRAP_CPP(MOC_BUILT_SOURCES
-  myMainWindow.h)
+  myMainWindow.h
+  extendedQlabel.h
+  collapsibleFrame.h)
 
 QT4_WRAP_UI(UI_BUILT_SOURCES
   myMainWindow.ui
 )
+
+SET(swft_RESOURCES resources.qrc)
+QT4_ADD_RESOURCES(swft_RESOURCES_RCC ${swft_RESOURCES})
+
 
 SOURCE_GROUP("Generated" FILES
   ${MOC_BUILT_SOURCES}
@@ -31,11 +37,16 @@ SOURCE_GROUP("Generated" FILES
 SET(ParaView_SOURCE_FILES
   myMainWindow.cxx
   myMainWindow.h
-  swftparaviewmenubuilders.cpp
-  swftparaviewmenubuilders.h
+  swftParaViewMenuBuilders.cpp
+  swftParaViewMenuBuilders.h
   swft_controler_ui.h
   pqMainControlsToolbar.cxx
   pqMainControlsToolbar.h
+  extendedQlabel.h
+  extendedQlabel.cpp
+  collapsibleFrame.cpp
+  collapsibleFrame.h
+  ${swft_RESOURCES}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})
 

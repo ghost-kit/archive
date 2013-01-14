@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/resources">
+        <file>resources/pqOpen32.png</file>
+        <file>resources/load.iconset/icon_16x16.png</file>
+        <file>resources/load.iconset/icon_32x32.png</file>
+        <file>resources/load.iconset/icon_128x128.png</file>
+        <file>resources/load.iconset/icon_256x256.png</file>
+        <file>resources/load.iconset/icon_512x512.png</file>
+    </qresource>
+</RCC>

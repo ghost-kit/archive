@@ -91,14 +91,14 @@
    </attribute>
    <widget class="pqSelectionInspectorWidget" name="selectionInspector"/>
   </widget>
-  <widget class="QDockWidget" name="dockWidget">
+  <widget class="QDockWidget" name="swftControlerDock">
    <property name="windowTitle">
     <string>SwFT Controls</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2"/>
+   <widget class="QWidget" name="collapsibleFrame"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="windowTitle">

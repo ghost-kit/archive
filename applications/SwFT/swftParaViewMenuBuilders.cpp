@@ -1,7 +1,7 @@
 
 
 
-#include "swftparaviewmenubuilders.h"
+#include "swftParaViewMenuBuilders.h"
 #include "vtkPVConfig.h"
 
 #include "ui_pqFileMenuBuilder.h"

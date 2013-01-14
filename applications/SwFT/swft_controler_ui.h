@@ -32,32 +32,37 @@ public:
         actionOpenData = new QAction(swftMainControlsToolbar);
         actionOpenData->setObjectName(QString::fromUtf8("actionOpenData"));
         actionOpenData->setIconText(QString::fromUtf8("Load Data"));
-//        actionOpenData->setIcon(QIcon(":/icons.png"));
         actionOpenData->setProperty("PV_MUST_BE_MASTER_TO_SHOW", QVariant(true));
 
         actionResetData = new QAction(swftMainControlsToolbar);
         actionResetData->setObjectName(QString::fromUtf8("actionResetData"));
         actionResetData->setIconText(QString::fromUtf8("Reset Data"));
-
-        //QIcon icon3;
-        //icon.addFile(QString::fromUtf8(":/pqWidets/Icons/pqOpen24.png"));
-        //actionResetData->setIcon(icon);
         actionResetData->setProperty("PV_MUST_BE_MASTER_TO_SHOW", QVariant(true));
 
         actionServerConnect = new QAction(swftMainControlsToolbar);
         actionServerConnect->setObjectName(QString::fromUtf8("actionServerConnect"));
         actionServerConnect->setIconText(QString::fromUtf8("Connect Server"));
-        //QIcon icon2;
-        //icon2.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqConnect24.png"), QSize(), QIcon::Normal, QIcon::Off);
-        //actionServerConnect->setIcon(icon2);
 
         actionServerDisconnect = new QAction(swftMainControlsToolbar);
         actionServerDisconnect->setObjectName(QString::fromUtf8("actionServerDisconnect"));
         actionServerDisconnect->setIconText(QString::fromUtf8("Disconnect Server"));
 
-        //QIcon icon2;
-        //icon2.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqConnect24.png"), QSize(), QIcon::Normal, QIcon::Off);
-        //actionServerConnect->setIcon(icon2);
+        QIcon icon1;
+        icon1.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqDisconnect32.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionServerDisconnect->setIcon(icon1);
+
+        QIcon icon2;
+        icon2.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqConnect32.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionServerConnect->setIcon(icon2);
+
+        QIcon icon3;
+        icon3.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqOpen32.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionOpenData->setIcon(icon3);
+
+        QIcon icon4;
+        icon4.addFile(QString::fromUtf8(":/pqWidgets/Icons/pqUndo32.png"), QSize(), QIcon::Normal, QIcon::Off);
+        actionResetData->setIcon(icon4);
+
 
         swftMainControlsToolbar->addAction(actionOpenData);
         swftMainControlsToolbar->addAction(actionResetData);
@@ -65,6 +70,8 @@ public:
         swftMainControlsToolbar->addAction(actionServerConnect);
         swftMainControlsToolbar->addAction(actionServerDisconnect);
         swftMainControlsToolbar->addSeparator();
+
+        swftMainControlsToolbar->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 
         retranslateUi(swftMainControlsToolbar);
 
