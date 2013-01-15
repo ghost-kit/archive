@@ -31,7 +31,7 @@
 #include "pqLoadDataReaction.h"
 #include "pqLoadStateReaction.h"
 
-#include "pqMainControlsToolbar.h"
+#include "swftMainControlsToolbar.h"
 
 #include "pqManageCustomFiltersReaction.h"
 #include "pqManageLinksReaction.h"
@@ -305,7 +305,7 @@ void swftParaViewMenuBuilders::buildHelpMenu(QMenu& menu)
 void swftParaViewMenuBuilders::buildToolbars(QMainWindow& mainWindow)
 {
 
-      QToolBar* mainToolBar = new pqMainControlsToolbar(&mainWindow)
+      QToolBar* mainToolBar = new swftMainControlsToolbar(&mainWindow)
         << pqSetName("MainControlsToolbar");
       mainToolBar->layout()->setSpacing(0);
       mainWindow.addToolBar(Qt::TopToolBarArea, mainToolBar);

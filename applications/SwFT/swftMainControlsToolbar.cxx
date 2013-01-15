@@ -29,8 +29,8 @@ NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================*/
-#include "pqMainControlsToolbar.h"
-#include "swft_controler_ui.h"
+#include "swftMainControlsToolbar.h"
+#include "ui_swftMainControlsToolbar.h"
 
 #include "pqHelpReaction.h"
 #include "pqLoadDataReaction.h"
@@ -40,9 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqUndoRedoReaction.h"
 #include "pqAutoApplyReaction.h"
 //-----------------------------------------------------------------------------
-void pqMainControlsToolbar::constructor()
+void swftMainControlsToolbar::constructor()
 {
-  Ui::pqMainControlsToolbar ui;
+  Ui::swftMainControlsToolbar ui;
   ui.setupUi(this);
   new pqLoadDataReaction(ui.actionOpenData);
   new pqSaveDataReaction(ui.actionResetData);

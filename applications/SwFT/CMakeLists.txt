@@ -16,17 +16,25 @@ include(ParaViewBranding)
 
 #------------------------------------------------------------------------------
 # Add extra library containing custom code for the client.
-QT4_WRAP_CPP(MOC_BUILT_SOURCES
-  myMainWindow.h
-  extendedQlabel.h
-  collapsibleFrame.h)
-
-QT4_WRAP_UI(UI_BUILT_SOURCES
-  myMainWindow.ui
-)
 
 SET(swft_RESOURCES resources.qrc)
 QT4_ADD_RESOURCES(swft_RESOURCES_RCC ${swft_RESOURCES})
+
+
+QT4_WRAP_CPP(MOC_BUILT_SOURCES
+  myMainWindow.h
+  swftMainControlsToolbar.h
+  swftMainControlsWidget.h
+  swftMainPropertiesWidget.h
+    )
+
+QT4_WRAP_UI(UI_BUILT_SOURCES
+  myMainWindow.ui
+  swftMainControlsToolbar.ui
+  swftMainControlsWidget.ui
+  swftMainPropertiesWidget.ui
+)
+
 
 
 SOURCE_GROUP("Generated" FILES
@@ -39,14 +47,13 @@ SET(ParaView_SOURCE_FILES
   myMainWindow.h
   swftParaViewMenuBuilders.cpp
   swftParaViewMenuBuilders.h
-  swft_controler_ui.h
-  pqMainControlsToolbar.cxx
-  pqMainControlsToolbar.h
-  extendedQlabel.h
-  extendedQlabel.cpp
-  collapsibleFrame.cpp
-  collapsibleFrame.h
-  ${swft_RESOURCES}
+  swftMainControlsToolbar.cxx
+  swftMainControlsToolbar.h
+ swftMainControlsWidget.h
+ swftMainControlsWidget.cpp
+ swftMainPropertiesWidget.cpp
+ swftMainPropertiesWidget.h
+  ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})
 

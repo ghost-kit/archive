@@ -98,16 +98,16 @@
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="collapsibleFrame"/>
+   <widget class="swftMainControlsWidget" name="mainMenu"/>
   </widget>
-  <widget class="QDockWidget" name="dockWidget_2">
+  <widget class="QDockWidget" name="swftPropertiesDock">
    <property name="windowTitle">
     <string>SwFT Properties</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_3"/>
+   <widget class="swftMainPropertiesWidget" name="mainProperties"/>
   </widget>
   <widget class="QDockWidget" name="proxyTabDock">
    <attribute name="dockWidgetArea">
@@ -150,6 +150,18 @@
    <class>pqObjectInspectorWidget</class>
    <extends>QWidget</extends>
    <header>pqObjectInspectorWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>swftMainControlsWidget</class>
+   <extends>QWidget</extends>
+   <header>swftMainControlsWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>swftMainPropertiesWidget</class>
+   <extends>QWidget</extends>
+   <header>swftMainPropertiesWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
