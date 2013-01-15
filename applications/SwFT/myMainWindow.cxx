@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "pqParaViewBehaviors.h"
 #include "swftParaViewMenuBuilders.h"
 #include "pqLoadDataReaction.h"
-#include "collapsibleFrame.h"
 
 
 class myMainWindow::pqInternals : public Ui::pqClientMainWindow
