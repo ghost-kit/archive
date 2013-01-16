@@ -26,6 +26,9 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   swftMainControlsToolbar.h
   swftMainControlsWidget.h
   swftMainPropertiesWidget.h
+  swftControlsStackUnit.h
+  swftCommandButton.h
+  swftCommandSubButton.h
     )
 
 QT4_WRAP_UI(UI_BUILT_SOURCES
@@ -33,9 +36,11 @@ QT4_WRAP_UI(UI_BUILT_SOURCES
   swftMainControlsToolbar.ui
   swftMainControlsWidget.ui
   swftMainPropertiesWidget.ui
+  swftControlsStackUnit.ui
+  swftCommandButton.ui
+  swftCommandSubButton.ui
+
 )
-
-
 
 SOURCE_GROUP("Generated" FILES
   ${MOC_BUILT_SOURCES}
@@ -53,6 +58,12 @@ SET(ParaView_SOURCE_FILES
  swftMainControlsWidget.cpp
  swftMainPropertiesWidget.cpp
  swftMainPropertiesWidget.h
+ swftControlsStackUnit.cpp
+ swftControlsStackUnit.h
+ swftCommandButton.cpp
+ swftCommandButton.h
+ swftCommandSubButton.cpp
+ swftCommandSubButton.h
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})
