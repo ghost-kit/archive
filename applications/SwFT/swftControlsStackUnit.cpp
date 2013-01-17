@@ -6,6 +6,7 @@ swftControlsStackUnit::swftControlsStackUnit(QWidget *parent) :
     ui(new Ui::swftControlsStackUnit)
 {
     ui->setupUi(this);
+    ui->subButtonStack->hide();
 }
 
 swftControlsStackUnit::~swftControlsStackUnit()

@@ -15,6 +15,7 @@ public:
     explicit swftControlsStackUnit(QWidget *parent = 0);
     ~swftControlsStackUnit();
     
+
 private:
     Ui::swftControlsStackUnit *ui;
 };

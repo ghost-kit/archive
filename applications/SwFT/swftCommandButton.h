@@ -2,12 +2,13 @@
 #define SWFTCOMMANDBUTTON_H
 
 #include <QWidget>
+#include <QCommandLinkButton>
 
 namespace Ui {
 class swftCommandButton;
 }
 
-class swftCommandButton : public QWidget
+class swftCommandButton : public QCommandLinkButton
 {
     Q_OBJECT
     
@@ -17,6 +18,9 @@ public:
     
 private:
     Ui::swftCommandButton *ui;
+
+signals:
+
 };
 
 #endif // SWFTCOMMANDBUTTON_H
