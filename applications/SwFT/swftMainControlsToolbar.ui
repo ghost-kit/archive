@@ -40,10 +40,10 @@
      <normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
-    <string>Load Data...</string>
+    <string>Load Model...</string>
    </property>
    <property name="iconText">
-    <string>Load Data</string>
+    <string>Load Model</string>
    </property>
    <property name="statusTip">
     <string>Open</string>
