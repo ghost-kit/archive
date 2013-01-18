@@ -29,6 +29,7 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   swftControlsStackUnit.h
   swftCommandButton.h
   swftCommandSubButton.h
+  swftStatusWindowWidget.h
     )
 
 QT4_WRAP_UI(UI_BUILT_SOURCES
@@ -39,7 +40,7 @@ QT4_WRAP_UI(UI_BUILT_SOURCES
   swftControlsStackUnit.ui
   swftCommandButton.ui
   swftCommandSubButton.ui
-
+  swftStatusWindowWidget.ui
 )
 
 SOURCE_GROUP("Generated" FILES
@@ -64,6 +65,8 @@ SET(ParaView_SOURCE_FILES
  swftCommandButton.h
  swftCommandSubButton.cpp
  swftCommandSubButton.h
+ swftStatusWindowWidget.h
+ swftStatusWindowWidget.cpp
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})

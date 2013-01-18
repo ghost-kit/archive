@@ -6,13 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>804</width>
+    <width>1526</width>
     <height>96</height>
    </rect>
   </property>
   <property name="font">
    <font>
     <family>Helvetica Neue</family>
+    <pointsize>5</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -36,7 +37,7 @@
   <action name="actionOpenData">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/resources/load.png</normaloff>:/images/icons/resources/load.png</iconset>
+     <normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
     <string>Load Data...</string>
@@ -50,7 +51,7 @@
    <property name="font">
     <font>
      <family>Helvetica Neue</family>
-     <pointsize>14</pointsize>
+     <pointsize>12</pointsize>
     </font>
    </property>
    <property name="PV_MUST_BE_MASTER_TO_SHOW" stdset="0">
@@ -68,7 +69,7 @@
    <property name="font">
     <font>
      <family>Helvetica Neue</family>
-     <pointsize>14</pointsize>
+     <pointsize>12</pointsize>
     </font>
    </property>
    <property name="PV_MUST_BE_MASTER_TO_SHOW" stdset="0">
@@ -89,7 +90,7 @@
    <property name="font">
     <font>
      <family>Helvetica Neue</family>
-     <pointsize>14</pointsize>
+     <pointsize>12</pointsize>
     </font>
    </property>
   </action>
@@ -107,50 +108,8 @@
    <property name="font">
     <font>
      <family>Helvetica Neue</family>
-     <pointsize>14</pointsize>
+     <pointsize>12</pointsize>
     </font>
-   </property>
-  </action>
-  <action name="actionHelp">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/pqWidgets/Icons/pqHelp32.png</normaloff>:/pqWidgets/Icons/pqHelp32.png</iconset>
-   </property>
-   <property name="text">
-    <string>Help</string>
-   </property>
-  </action>
-  <action name="actionUndo">
-   <property name="icon">
-    <iconset>
-     <normaloff>:pqWidgets/Icons/pqUndo24.png</normaloff>:pqWidgets/Icons/pqUndo24.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Undo</string>
-   </property>
-  </action>
-  <action name="actionRedo">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/pqWidgets/Icons/pqRedo24.png</normaloff>:/pqWidgets/Icons/pqRedo24.png</iconset>
-   </property>
-   <property name="text">
-    <string>&amp;Redo</string>
-   </property>
-  </action>
-  <action name="actionAutoApply">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset>
-     <normaloff>:/pqWidgets/Icons/pqAutoApply32.png</normaloff>:/pqWidgets/Icons/pqAutoApply32.png</iconset>
-   </property>
-   <property name="text">
-    <string>Auto Apply</string>
-   </property>
-   <property name="toolTip">
-    <string>Apply changes to parameters automatically</string>
    </property>
   </action>
   <addaction name="actionOpenData"/>
