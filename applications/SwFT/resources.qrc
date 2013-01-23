@@ -2,10 +2,25 @@
     <qresource prefix="/images/icons">
         <file>resources/load.png</file>
         <file>resources/pqOpen32.png</file>
-        <file>resources/load2.iconset/icon_16x16.png</file>
-        <file>resources/load2.iconset/icon_32x32.png</file>
-        <file>resources/load2.iconset/icon_128x128.png</file>
-        <file>resources/load2.iconset/icon_256x256.png</file>
-        <file>resources/load2.iconset/icon_512x512.png</file>
+        <file>resources/load2.iconset/Untitled.iconset/icon_16x16.png</file>
+        <file>resources/load2.iconset/Untitled.iconset/icon_32x32.png</file>
+        <file>resources/load2.iconset/Untitled.iconset/icon_128x128.png</file>
+        <file>resources/load2.iconset/Untitled.iconset/icon_256x256.png</file>
+        <file>resources/load2.iconset/Untitled.iconset/icon_512x512.png</file>
+        <file>resources/resetModel.iconset/icon_16x16.png</file>
+        <file>resources/resetModel.iconset/icon_32x32.png</file>
+        <file>resources/resetModel.iconset/icon_128x128.png</file>
+        <file>resources/resetModel.iconset/icon_256x256.png</file>
+        <file>resources/resetModel.iconset/icon_512x512.png</file>
+        <file>resources/connect.iconset/icon_16x16.png</file>
+        <file>resources/connect.iconset/icon_32x32.png</file>
+        <file>resources/connect.iconset/icon_128x128.png</file>
+        <file>resources/connect.iconset/icon_256x256.png</file>
+        <file>resources/connect.iconset/icon_512x512.png</file>
+        <file>resources/disconnect.iconset/icon_16x16.png</file>
+        <file>resources/disconnect.iconset/icon_32x32.png</file>
+        <file>resources/disconnect.iconset/icon_128x128.png</file>
+        <file>resources/disconnect.iconset/icon_256x256.png</file>
+        <file>resources/disconnect.iconset/icon_512x512.png</file>
     </qresource>
 </RCC>

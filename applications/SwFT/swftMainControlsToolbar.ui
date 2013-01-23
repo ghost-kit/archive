@@ -37,7 +37,7 @@
   <action name="actionOpenData">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</iconset>
+     <normaloff>:/images/icons/resources/load2.iconset/Untitled.iconset/icon_256x256.png</normaloff>:/images/icons/resources/load2.iconset/Untitled.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
     <string>Load Model...</string>
@@ -60,11 +60,11 @@
   </action>
   <action name="actionResetData">
    <property name="icon">
-    <iconset>
-     <normaloff>:/resources/resources/load.iconset/icon_256x256.png</normaloff>:/resources/resources/load.iconset/icon_256x256.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/resources/resetModel.iconset/icon_256x256.png</normaloff>:/images/icons/resources/resetModel.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
-    <string>Reset Data</string>
+    <string>Reset Views</string>
    </property>
    <property name="font">
     <font>
@@ -78,8 +78,8 @@
   </action>
   <action name="actionServerConnect">
    <property name="icon">
-    <iconset>
-     <normaloff>:/resources/resources/load.iconset/icon_256x256.png</normaloff>:/resources/resources/load.iconset/icon_256x256.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/resources/connect.iconset/icon_256x256.png</normaloff>:/images/icons/resources/connect.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Connect...</string>
@@ -96,8 +96,8 @@
   </action>
   <action name="actionServerDisconnect">
    <property name="icon">
-    <iconset>
-     <normaloff>:/resources/resources/load.iconset/icon_256x256.png</normaloff>:/resources/resources/load.iconset/icon_256x256.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/images/icons/resources/disconnect.iconset/icon_256x256.png</normaloff>:/images/icons/resources/disconnect.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Disconnect</string>
