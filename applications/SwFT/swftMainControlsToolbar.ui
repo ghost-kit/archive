@@ -37,7 +37,7 @@
   <action name="actionOpenData">
    <property name="icon">
     <iconset resource="resources.qrc">
-     <normaloff>:/images/icons/resources/load2.iconset/Untitled.iconset/icon_256x256.png</normaloff>:/images/icons/resources/load2.iconset/Untitled.iconset/icon_256x256.png</iconset>
+     <normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</normaloff>:/images/icons/resources/load2.iconset/icon_256x256.png</iconset>
    </property>
    <property name="text">
     <string>Load Model...</string>

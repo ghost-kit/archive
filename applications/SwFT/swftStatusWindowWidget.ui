@@ -38,18 +38,12 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="6" column="2">
-        <spacer name="topHorizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+       <item row="7" column="0">
+        <widget class="QLabel" name="EndDateLabel">
+         <property name="text">
+          <string>End Date/Time:</string>
          </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
+        </widget>
        </item>
        <item row="3" column="0" colspan="3">
         <widget class="Line" name="bottomSeperator">
@@ -71,17 +65,62 @@
          </property>
         </spacer>
        </item>
+       <item row="1" column="0" colspan="3">
+        <widget class="QLabel" name="modelNameLabel">
+         <property name="font">
+          <font>
+           <family>Helvetica Neue</family>
+           <pointsize>14</pointsize>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="text">
+          <string>ModelLabelName</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="2">
+        <spacer name="topHorizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="6" column="1">
+        <widget class="QLabel" name="StartDateInfo">
+         <property name="text">
+          <string>N/A</string>
+         </property>
+        </widget>
+       </item>
        <item row="5" column="1">
         <widget class="QLabel" name="ModelRunInfo">
          <property name="text">
-          <string>TextLabel</string>
+          <string>N/A</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="3">
+        <widget class="Line" name="topSeparator">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item row="7" column="1">
         <widget class="QLabel" name="EndDateInfo">
          <property name="text">
-          <string>TextLabel</string>
+          <string>N/A</string>
          </property>
         </widget>
        </item>
@@ -99,43 +138,79 @@
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
-        <widget class="QLabel" name="EndDateLabel">
-         <property name="text">
-          <string>End Date/Time:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="0" colspan="3">
-        <widget class="Line" name="topSeparator">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1">
-        <widget class="QLabel" name="StartDateInfo">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="3">
-        <widget class="QLabel" name="modelNameLabel">
+       <item row="11" column="0" colspan="3">
+        <widget class="QGroupBox" name="groupBox">
          <property name="font">
           <font>
            <family>Helvetica Neue</family>
-           <pointsize>14</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
+           <pointsize>12</pointsize>
           </font>
          </property>
-         <property name="text">
-          <string>ModelLabelName</string>
+         <property name="title">
+          <string>File Info:</string>
          </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="2" column="0">
+           <widget class="QLabel" name="currentFilePathLabel">
+            <property name="font">
+             <font>
+              <family>Helvetica Neue</family>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Base Path:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="currentFileLabel">
+            <property name="maximumSize">
+             <size>
+              <width>71</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="font">
+             <font>
+              <family>Helvetica Neue</family>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Base File:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLabel" name="currentFilePathInfo">
+            <property name="font">
+             <font>
+              <family>Helvetica Neue</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>N/A</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="currentFileInfo">
+            <property name="font">
+             <font>
+              <family>Helvetica Neue</family>
+              <pointsize>12</pointsize>
+             </font>
+            </property>
+            <property name="text">
+             <string>N/A</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

@@ -41,6 +41,9 @@ private:
     QPointer<pqOutputPort> OutputPort;
     vtkEventQtSlotConnect *VTKConnect;
 
+    class pqUi;
+    pqUi *pvUi;
+
 };
 
 #endif // SWFTSTATUSWINDOWWIDGET_H

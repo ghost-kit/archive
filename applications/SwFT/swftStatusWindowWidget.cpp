@@ -12,6 +12,7 @@
 #include "vtkPVArrayInformation.h"
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkPVDataInformation.h"
+#include "vtkExecutive.h"
 #include "vtkPVDataSetAttributesInformation.h"
 #include "vtkSmartPointer.h"
 #include "vtkSMDomain.h"
@@ -31,13 +32,20 @@
 
 #include <QVariant>
 
+class swftStatusWindowWidget::pqUi
+        : public QObject, public Ui::swftStatusWindowWidget
+{
+public:
+    pqUi(QObject* p) : QObject(p) {}
+};
+
 swftStatusWindowWidget::swftStatusWindowWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::swftStatusWindowWidget)
 {
     ui->setupUi(this);
 
-    ui->modelNameLabel->setText("[___] Model Information");
+    ui->modelNameLabel->setText("Model Information");
 
     this->VTKConnect = vtkEventQtSlotConnect::New();
     this->updateInformation();
@@ -58,6 +66,8 @@ swftStatusWindowWidget::~swftStatusWindowWidget()
 
 pqOutputPort *swftStatusWindowWidget::getOutputPort()
 {
+
+    return this->OutputPort;
 }
 
 
@@ -118,13 +128,86 @@ void swftStatusWindowWidget::updateInformation()
         return;
     }
 
-    vtkPVCompositeDataInformation *compositeInformation = dataInformation->GetCompositeDataInformation();
+    this->fillDataInformation(dataInformation);
 
-    if(compositeInformation->GetDataIsComposite())
+    //need to get the required information
+
+    //find the filename
+    vtkSmartPointer<vtkSMPropertyIterator> piter;
+    piter.TakeReference(source->getProxy()->NewPropertyIterator());
+    for(piter->Begin(); !piter->IsAtEnd(); piter->Next())
     {
-        //todo
+        vtkSMProperty *prop = piter->GetProperty();
+        if(prop->IsA("vtkSMStringVectorProperty"))
+        {
+
+            vtkSmartPointer<vtkSMDomainIterator> diter;
+            diter.TakeReference(prop->NewDomainIterator());
+
+
+            for(diter->Begin(); !diter->IsAtEnd(); diter->Next())
+            {
+                if(diter->GetDomain()->IsA("vtkSMFileListDomain"))
+                {
+                    vtkSMProperty* smprop = piter->GetProperty();
+                    if(smprop->GetInformationProperty())
+                    {
+                        smprop = smprop->GetInformationProperty();
+                        source->getProxy()->UpdatePropertyInformation(smprop);
+                    }
+
+                    QString filename = pqSMAdaptor::getElementProperty(smprop).toString();
+                    QString path = vtksys::SystemTools::GetFilenamePath(filename.toAscii().data()).c_str();
+
+                    std::cout << "Path: " << path.toAscii().data() << std::endl;
+                    std::cout << "filename: " << filename.toAscii().data() << std::endl;
+
+                    ui->currentFileInfo->setText(vtksys::SystemTools::GetFilenameName(filename.toAscii().data()).c_str());
+                    ui->currentFilePathInfo->setText(path);
+
+                }
+
+                if(!diter->IsAtEnd())
+                {
+                    break;
+                }
+            }
+        }
     }
 
-    //
+
+    vtkPVDataSetAttributesInformation* fieldInfo;
+
+    fieldInfo = dataInformation->GetFieldDataInformation();
+
+
+    for(int q=0; q < fieldInfo->GetNumberOfArrays(); q++)
+    {
+        vtkPVArrayInformation* arrayInfo;
+        arrayInfo = fieldInfo->GetArrayInformation(q);
+
+        int numComponents = arrayInfo->GetNumberOfComponents();
+
+        QString name = arrayInfo->GetName();
+        QString value;
+
+        std::cout << "Name: " << name.toAscii().data() << std::endl;
+
+        for(int j = 0; j < numComponents; j++)
+        {
+            //look for the correct values
+        }
+
+//        vtkDataObject* input = vtkDataObject::GetData()
+
+       // OutputPort->getServer()->
+        //source->getOutputPort(0);
+
+
+    }
+
+
+
+
 
 }
