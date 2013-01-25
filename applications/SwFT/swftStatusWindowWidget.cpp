@@ -20,6 +20,9 @@
 #include "vtkSMDoubleVectorProperty.h"
 #include "vtkSMOutputPort.h"
 #include "vtkSMPropertyIterator.h"
+#include "vtkSelection.h"
+#include "vtkSelectionNode.h"
+#include "vtkSelectionRepresentation.h"
 
 #include "pqActiveObjects.h"
 #include "pqNonEditableStyledItemDelegate.h"
@@ -39,13 +42,15 @@ public:
     pqUi(QObject* p) : QObject(p) {}
 };
 
+
+
 swftStatusWindowWidget::swftStatusWindowWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::swftStatusWindowWidget)
 {
     ui->setupUi(this);
 
-    ui->modelNameLabel->setText("Model Information");
+    ui->modelNameLabel->setText("Enlil Model");
 
     this->VTKConnect = vtkEventQtSlotConnect::New();
     this->updateInformation();
@@ -54,6 +59,7 @@ swftStatusWindowWidget::swftStatusWindowWidget(QWidget *parent) :
                   SIGNAL (portChanged(pqOutputPort*)),
                   this,
                   SLOT(setOutputPort(pqOutputPort*)));
+
 
 }
 
@@ -198,10 +204,6 @@ void swftStatusWindowWidget::updateInformation()
             //look for the correct values
         }
 
-//        vtkDataObject* input = vtkDataObject::GetData()
-
-       // OutputPort->getServer()->
-        //source->getOutputPort(0);
 
 
     }

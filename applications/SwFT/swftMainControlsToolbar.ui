@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1526</width>
-    <height>96</height>
+    <height>62</height>
    </rect>
   </property>
   <property name="font">
@@ -24,8 +24,8 @@
   </property>
   <property name="iconSize">
    <size>
-    <width>48</width>
-    <height>48</height>
+    <width>32</width>
+    <height>32</height>
    </size>
   </property>
   <property name="toolButtonStyle">
