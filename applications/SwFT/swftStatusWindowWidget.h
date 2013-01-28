@@ -4,11 +4,17 @@
 #include <QWidget>
 #include <QPointer>
 #include "pqComponentsModule.h"
+#include "pqCoreModule.h"
+#include "vtkWeakPointer.h"
+#include "vtkSmartPointer.h"
+#include "vtkSMProxy.h"
 
 class pqOutputPort;
 class QTreeWidgetItem;
 class vtkEventQtSlotConnect;
 class vtkPVDataInformation;
+class pqDataRepresentation;
+
 
 namespace Ui {
 class swftStatusWindowWidget;
@@ -43,6 +49,7 @@ private:
 
     class pqUi;
     pqUi *pvUi;
+
 
 };
 

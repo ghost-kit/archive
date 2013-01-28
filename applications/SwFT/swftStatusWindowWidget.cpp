@@ -61,6 +61,7 @@ swftStatusWindowWidget::swftStatusWindowWidget(QWidget *parent) :
                   SLOT(setOutputPort(pqOutputPort*)));
 
 
+
 }
 
 swftStatusWindowWidget::~swftStatusWindowWidget()
