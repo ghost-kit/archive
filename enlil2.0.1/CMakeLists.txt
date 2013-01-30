@@ -16,8 +16,16 @@ ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0.1"
   SOURCES DateTime.C
   GUI_RESOURCE_FILES vtkEnlilGUI.xml)
 
-SET(KIT_LIBS cxform vtkNetCDF_cxx vtkRenderingMatplotlib)
+SET(KIT_LIBS cxform vtkNetCDF_cxx )
+
+#vtkRenderingMatplotlib
 
 Target_LINK_LIBRARIES(vtkEnlilReader  ${ParaView_LIBRARIES} ${KIT_LIBS})
 
-
+add_custom_target(dist
+    COMMAND ${CMAKE_COMMAND}  -DBINARY_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -DINSTALL_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -DPARAVIEW_BINARY_DIR:PATH=${ParaView_DIR}
+                              -DTMP_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -Dbundle_name:STRING=${CMAKE_CURRENT_BINARY_DIR}/EnlilToolsPlugin.tgz
+                              -P ${CMAKE_CURRENT_LIST_DIR}/install_plugin.cmake)

@@ -351,8 +351,10 @@ int vtkEnlilReader::RequestInformation(
 
             DataOutputInfo->Set(
                         vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
-                        timeRange,
+                        this->timeRange,
                         2);
+
+            std::cout << "time Range: " << this->timeRange[0] << " to " << this->timeRange[1] << std::endl;
 
         }
 
@@ -379,6 +381,8 @@ int vtkEnlilReader::RequestData(
 
     //need to determine the current requested file
     double requestedTimeValue = this->getRequestedTime(outputVector);
+
+    std::cout << "Requested Time Value in Request Data: " << requestedTimeValue << std::endl;
 
     this->CurrentFileName = (char*)this->time2fileMap[requestedTimeValue].c_str();
     this->CurrentPhysicalTime = this->time2physicaltimeMap[requestedTimeValue];
@@ -408,7 +412,7 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 {
     vtkInformation* outInfo = outputVector->GetInformationObject(0);
 
-    double requestedTimeValue = 0;
+    double requestedTimeValue = this->TimeSteps[0];
 
     if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
     {
@@ -422,6 +426,15 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
         while(this->TimeSteps[x] < requestedTimeValue && x < this->NumberOfTimeSteps)
         {
             x++;
+        }
+        std::cout << "x counter: " << x << std::endl;
+        std::cout << "number of time steps " << this->NumberOfTimeSteps << std::endl;
+
+        //check to see if we went out of bounds on our file search
+        if(x >= this->NumberOfTimeSteps)
+        {
+            //fix out of bounds condition
+            x = this->NumberOfTimeSteps-1;
         }
 
         upper = this->TimeSteps[x];
@@ -459,6 +472,7 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 
         std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
     }
+
 
 
     return requestedTimeValue;
