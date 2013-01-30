@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 project(SwFT)
 
+
+
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 if (NOT PARAVIEW_BUILD_QT_GUI)

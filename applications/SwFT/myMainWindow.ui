@@ -107,7 +107,7 @@
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="swftMainPropertiesWidget" name="mainProperties"/>
+   <widget class="pqPipelineBrowserWidget" name="mainProperties"/>
   </widget>
   <widget class="QDockWidget" name="proxyTabDock">
    <attribute name="dockWidgetArea">
@@ -153,15 +153,15 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>swftMainPropertiesWidget</class>
-   <extends>QWidget</extends>
-   <header>swftMainPropertiesWidget.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>swftStatusWindowWidget</class>
    <extends>QWidget</extends>
    <header>swftStatusWindowWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>pqPipelineBrowserWidget</class>
+   <extends>QWidget</extends>
+   <header>pqPipelineBrowserWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

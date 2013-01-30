@@ -91,6 +91,9 @@ void swftStatusWindowWidget::setOutputPort(pqOutputPort *source)
         QObject::disconnect((this->OutputPort->getSource(),
                              SIGNAL (dataUdated(pqPipelineSource*)),
                              this, SLOT(updateInformation())));
+
+        this->ui->currentFileInfo->setText("N/A");
+        this->ui->currentFilePathInfo->setText("N/A");
     }
 
     this->OutputPort = source;
