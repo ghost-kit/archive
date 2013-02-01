@@ -93,7 +93,7 @@
   </widget>
   <widget class="QDockWidget" name="swftControlerDock">
    <property name="windowTitle">
-    <string>Model Run Information</string>
+    <string>Model Information</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -102,12 +102,12 @@
   </widget>
   <widget class="QDockWidget" name="swftPropertiesDock">
    <property name="windowTitle">
-    <string>SwFT Properties</string>
+    <string>Analysis Tools</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="pqPipelineBrowserWidget" name="mainProperties"/>
+   <widget class="swftSimplePipelineViewer" name="mainProperties"/>
   </widget>
   <widget class="QDockWidget" name="proxyTabDock">
    <attribute name="dockWidgetArea">
@@ -159,9 +159,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>pqPipelineBrowserWidget</class>
+   <class>swftSimplePipelineViewer</class>
    <extends>QWidget</extends>
-   <header>pqPipelineBrowserWidget.h</header>
+   <header>swftSimplePipelineViewer.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

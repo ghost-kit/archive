@@ -32,6 +32,8 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   swftCommandButton.h
   swftCommandSubButton.h
   swftStatusWindowWidget.h
+  swftSimplePipelineViewer.h
+  swftSimplePipelineElement.h
     )
 
 QT4_WRAP_UI(UI_BUILT_SOURCES
@@ -43,6 +45,8 @@ QT4_WRAP_UI(UI_BUILT_SOURCES
   swftCommandButton.ui
   swftCommandSubButton.ui
   swftStatusWindowWidget.ui
+  swftSimplePipelineViewer.ui
+  swftSimplePipelineElement.ui
 )
 
 SOURCE_GROUP("Generated" FILES
@@ -69,7 +73,10 @@ SET(ParaView_SOURCE_FILES
  swftCommandSubButton.h
  swftStatusWindowWidget.h
  swftStatusWindowWidget.cpp
-
+swftSimplePipelineViewer.h
+swftSimplePipelineViewer.cpp
+swftSimplePipelineElement.h
+swftSimplePipelineElement.cpp
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})

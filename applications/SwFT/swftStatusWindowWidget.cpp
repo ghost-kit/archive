@@ -86,8 +86,8 @@ void swftStatusWindowWidget::setOutputPort(pqOutputPort *source)
     }
 
     this->VTKConnect->Disconnect();
-//    if (this->OutputPort)
-//    {
+    if (this->OutputPort)
+    {
 //        QObject::disconnect((this->OutputPort->getSource(),
 //                             SIGNAL (dataUdated(pqPipelineSource*)),
 //                             this, SLOT(updateInformation())));
