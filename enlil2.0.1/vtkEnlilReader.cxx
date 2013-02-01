@@ -423,19 +423,12 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
         int x=0;
 
         //find the first time step where the value is greater than requested
-        while(this->TimeSteps[x] < requestedTimeValue && x < this->NumberOfTimeSteps)
+        while(this->TimeSteps[x] < requestedTimeValue && x < this->NumberOfTimeSteps-1)
         {
             x++;
         }
         std::cout << "x counter: " << x << std::endl;
         std::cout << "number of time steps " << this->NumberOfTimeSteps << std::endl;
-
-        //check to see if we went out of bounds on our file search
-        if(x >= this->NumberOfTimeSteps)
-        {
-            //fix out of bounds condition
-            x = this->NumberOfTimeSteps-1;
-        }
 
         upper = this->TimeSteps[x];
 
