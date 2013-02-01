@@ -69,6 +69,7 @@ SET(ParaView_SOURCE_FILES
  swftCommandSubButton.h
  swftStatusWindowWidget.h
  swftStatusWindowWidget.cpp
+
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})

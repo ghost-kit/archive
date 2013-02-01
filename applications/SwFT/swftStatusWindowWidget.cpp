@@ -86,15 +86,15 @@ void swftStatusWindowWidget::setOutputPort(pqOutputPort *source)
     }
 
     this->VTKConnect->Disconnect();
-    if (this->OutputPort)
-    {
-        QObject::disconnect((this->OutputPort->getSource(),
-                             SIGNAL (dataUdated(pqPipelineSource*)),
-                             this, SLOT(updateInformation())));
+//    if (this->OutputPort)
+//    {
+//        QObject::disconnect((this->OutputPort->getSource(),
+//                             SIGNAL (dataUdated(pqPipelineSource*)),
+//                             this, SLOT(updateInformation())));
 
-        this->ui->currentFileInfo->setText("N/A");
-        this->ui->currentFilePathInfo->setText("N/A");
-    }
+//        this->ui->currentFileInfo->setText("N/A");
+//        this->ui->currentFilePathInfo->setText("N/A");
+//    }
 
     this->OutputPort = source;
     if(this->OutputPort)
