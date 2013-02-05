@@ -14,13 +14,22 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <property name="horizontalSpacing">
-    <number>2</number>
-   </property>
-   <property name="verticalSpacing">
+   <property name="leftMargin">
     <number>0</number>
    </property>
-   <property name="margin">
+   <property name="topMargin">
+    <number>8</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <property name="horizontalSpacing">
+    <number>5</number>
+   </property>
+   <property name="verticalSpacing">
     <number>0</number>
    </property>
    <item row="0" column="1">
@@ -32,30 +41,6 @@
      </property>
      <property name="text">
       <string>Element for Control</string>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="3">
-    <widget class="QPushButton" name="moreButton">
-     <property name="font">
-      <font>
-       <family>Helvetica Neue</family>
-      </font>
-     </property>
-     <property name="text">
-      <string>More &gt;</string>
-     </property>
-     <property name="checkable">
-      <bool>false</bool>
-     </property>
-     <property name="autoDefault">
-      <bool>false</bool>
-     </property>
-     <property name="default">
-      <bool>false</bool>
-     </property>
-     <property name="flat">
-      <bool>false</bool>
      </property>
     </widget>
    </item>
@@ -91,6 +76,30 @@
      </property>
      <property name="arrowType">
       <enum>Qt::NoArrow</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QPushButton" name="moreButton">
+     <property name="font">
+      <font>
+       <family>Helvetica Neue</family>
+      </font>
+     </property>
+     <property name="text">
+      <string>More &gt;</string>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
+     </property>
+     <property name="autoDefault">
+      <bool>false</bool>
+     </property>
+     <property name="default">
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
      </property>
     </widget>
    </item>

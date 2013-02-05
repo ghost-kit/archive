@@ -67,14 +67,31 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
     swftSimplePipelineElement *test2 = new swftSimplePipelineElement();
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
+    QFrame *line0 = this->lineWidget(QString("line0"));
+    QFrame *line1 = this->lineWidget(QString("line1"));
+    QFrame *line2 = this->lineWidget(QString("line2"));
+
     test->setToolName(QString("Test Item"));
     test2->setToolName(QString("Test Item Two!"));
 
+    ui->scrollAreaWidgetContents->layout()->addWidget(line0);
     ui->scrollAreaWidgetContents->layout()->addWidget(test);
+    ui->scrollAreaWidgetContents->layout()->addWidget(line1);
     ui->scrollAreaWidgetContents->layout()->addWidget(test2);
+    ui->scrollAreaWidgetContents->layout()->addWidget(line2);
     ui->scrollAreaWidgetContents->layout()->addItem(verticalSpacer);
 
 
+}
+
+QFrame* swftSimplePipelineViewer::lineWidget(const QString name)
+{
+    QFrame *line;
+    line = new QFrame();
+    line->setObjectName(name);
+    line->setFrameShape(QFrame::HLine);
+
+    return line;
 }
 
 swftSimplePipelineViewer::~swftSimplePipelineViewer()

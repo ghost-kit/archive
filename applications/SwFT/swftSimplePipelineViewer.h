@@ -5,6 +5,9 @@
 #include "pqComponentsModule.h"
 
 #include <QModelIndex>
+#include <QFrame>
+
+
 
 class pqPipelineModel;
 class pqPipelineAnnotationFilterModel;
@@ -39,6 +42,7 @@ public:
     // Disable any Session filter
     void disableSessionFilter();
 
+    QFrame *lineWidget(const QString name);
 signals:
 
 public slots:

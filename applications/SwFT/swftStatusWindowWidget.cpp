@@ -50,7 +50,7 @@ swftStatusWindowWidget::swftStatusWindowWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->modelNameLabel->setText("Enlil Model");
+    ui->modelNameLabel->setText("... Please Load a Model Run to Start ...");
 
     this->VTKConnect = vtkEventQtSlotConnect::New();
     this->updateInformation();
@@ -88,13 +88,13 @@ void swftStatusWindowWidget::setOutputPort(pqOutputPort *source)
     this->VTKConnect->Disconnect();
     if (this->OutputPort)
     {
-//        QObject::disconnect((this->OutputPort->getSource(),
-//                             SIGNAL (dataUdated(pqPipelineSource*)),
-//                             this, SLOT(updateInformation())));
+        //        QObject::disconnect((this->OutputPort->getSource(),
+        //                             SIGNAL (dataUdated(pqPipelineSource*)),
+        //                             this, SLOT(updateInformation())));
 
-//        this->ui->currentFileInfo->setText("N/A");
-//        this->ui->currentFilePathInfo->setText("N/A");
-//    }
+        //        this->ui->currentFileInfo->setText("N/A");
+        //        this->ui->currentFilePathInfo->setText("N/A");
+    }
 
     this->OutputPort = source;
     if(this->OutputPort)
@@ -214,6 +214,6 @@ void swftStatusWindowWidget::updateInformation()
 
 
 
-
-
 }
+
+
