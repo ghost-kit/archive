@@ -34,6 +34,8 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   swftStatusWindowWidget.h
   swftSimplePipelineViewer.h
   swftSimplePipelineElement.h
+  swftPipelineLeafListView.h
+
     )
 
 QT4_WRAP_UI(UI_BUILT_SOURCES
@@ -77,6 +79,8 @@ swftSimplePipelineViewer.h
 swftSimplePipelineViewer.cpp
 swftSimplePipelineElement.h
 swftSimplePipelineElement.cpp
+  swftPipelineLeafListView.h
+  swftPipelineLeafListView.cpp
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})
