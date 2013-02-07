@@ -2,6 +2,7 @@
 #include "ui_swftSimplePipelineViewer.h"
 
 #include "swftSimplePipelineElement.h"
+#include "swftPipelineLeafListView.h"
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
@@ -82,6 +83,12 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
     ui->scrollAreaWidgetContents->layout()->addItem(verticalSpacer);
 
 
+
+
+
+
+
+
 }
 
 QFrame* swftSimplePipelineViewer::lineWidget(const QString name)
@@ -102,7 +109,17 @@ swftSimplePipelineViewer::~swftSimplePipelineViewer()
 //-----------------------------------------------------------------------//
 void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
+    swftPipelineLeafListView testPFLV(0,this->PipelineModel);
+
+    std::cout << "===========" << std::endl;
+    std::cout << "Root Name: " << testPFLV.getRoot()->Children[0]->name.toAscii().data() << std::endl;
+    std::cout << "Root Children: " << testPFLV.getRoot()->Children[0]->Children.count() << std::endl;
     this->PipelineModel->setView(view);
+
+    if(view)
+    {
+        std::cout << "view: " << view->getSMName().toAscii().data() << std::endl;
+    }
 }
 
 
