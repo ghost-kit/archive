@@ -80,7 +80,9 @@ void swftPipelineLeafListView::addChildItems(swftPipelineLeafListViewItem *root,
                     name = value.toString();
                     child->name = name;
 
+                    this->nodeList.append(child);
                     this->addChildItems(child,count);
+
 
 
                 }
@@ -88,6 +90,12 @@ void swftPipelineLeafListView::addChildItems(swftPipelineLeafListViewItem *root,
         }
 
     }
+
+}
+//==========================================================================
+void swftPipelineLeafListView::flattenTree()
+{
+
 
 }
 

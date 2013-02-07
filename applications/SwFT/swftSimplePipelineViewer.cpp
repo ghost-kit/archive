@@ -61,6 +61,7 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
                      this, SLOT(setActiveView(pqView*)));
 
 
+
     //new pqPipelineModelSelectionAdaptor(this->getSelectionModel)));
 
     //add test element
@@ -81,12 +82,6 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
     ui->scrollAreaWidgetContents->layout()->addWidget(test2);
     ui->scrollAreaWidgetContents->layout()->addWidget(line2);
     ui->scrollAreaWidgetContents->layout()->addItem(verticalSpacer);
-
-
-
-
-
-
 
 
 }
@@ -119,6 +114,16 @@ void swftSimplePipelineViewer::setActiveView(pqView *view)
     if(view)
     {
         std::cout << "view: " << view->getSMName().toAscii().data() << std::endl;
+    }
+
+    std::cout << "flat List: " << std::endl;
+
+    for(int y = 0; y < testPFLV.nodeList.count(); y++)
+    {
+        if(!testPFLV.nodeList[y]->HasChildren)
+        {
+            std::cout << testPFLV.nodeList[y]->name.toAscii().data() << std::endl;
+        }
     }
 }
 
@@ -208,6 +213,13 @@ void swftSimplePipelineViewer::enableSessionFilter(vtkSession *session)
 void swftSimplePipelineViewer::disableSessionFilter()
 {
     this->FilteredPipelineModel->disableSessionFilter();
+}
+
+//------------------------------------------------------------------//
+
+void swftSimplePipelineViewer::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+{
+    std::cout << "Function: " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
 }
 
 //------------------------------------------------------------------//

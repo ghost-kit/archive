@@ -42,6 +42,8 @@ public:
     // Disable any Session filter
     void disableSessionFilter();
 
+    void updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight);
+
     QFrame *lineWidget(const QString name);
 signals:
 

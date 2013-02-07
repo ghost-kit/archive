@@ -99,11 +99,12 @@ public:
 
     void addChildItems(swftPipelineLeafListViewItem *root, int paraentChildCount);
 
-
     const swftPipelineLeafListViewItem* getRoot() const
     {
         return this->Root;
     }
+
+    QList<swftPipelineLeafListViewItem *> nodeList;
 
 signals:
     
@@ -111,8 +112,11 @@ public slots:
 
 protected:
 
+    void flattenTree();
+
     swftPipelineLeafListViewItem *Root;
     swftPipelineLeafListViewInternal *Internal;
+
 private:
     QAbstractItemModel *Model;
 
