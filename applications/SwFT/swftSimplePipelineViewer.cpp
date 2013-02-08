@@ -2,7 +2,6 @@
 #include "ui_swftSimplePipelineViewer.h"
 
 #include "swftSimplePipelineElement.h"
-#include "swftPipelineLeafListView.h"
 
 #include "pqActiveObjects.h"
 #include "pqApplicationCore.h"
@@ -32,13 +31,20 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    //get the pipeline model
     this->PipelineModel = new pqPipelineModel(this);
     this->FilteredPipelineModel = new pqPipelineAnnotationFilterModel(this);
     this->FilteredPipelineModel->setSourceModel(this->PipelineModel);
 
+    //build the node list (will be empty at first)
+    this->leafList = new swftPipelineLeafListView(this->PipelineModel);
+
+
     //Connect the model to the ServerManager model
     pqServerManagerModel *smModel = pqApplicationCore::instance()->getServerManagerModel();
 
+
+    //connect the relevent signals/slots
     QObject::connect(smModel, SIGNAL(preServerAdded(pqServer*)),
                      this->PipelineModel, SLOT(addServer(pqServer*)));
 
@@ -61,8 +67,6 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
                      this, SLOT(setActiveView(pqView*)));
 
 
-
-    //new pqPipelineModelSelectionAdaptor(this->getSelectionModel)));
 
     //add test element
     swftSimplePipelineElement *test = new swftSimplePipelineElement();
@@ -104,27 +108,11 @@ swftSimplePipelineViewer::~swftSimplePipelineViewer()
 //-----------------------------------------------------------------------//
 void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
-    swftPipelineLeafListView testPFLV(0,this->PipelineModel);
 
-    std::cout << "===========" << std::endl;
-    std::cout << "Root Name: " << testPFLV.getRoot()->Children[0]->name.toAscii().data() << std::endl;
-    std::cout << "Root Children: " << testPFLV.getRoot()->Children[0]->Children.count() << std::endl;
-    this->PipelineModel->setView(view);
+        this->PipelineModel->setView(view);
 
-    if(view)
-    {
-        std::cout << "view: " << view->getSMName().toAscii().data() << std::endl;
-    }
 
-    std::cout << "flat List: " << std::endl;
 
-    for(int y = 0; y < testPFLV.nodeList.count(); y++)
-    {
-        if(!testPFLV.nodeList[y]->HasChildren)
-        {
-            std::cout << testPFLV.nodeList[y]->name.toAscii().data() << std::endl;
-        }
-    }
 }
 
 

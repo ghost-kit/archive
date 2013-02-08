@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include "pqComponentsModule.h"
+#include "swftPipelineLeafListView.h"
 
 #include <QModelIndex>
 #include <QFrame>
@@ -63,6 +64,11 @@ protected:
     pqPipelineAnnotationFilterModel *FilteredPipelineModel;
     const QModelIndex pipelineModelIndex(const QModelIndex &index) const;
     const pqPipelineModel *getPipelineModel(const QModelIndex &index) const;
+
+    //leaf list
+    swftPipelineLeafListView *leafList;
+
+
 
 private:
     Ui::swftSimplePipelineViewer *ui;

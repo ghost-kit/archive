@@ -8,6 +8,7 @@
 #include <QModelIndex>
 #include <QStyleOptionViewItem>
 #include <QAbstractItemModel>
+#include <QPersistentModelIndex>
 
 
 class pqPipelineModel;
@@ -85,24 +86,23 @@ public:
 };
 
 //====================================================
+
+class swftPipelineLeafListViewItemRows: public QList<int> {};
+
+
+//====================================================
 class swftPipelineLeafListView : public QObject
 {
     Q_OBJECT
     typedef QObject Superclass;
 
 public:
-    explicit swftPipelineLeafListView(QWidget *parent = 0, QAbstractItemModel *model = 0);
+    explicit swftPipelineLeafListView(QAbstractItemModel *model = 0, QWidget *parent = 0);
     
     void setModel(QAbstractItemModel *model);
-
     void setRootIndex(const QModelIndex &index);
-
     void addChildItems(swftPipelineLeafListViewItem *root, int paraentChildCount);
-
-    const swftPipelineLeafListViewItem* getRoot() const
-    {
-        return this->Root;
-    }
+    const swftPipelineLeafListViewItem* getRoot() const {return this->Root;}
 
     QList<swftPipelineLeafListViewItem *> nodeList;
 
@@ -110,12 +110,18 @@ signals:
     
 public slots:
 
-protected:
+protected slots:
+    void updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight);
 
-    void flattenTree();
+protected:
+    void resetRoot();
 
     swftPipelineLeafListViewItem *Root;
     swftPipelineLeafListViewInternal *Internal;
+
+    swftPipelineLeafListViewItem* getItem(const QModelIndex &index) const;
+    swftPipelineLeafListViewItem* getItem(const swftPipelineLeafListViewItemRows &rowList) const;
+    bool getIndexRowList(const QModelIndex &index, swftPipelineLeafListViewItemRows &rowList) const;
 
 private:
     QAbstractItemModel *Model;
