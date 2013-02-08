@@ -67,27 +67,6 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
                      this, SLOT(setActiveView(pqView*)));
 
 
-
-    //add test element
-    swftSimplePipelineElement *test = new swftSimplePipelineElement();
-    swftSimplePipelineElement *test2 = new swftSimplePipelineElement();
-    QSpacerItem *verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-    QFrame *line0 = this->lineWidget(QString("line0"));
-    QFrame *line1 = this->lineWidget(QString("line1"));
-    QFrame *line2 = this->lineWidget(QString("line2"));
-
-    test->setToolName(QString("Test Item"));
-    test2->setToolName(QString("Test Item Two!"));
-
-    ui->scrollAreaWidgetContents->layout()->addWidget(line0);
-    ui->scrollAreaWidgetContents->layout()->addWidget(test);
-    ui->scrollAreaWidgetContents->layout()->addWidget(line1);
-    ui->scrollAreaWidgetContents->layout()->addWidget(test2);
-    ui->scrollAreaWidgetContents->layout()->addWidget(line2);
-    ui->scrollAreaWidgetContents->layout()->addItem(verticalSpacer);
-
-
 }
 
 QFrame* swftSimplePipelineViewer::lineWidget(const QString name)
@@ -109,8 +88,9 @@ swftSimplePipelineViewer::~swftSimplePipelineViewer()
 void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
 
-        this->PipelineModel->setView(view);
+    this->PipelineModel->setView(view);
 
+    this->populateControls();
 
 
 }
@@ -236,6 +216,42 @@ const pqPipelineModel* swftSimplePipelineViewer::getPipelineModel(const QModelIn
     assert("Invalid model used inside index" && filterModel);
 
     return this->getPipelineModel(filterModel->mapToSource(index));
+}
+
+void swftSimplePipelineViewer::populateControls()
+{
+    //1) Remove existing controlls
+
+    if(ui->scrollAreaWidgetContents->layout() != NULL)
+    {
+        QLayoutItem* item;
+        while ( ( item = ui->scrollAreaWidgetContents->layout()->takeAt( 0 ) ) != NULL )
+        {
+            if(item)
+            {
+                delete item->widget();
+                delete item;
+            }
+        }
+    }
+
+    //2) populate with new controlls
+    QSpacerItem *verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
+    QFrame *line0 = this->lineWidget(QString("line0"));
+    ui->scrollAreaWidgetContents->layout()->addWidget(line0);
+
+    for(int y = 0; y < this->leafList->nodeList.count(); y++)
+    {
+        swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
+        //   const QString toolName = this->leafList->nodeList[y]->name;
+        //        newControl->setToolName(toolName);
+
+        //        ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
+
+    }
+
+    ui->scrollAreaWidgetContents->layout()->addItem(verticalSpacer);
+
 }
 
 void swftSimplePipelineViewer::expandWithModelIndexTranslation(const QModelIndex &index)

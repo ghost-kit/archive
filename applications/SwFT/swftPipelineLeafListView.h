@@ -9,7 +9,8 @@
 #include <QStyleOptionViewItem>
 #include <QAbstractItemModel>
 #include <QPersistentModelIndex>
-
+#include <QFilterTreeProxyModel.h>
+#include <QSortFilterProxyModel>
 
 class pqPipelineModel;
 class swftPipelineLeafListViewInternal;
@@ -26,7 +27,7 @@ public:
         : Children(), Index()
     {
         this->Parent = NULL;
-        this->RowSelected = false;
+        this->itemSelected = false;
 
         this->Parent = 0;
         this->ContentsY = 0;
@@ -34,7 +35,7 @@ public:
         this->Indent = 0;
         this->Expandable = false;
         this->Expanded = false;
-        this->RowSelected = false;
+        this->itemSelected = false;
         this->HasChildren = false;
 
     }
@@ -61,7 +62,7 @@ public:
 
     bool Expandable;
     bool Expanded;
-    bool RowSelected;
+    bool itemSelected;
 
     QString name;
     bool HasChildren;
@@ -122,6 +123,12 @@ protected:
     swftPipelineLeafListViewItem* getItem(const QModelIndex &index) const;
     swftPipelineLeafListViewItem* getItem(const swftPipelineLeafListViewItemRows &rowList) const;
     bool getIndexRowList(const QModelIndex &index, swftPipelineLeafListViewItemRows &rowList) const;
+
+    const QModelIndex pipelineModelIndex(const QModelIndex & index) const;
+
+    bool itemIsDisplayed(const QModelIndex &index_);
+
+    const pqPipelineModel* getPipelineModel(const QModelIndex &index) const;
 
 private:
     QAbstractItemModel *Model;

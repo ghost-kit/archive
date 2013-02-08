@@ -68,6 +68,8 @@ protected:
     //leaf list
     swftPipelineLeafListView *leafList;
 
+    //population commands
+    void populateControls();
 
 
 private:
