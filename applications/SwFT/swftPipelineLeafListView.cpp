@@ -195,7 +195,10 @@ void swftPipelineLeafListView::resetRoot()
         delete *iter;
     }
 
+    //clear the lists
+    //these lists contain the same objects
     this->Root->Children.clear();
+    this->nodeList.clear();
 
     if(this->Root->Index.isValid())
     {

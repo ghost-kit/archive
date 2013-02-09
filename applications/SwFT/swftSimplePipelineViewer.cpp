@@ -237,16 +237,19 @@ void swftSimplePipelineViewer::populateControls()
 
     //2) populate with new controlls
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    QFrame *line0 = this->lineWidget(QString("line0"));
-    ui->scrollAreaWidgetContents->layout()->addWidget(line0);
+
+    std::cout << "Number of nodes: " << this->leafList->nodeList.count() << std::endl;
 
     for(int y = 0; y < this->leafList->nodeList.count(); y++)
     {
         swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
-        //   const QString toolName = this->leafList->nodeList[y]->name;
-        //        newControl->setToolName(toolName);
 
-        //        ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
+        std::cout << "Controler: " << this->leafList->nodeList[y]->name.toAscii().data() << std::endl;
+
+        const QString toolName = this->leafList->nodeList[y]->name;
+        newControl->setToolName(toolName);
+
+        ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
 
     }
 

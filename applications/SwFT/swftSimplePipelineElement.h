@@ -3,6 +3,11 @@
 
 #include <QWidget>
 #include <QString>
+#include <QModelIndex>
+
+#include "swftPipelineLeafListView.h"
+
+class swftPipelineLeafListViewItem;
 
 namespace Ui {
 class swftSimplePipelineElement;
@@ -18,10 +23,24 @@ public:
 
     void setToolName(const QString &title);
 
+    void setControllerItem(swftPipelineLeafListViewItem *item);
 
-    
+    swftPipelineLeafListViewItem *getControllerItem()
+    {
+        return this->controllerItem;
+    }
+
+
+public slots:
+    void visibilitySet(bool visible);
+
+signals:
+
 private:
     Ui::swftSimplePipelineElement *ui;
+
+    swftPipelineLeafListViewItem *controllerItem;
+
 };
 
 #endif // SWFTSIMPLEPIPELINEELEMENT_H
