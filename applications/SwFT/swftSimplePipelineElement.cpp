@@ -44,6 +44,7 @@ void swftSimplePipelineElement::setToolState(bool state)
 {
 
     ui->visibleButton->setChecked(state);
+    ui->visibleButton->setText((state?"ON":"OFF"));
 }
 
 void swftSimplePipelineElement::setPipelineLink(swftPipelineLeafListView *item)
@@ -64,6 +65,15 @@ void swftSimplePipelineElement::setVisibilityState(bool visible)
     //Get object relative to pqPipelineModel
     if(this->pipeline)
     {
+        if(visible)
+        {
+            ui->visibleButton->setText(QString("ON"));
+        }
+        else
+        {
+            ui->visibleButton->setText(QString("OFF"));
+        }
+
         QModelIndex index_ = this->getControllerItem()->Index;
         QModelIndex index;
         const pqPipelineModel *model = this->getPipelineModel(index_);
