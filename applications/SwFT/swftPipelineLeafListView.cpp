@@ -19,7 +19,7 @@
 swftPipelineLeafListView::swftPipelineLeafListView(QAbstractItemModel* model, QWidget *parent) :
     Superclass(parent)
 {
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     this->Model = 0;
     this->Root = new swftPipelineLeafListViewItem();
@@ -36,7 +36,7 @@ swftPipelineLeafListView::swftPipelineLeafListView(QAbstractItemModel* model, QW
 
 void swftPipelineLeafListView::setModel(QAbstractItemModel *model)
 {
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     //don't mess with a good thing if it is already a good thing!
     if(model == this->Model)
@@ -74,7 +74,7 @@ void swftPipelineLeafListView::setModel(QAbstractItemModel *model)
 
 void swftPipelineLeafListView::setRootIndex(const QModelIndex &index)
 {
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     if(index.isValid() && index.model() != this->Model) return;
     if(this->Root->Index == index) return;
@@ -88,7 +88,7 @@ void swftPipelineLeafListView::setRootIndex(const QModelIndex &index)
 
 void swftPipelineLeafListView::addChildItems(swftPipelineLeafListViewItem *root, int parentChildCount)
 {
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
     if(root)
@@ -175,7 +175,7 @@ void swftPipelineLeafListView::updateData(const QModelIndex &topLeft, const QMod
     }
 
     //if the data changes, we need to update everything!
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     //need to re-create the tree
     this->resetRoot();
@@ -186,7 +186,7 @@ void swftPipelineLeafListView::updateData(const QModelIndex &topLeft, const QMod
 //==========================================================================
 void swftPipelineLeafListView::resetRoot()
 {
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+    std::cout << __FILE__ << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     //clean out and reset all root items
     QList<swftPipelineLeafListViewItem *>::Iterator iter = this->Root->Children.begin();

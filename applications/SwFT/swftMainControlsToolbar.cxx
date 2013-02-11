@@ -32,11 +32,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "swftMainControlsToolbar.h"
 #include "ui_swftMainControlsToolbar.h"
 
+#include "swftLoadModelReaction.h"
 #include "pqHelpReaction.h"
 #include "pqLoadDataReaction.h"
 #include "pqSaveDataReaction.h"
 #include "pqServerConnectReaction.h"
 #include "pqServerDisconnectReaction.h"
+#include "pqLoadStateReaction.h"
 #include "pqUndoRedoReaction.h"
 #include "pqAutoApplyReaction.h"
 //-----------------------------------------------------------------------------
@@ -44,7 +46,7 @@ void swftMainControlsToolbar::constructor()
 {
   Ui::swftMainControlsToolbar ui;
   ui.setupUi(this);
-  new pqLoadDataReaction(ui.actionOpenData);
+  new swftLoadModelReaction(ui.actionOpenData);
   new pqSaveDataReaction(ui.actionResetData);
   new pqServerConnectReaction(ui.actionServerConnect);
   new pqServerDisconnectReaction(ui.actionServerDisconnect);

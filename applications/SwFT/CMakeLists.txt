@@ -35,6 +35,7 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   swftSimplePipelineViewer.h
   swftSimplePipelineElement.h
   swftPipelineLeafListView.h
+  swftLoadModelReaction.h
 
     )
 
@@ -81,6 +82,8 @@ swftSimplePipelineElement.h
 swftSimplePipelineElement.cpp
   swftPipelineLeafListView.h
   swftPipelineLeafListView.cpp
+swftLoadModelReaction.h
+swftLoadModelReaction.cpp
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})

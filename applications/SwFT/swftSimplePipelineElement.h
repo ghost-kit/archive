@@ -24,23 +24,42 @@ public:
     void setToolName(const QString &title);
     void setToolState(bool state);
 
-    void setControllerItem(swftPipelineLeafListViewItem *item);
+    void setPipelineLink(swftPipelineLeafListView *item);
 
     swftPipelineLeafListViewItem *getControllerItem()
     {
-        return this->controllerItem;
+        if(this->pipeline && this->pipelineIndex >= 0)
+            return this->pipeline->nodeList[pipelineIndex];
+        else
+            return NULL;
+    }
+
+    void setPipelineIndex(int index)
+    {
+        this->pipelineIndex = index;
+    }
+
+    int getPipelineIndex()
+    {
+        return this->pipelineIndex;
     }
 
 
 public slots:
-    void visibilitySet(bool visible);
+    void setVisibilityState(bool visible);
 
 signals:
 
 private:
     Ui::swftSimplePipelineElement *ui;
 
-    swftPipelineLeafListViewItem *controllerItem;
+//    swftPipelineLeafListViewItem *controllerItem;
+
+    swftPipelineLeafListView * pipeline;
+    int pipelineIndex;
+
+    const QModelIndex pipelineModelIndex(const QModelIndex &index) const;
+    const pqPipelineModel *getPipelineModel(const QModelIndex &index) const;
 
 };
 

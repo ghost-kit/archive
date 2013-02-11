@@ -23,4 +23,7 @@
         <file>resources/load2.iconset/icon_256x256.png</file>
         <file>resources/load2.iconset/icon_512x512.png</file>
     </qresource>
+    <qresource prefix="/">
+        <file>resources/standardview.pvsm</file>
+    </qresource>
 </RCC>

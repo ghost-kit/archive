@@ -59,7 +59,6 @@ protected slots:
 
 protected:
     //sets te visibility for items in the indices list.
-    void setVisibility(bool visible, const QModelIndexList &indexes);
     pqPipelineModel *PipelineModel;
     pqPipelineAnnotationFilterModel *FilteredPipelineModel;
     const QModelIndex pipelineModelIndex(const QModelIndex &index) const;

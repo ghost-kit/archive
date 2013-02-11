@@ -2,6 +2,7 @@
 
 
 #include "swftParaViewMenuBuilders.h"
+#include "swftLoadModelReaction.h"
 #include "vtkPVConfig.h"
 
 #include "ui_pqFileMenuBuilder.h"
@@ -83,7 +84,7 @@ void swftParaViewMenuBuilders::buildFileMenu(QMenu& menu)
     pqApplicationCore::instance(), SLOT(quit()));
 
   // now setup reactions.
-  new pqLoadDataReaction(ui.actionFileOpen);
+  new pqLoadStateReaction(ui.actionFileOpen);
   new pqRecentFilesMenu(*ui.menuRecentFiles, ui.menuRecentFiles);
 
   new pqLoadStateReaction(ui.actionFileLoadServerState);
@@ -253,7 +254,7 @@ void swftParaViewMenuBuilders::buildPipelineBrowserContextMenu(QWidget& widget)
 
   // And here the reactions come in handy! Just reuse the reaction used for
   // File | Open.
-  new pqLoadDataReaction(ui.actionPBOpen);
+  new swftLoadModelReaction(ui.actionPBOpen);
   new pqChangePipelineInputReaction(ui.actionPBChangeInput);
   new pqCreateCustomFilterReaction(ui.actionPBCreateCustomFilter);
   new pqIgnoreSourceTimeReaction(ui.actionPBIgnoreTime);

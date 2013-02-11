@@ -29,6 +29,8 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::swftSimplePipelineViewer)
 {
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+
     ui->setupUi(this);
 
     //get the pipeline model
@@ -87,8 +89,11 @@ swftSimplePipelineViewer::~swftSimplePipelineViewer()
 //-----------------------------------------------------------------------//
 void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+
 
     this->PipelineModel->setView(view);
+//    this->leafList->resetRoot();
     this->populateControls();
 
 
@@ -98,65 +103,12 @@ void swftSimplePipelineViewer::setActiveView(pqView *view)
 //----------------------------------------------------------------------//
 void swftSimplePipelineViewer::handleIndexClicked(const QModelIndex &index_)
 {
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
 }
 
-//----------------------------------------------------------------------//
-void swftSimplePipelineViewer::setVisibility(bool visible, const QModelIndexList &indexes)
-{
-    pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
-    bool begun_undo_set = false;
 
-    foreach(QModelIndex index_, indexes)
-    {
-        //get object relative to pqPipelineModel
-        const pqPipelineModel* model = this->getPipelineModel(index_);
-        QModelIndex index = this->pipelineModelIndex(index_);
-
-        pqServerManagerModelItem* smModelItem = model->getItemFor(index);
-        pqPipelineSource *source = qobject_cast<pqPipelineSource*>(smModelItem);
-        pqOutputPort *port = source? source->getOutputPort(0) : qobject_cast<pqOutputPort*>(smModelItem);
-
-        if(port)
-        {
-            if(!begun_undo_set)
-            {
-                begun_undo_set = true;
-                if(indexes.size() == 1)
-                {
-                    source = port->getSource();
-                    BEGIN_UNDO_SET(QString("%1  %2").arg(visible? "show" : "hide").arg(source->getSMName()));
-
-                }
-                else
-                {
-                    BEGIN_UNDO_SET(QString("%1 Selected").arg(visible? "show" : "hide"));
-
-                }
-            }
-
-            if(visible)
-            {
-                //make sure the given port is selected
-                pqActiveObjects::instance().setActivePort(port);
-            }
-            display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), visible);
-        }
-
-    }
-
-    if(begun_undo_set)
-    {
-        END_UNDO_SET();
-    }
-
-    if(pqActiveObjects::instance().activeView())
-    {
-        pqActiveObjects::instance().activeView()->render();
-    }
-
-}
 
 //-------------------------------------------------------------------//
 void swftSimplePipelineViewer::enableAnnotationFilter(const QString &annotationKey)
@@ -186,7 +138,7 @@ void swftSimplePipelineViewer::disableSessionFilter()
 
 void swftSimplePipelineViewer::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    std::cout << "Function: " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
+    std::cout << __FILE__ << " " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
 }
 
 //------------------------------------------------------------------//
@@ -197,7 +149,7 @@ const QModelIndex swftSimplePipelineViewer::pipelineModelIndex(const QModelIndex
         return index;
     }
 
-    const QSortFilterProxyModel *filterModel = qobject_cast<const QSortFilterProxyModel*>(index.model());
+    const QSortFilterProxyModel *filterModel = qobject_cast<const QSortFilterProxyModel *>(index.model());
 
     //make a recursive call to support unknown filter depth
     return this->pipelineModelIndex(filterModel->mapToSource(index));
@@ -217,9 +169,13 @@ const pqPipelineModel* swftSimplePipelineViewer::getPipelineModel(const QModelIn
     return this->getPipelineModel(filterModel->mapToSource(index));
 }
 
+//-----------------------------------------------------------------//
 void swftSimplePipelineViewer::populateControls()
 {
     //1) Remove existing controlls
+
+    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+
 
     if(ui->scrollAreaWidgetContents->layout() != NULL)
     {
@@ -249,7 +205,8 @@ void swftSimplePipelineViewer::populateControls()
 
             const QString toolName = this->leafList->nodeList[y]->name;
             //store reference in controller object (so we know what is being clicked!)
-            newControl->setControllerItem(this->leafList->nodeList[y]);
+            newControl->setPipelineLink(this->leafList);
+            newControl->setPipelineIndex(y);
             //set the name in the tool to represent pipeline name
             newControl->setToolName(toolName);
             //set the tool status
@@ -264,6 +221,7 @@ void swftSimplePipelineViewer::populateControls()
 
 }
 
+//-----------------------------------------------------------------//
 void swftSimplePipelineViewer::expandWithModelIndexTranslation(const QModelIndex &index)
 {
     // remove if we dont need this function
