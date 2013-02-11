@@ -26,6 +26,12 @@ void swftSimplePipelineElement::setToolName(const QString &title)
     ui->ViewElementName->setText(title);
 }
 
+void swftSimplePipelineElement::setToolState(bool state)
+{
+
+    ui->visibleButton->setChecked(state);
+}
+
 void swftSimplePipelineElement::setControllerItem(swftPipelineLeafListViewItem *item)
 {
     //this is just a reference... do not delete

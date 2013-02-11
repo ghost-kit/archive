@@ -22,6 +22,7 @@ public:
     ~swftSimplePipelineElement();
 
     void setToolName(const QString &title);
+    void setToolState(bool state);
 
     void setControllerItem(swftPipelineLeafListViewItem *item);
 

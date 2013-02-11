@@ -89,7 +89,6 @@ void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
 
     this->PipelineModel->setView(view);
-
     this->populateControls();
 
 
@@ -242,14 +241,22 @@ void swftSimplePipelineViewer::populateControls()
 
     for(int y = 0; y < this->leafList->nodeList.count(); y++)
     {
-        swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
+        if(!this->leafList->nodeList[y]->HasChildren)
+        {
+            swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
 
-        std::cout << "Controler: " << this->leafList->nodeList[y]->name.toAscii().data() << std::endl;
+            std::cout << "Controler: " << this->leafList->nodeList[y]->name.toAscii().data() << std::endl;
 
-        const QString toolName = this->leafList->nodeList[y]->name;
-        newControl->setToolName(toolName);
+            const QString toolName = this->leafList->nodeList[y]->name;
+            //store reference in controller object (so we know what is being clicked!)
+            newControl->setControllerItem(this->leafList->nodeList[y]);
+            //set the name in the tool to represent pipeline name
+            newControl->setToolName(toolName);
+            //set the tool status
+            newControl->setToolState(this->leafList->nodeList[y]->itemSelected);
 
-        ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
+            ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
+        }
 
     }
 
