@@ -29,7 +29,7 @@ swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::swftSimplePipelineViewer)
 {
-    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     ui->setupUi(this);
 
@@ -89,10 +89,21 @@ swftSimplePipelineViewer::~swftSimplePipelineViewer()
 //-----------------------------------------------------------------------//
 void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
-    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
     this->PipelineModel->setView(view);
+
+    if(view)
+    {
+        std::cout << "Active View: " << this->PipelineModel->view()->getSMName().toAscii().data() << std::endl;
+
+        if(this->PipelineModel->view()->getSMName().compare(QString("RV2D1")) || this->PipelineModel->view()->getSMName().compare(QString("RV2D2")))
+        {
+//            this->PipelineModel->
+        }
+
+    }
 //    this->leafList->resetRoot();
     this->populateControls();
 
@@ -103,7 +114,7 @@ void swftSimplePipelineViewer::setActiveView(pqView *view)
 //----------------------------------------------------------------------//
 void swftSimplePipelineViewer::handleIndexClicked(const QModelIndex &index_)
 {
-    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
 }
@@ -138,7 +149,7 @@ void swftSimplePipelineViewer::disableSessionFilter()
 
 void swftSimplePipelineViewer::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    std::cout << __FILE__ << " " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
+//    std::cout << __FILE__ << " " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
 }
 
 //------------------------------------------------------------------//
@@ -174,7 +185,7 @@ void swftSimplePipelineViewer::populateControls()
 {
     //1) Remove existing controlls
 
-    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
     if(ui->scrollAreaWidgetContents->layout() != NULL)
@@ -193,7 +204,7 @@ void swftSimplePipelineViewer::populateControls()
     //2) populate with new controlls
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
 
-    std::cout << "Number of nodes: " << this->leafList->nodeList.count() << std::endl;
+//    std::cout << "Number of nodes: " << this->leafList->nodeList.count() << std::endl;
 
     for(int y = 0; y < this->leafList->nodeList.count(); y++)
     {
@@ -201,7 +212,7 @@ void swftSimplePipelineViewer::populateControls()
         {
             swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
 
-            std::cout << "Controler: " << this->leafList->nodeList[y]->name.toAscii().data() << std::endl;
+//            std::cout << "Controler: " << this->leafList->nodeList[y]->name.toAscii().data() << std::endl;
 
             const QString toolName = this->leafList->nodeList[y]->name;
             //store reference in controller object (so we know what is being clicked!)

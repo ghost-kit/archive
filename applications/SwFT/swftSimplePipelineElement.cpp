@@ -55,7 +55,7 @@ void swftSimplePipelineElement::setPipelineLink(swftPipelineLeafListView *item)
 
 void swftSimplePipelineElement::setVisibilityState(bool visible)
 {
-    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
+//    std::cout << __FUNCTION__ << " " << __LINE__ << std::endl;
     std::cout << "Setting Visibility to " << ((visible) ? "ON" : "OFF") << std::endl;
 
     //get display policy

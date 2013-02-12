@@ -111,14 +111,14 @@ void swftStatusWindowWidget::setOutputPort(pqOutputPort *source)
 void swftStatusWindowWidget::fillDataInformation(vtkPVDataInformation *info)
 {
 
-    std::cout << __FUNCTION__ << " " << __LINE__ << " has been triggered" << std::endl;
+//    std::cout << __FUNCTION__ << " " << __LINE__ << " has been triggered" << std::endl;
 }
 
 
 void swftStatusWindowWidget::updateInformation()
 {
 
-    std::cout << "update Information triggered" << std::endl;
+//    std::cout << "update Information triggered" << std::endl;
 
     vtkPVDataInformation *dataInformation = NULL;
     pqPipelineSource * source = NULL;
@@ -169,8 +169,8 @@ void swftStatusWindowWidget::updateInformation()
                     QString filename = pqSMAdaptor::getElementProperty(smprop).toString();
                     QString path = vtksys::SystemTools::GetFilenamePath(filename.toAscii().data()).c_str();
 
-                    std::cout << "Path: " << path.toAscii().data() << std::endl;
-                    std::cout << "filename: " << filename.toAscii().data() << std::endl;
+//                    std::cout << "Path: " << path.toAscii().data() << std::endl;
+//                    std::cout << "filename: " << filename.toAscii().data() << std::endl;
 
                     ui->currentFileInfo->setText(vtksys::SystemTools::GetFilenameName(filename.toAscii().data()).c_str());
                     ui->currentFilePathInfo->setText(path);
@@ -201,7 +201,7 @@ void swftStatusWindowWidget::updateInformation()
         QString name = arrayInfo->GetName();
         QString value;
 
-        std::cout << "Name: " << name.toAscii().data() << std::endl;
+//        std::cout << "Name: " << name.toAscii().data() << std::endl;
 
         for(int j = 0; j < numComponents; j++)
         {
