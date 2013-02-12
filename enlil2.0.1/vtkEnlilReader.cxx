@@ -284,11 +284,11 @@ int vtkEnlilReader::RequestInformation(
                 DataOutputInfo,
                 (char*)" Array Name: Data Info Output Information");
 
-    std::cout << "Number of Files: " << this->GetNumberOfFileNames() << std::endl;
+//    std::cout << "Number of Files: " << this->GetNumberOfFileNames() << std::endl;
 
     for(int g = 0; g < this->GetNumberOfFileNames(); g++)
     {
-        std::cout << "FileName: " << this->fileNames[g] << std::endl;
+//        std::cout << "FileName: " << this->fileNames[g] << std::endl;
     }
 
     //need to build the counts for time steps, and time intervals.
@@ -315,18 +315,18 @@ int vtkEnlilReader::RequestInformation(
             if(this->PointDataArraySelection->GetNumberOfArrays() != 0)
             {
                 this->PointDataArraySelection->RemoveAllArrays();
-                std::cout << "Removed Erroneous point Arrays" << std::endl;
+//                std::cout << "Removed Erroneous point Arrays" << std::endl;
             }
             if(this->CellDataArraySelection->GetNumberOfArrays() !=0)
             {
                 this->CellDataArraySelection->RemoveAllArrays();
-                std::cout << "Removed Erroneus Cell Arrays" << std::endl;
+//                std::cout << "Removed Erroneus Cell Arrays" << std::endl;
             }
 
             //Set the Names of the Arrays
             this->PopulateArrays();
 
-            std::cout << "Arrays Populated" << std::endl;
+//            std::cout << "Arrays Populated" << std::endl;
 
         }
 
@@ -354,7 +354,7 @@ int vtkEnlilReader::RequestInformation(
                         this->timeRange,
                         2);
 
-            std::cout << "time Range: " << this->timeRange[0] << " to " << this->timeRange[1] << std::endl;
+//            std::cout << "time Range: " << this->timeRange[0] << " to " << this->timeRange[1] << std::endl;
 
         }
 
@@ -375,14 +375,14 @@ int vtkEnlilReader::RequestData(
         vtkInformationVector** inputVector,
         vtkInformationVector* outputVector)
 {
-    std::cout << __FUNCTION__ << " Start" << std::endl;
+//    std::cout << __FUNCTION__ << " Start" << std::endl;
 
     this->SetProgress(0);
 
     //need to determine the current requested file
     double requestedTimeValue = this->getRequestedTime(outputVector);
 
-    std::cout << "Requested Time Value in Request Data: " << requestedTimeValue << std::endl;
+//    std::cout << "Requested Time Value in Request Data: " << requestedTimeValue << std::endl;
 
     this->CurrentFileName = (char*)this->time2fileMap[requestedTimeValue].c_str();
     this->CurrentPhysicalTime = this->time2physicaltimeMap[requestedTimeValue];
@@ -394,7 +394,7 @@ int vtkEnlilReader::RequestData(
     //Import the MetaData
     this->LoadMetaData(outputVector);
 
-    std::cout << __FUNCTION__ <<  " Loaded MetaData" << std::endl;
+//    std::cout << __FUNCTION__ <<  " Loaded MetaData" << std::endl;
     this->SetProgress(.05);
 
     //Import the actual Data
@@ -402,7 +402,7 @@ int vtkEnlilReader::RequestData(
 
     this->SetProgress(1.00);
 
-    std::cout << __FUNCTION__ << " Stop" << std::endl;
+//    std::cout << __FUNCTION__ << " Stop" << std::endl;
     return 1;
 
 }
@@ -427,8 +427,8 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
         {
             x++;
         }
-        std::cout << "x counter: " << x << std::endl;
-        std::cout << "number of time steps " << this->NumberOfTimeSteps << std::endl;
+//        std::cout << "x counter: " << x << std::endl;
+//        std::cout << "number of time steps " << this->NumberOfTimeSteps << std::endl;
 
         upper = this->TimeSteps[x];
 
@@ -463,7 +463,7 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
         //set the modified julian date
         current_MJD = requestedTimeValue;
 
-        std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
+//        std::cout << "Requested Time Step: " << setprecision(12) << requestedTimeValue << std::endl;
     }
 
 
@@ -582,7 +582,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
                 //when loading from state fiile, we may get some junk marking us to read bad data
                 if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
                 {
-                    std::cout << "Bad SubExtents" << std::endl;
+//                    std::cout << "Bad SubExtents" << std::endl;
                     this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
                     this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
 
@@ -1036,14 +1036,14 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
         vtkIntArray *MetaInt = vtkIntArray::New();
         vtkDoubleArray *MetaDouble = vtkDoubleArray::New();
 
-        std::cout << "Adding Attribute: " << outputName << std::endl;
+//        std::cout << "Adding Attribute: " << outputName << std::endl;
 
         switch(attType)
         {
         case ncByte:
 
-            std::cout << "Type: Byte" << std::endl;
-            std::cout << "Not implimented" << std::endl;
+//            std::cout << "Type: Byte" << std::endl;
+//            std::cout << "Not implimented" << std::endl;
             break;
 
         case ncChar:
@@ -1059,8 +1059,8 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
             break;
 
         case ncShort:
-            std::cout << "Type: Short" << std::endl;
-            std::cout << "Not implimented" << std::endl;
+//            std::cout << "Type: Short" << std::endl;
+//            std::cout << "Not implimented" << std::endl;
             break;
 
         case ncInt:
@@ -1076,8 +1076,8 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
             break;
 
         case ncFloat:
-            std::cout << "Type: Float" << std::endl;
-            std::cout << "Not implimented" << std::endl;
+//            std::cout << "Type: Float" << std::endl;
+//            std::cout << "Not implimented" << std::endl;
             break;
 
         case ncDouble:
@@ -1309,7 +1309,7 @@ int vtkEnlilReader::calculateTimeSteps()
         //  This is easy, as there is one time step per file.
         this->NumberOfTimeSteps = this->fileNames.size();
 
-        std::cout << "Number of Time Steps: " << this->NumberOfTimeSteps << std::endl;
+//        std::cout << "Number of Time Steps: " << this->NumberOfTimeSteps << std::endl;
 
         //the hard part... open all of the files, map them to their calculated times
 
@@ -1337,7 +1337,7 @@ int vtkEnlilReader::calculateTimeSteps()
             //populate datestring map
             this->time2datestringMap[this->TimeSteps[x]].assign(refDate.getDateTimeString());
 
-            std::cout << "[" << x << "] MJD: " << this->TimeSteps[x] << std::endl;
+//            std::cout << "[" << x << "] MJD: " << this->TimeSteps[x] << std::endl;
         }
 
         //calculate time range
