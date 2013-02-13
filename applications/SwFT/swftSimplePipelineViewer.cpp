@@ -23,13 +23,15 @@
 
 #include <assert.h>
 
+#define DEBUG 0
+
 //=========================================================================
 
 swftSimplePipelineViewer::swftSimplePipelineViewer(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::swftSimplePipelineViewer)
 {
-//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+    //    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
     ui->setupUi(this);
 
@@ -89,23 +91,18 @@ swftSimplePipelineViewer::~swftSimplePipelineViewer()
 //-----------------------------------------------------------------------//
 void swftSimplePipelineViewer::setActiveView(pqView *view)
 {
-//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
-
+    //set the new view
     this->PipelineModel->setView(view);
 
-    if(view)
+
+    if(view && DEBUG)
     {
         std::cout << "Active View: " << this->PipelineModel->view()->getSMName().toAscii().data() << std::endl;
-
-        if(this->PipelineModel->view()->getSMName().compare(QString("RV2D1")) || this->PipelineModel->view()->getSMName().compare(QString("RV2D2")))
-        {
-//            this->PipelineModel->
-        }
-
     }
-//    this->leafList->resetRoot();
-    this->populateControls();
+
+    //repolulate the view based on new active view
+    this->populateControls(view);
 
 
 }
@@ -114,7 +111,7 @@ void swftSimplePipelineViewer::setActiveView(pqView *view)
 //----------------------------------------------------------------------//
 void swftSimplePipelineViewer::handleIndexClicked(const QModelIndex &index_)
 {
-//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+    //    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
 }
@@ -149,7 +146,7 @@ void swftSimplePipelineViewer::disableSessionFilter()
 
 void swftSimplePipelineViewer::updateData(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-//    std::cout << __FILE__ << " " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
+    //    std::cout << __FILE__ << " " << __FUNCTION__ << " Line: " << __LINE__ << std::endl;
 }
 
 //------------------------------------------------------------------//
@@ -181,11 +178,11 @@ const pqPipelineModel* swftSimplePipelineViewer::getPipelineModel(const QModelIn
 }
 
 //-----------------------------------------------------------------//
-void swftSimplePipelineViewer::populateControls()
+void swftSimplePipelineViewer::populateControls(pqView *view)
 {
     //1) Remove existing controlls
 
-//    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
+    //    std::cout << __FILE__ << " " << __FUNCTION__ << " " << __LINE__ << std::endl;
 
 
     if(ui->scrollAreaWidgetContents->layout() != NULL)
@@ -203,31 +200,36 @@ void swftSimplePipelineViewer::populateControls()
 
     //2) populate with new controlls
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 40, QSizePolicy::Minimum, QSizePolicy::Expanding);
-
-//    std::cout << "Number of nodes: " << this->leafList->nodeList.count() << std::endl;
-
-    for(int y = 0; y < this->leafList->nodeList.count(); y++)
+    if(view)
     {
-        if(!this->leafList->nodeList[y]->HasChildren)
+        //parse view name
+        QString viewName = view->getSMName();
+
+        std::cout << "viewName: " << viewName.toAscii().data() << std::endl;
+
+
+        //find the active units for this view, and build the controller objects
+        for(int y = 0; y < this->leafList->nodeList.count(); y++)
         {
-            swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
+            if(!this->leafList->nodeList[y]->HasChildren && (viewName.contains(this->leafList->nodeList[y]->tags[0]) || this->leafList->nodeList[y]->tags[0].contains("ALL",Qt::CaseInsensitive)))
+            {
+                swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
 
-//            std::cout << "Controler: " << this->leafList->nodeList[y]->name.toAscii().data() << std::endl;
+                const QString toolName = this->leafList->nodeList[y]->name;
 
-            const QString toolName = this->leafList->nodeList[y]->name;
-            //store reference in controller object (so we know what is being clicked!)
-            newControl->setPipelineLink(this->leafList);
-            newControl->setPipelineIndex(y);
-            //set the name in the tool to represent pipeline name
-            newControl->setToolName(toolName);
-            //set the tool status
-            newControl->setToolState(this->leafList->nodeList[y]->itemSelected);
+                //store reference in controller object (so we know what is being clicked!)
+                newControl->setPipelineLink(this->leafList);
+                newControl->setPipelineIndex(y);
+                //set the name in the tool to represent pipeline name
+                newControl->setToolName(toolName);
+                //set the tool status
+                newControl->setToolState(this->leafList->nodeList[y]->itemSelected);
 
-            ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
+                ui->scrollAreaWidgetContents->layout()->addWidget(newControl);
+            }
+
         }
-
     }
-
     ui->scrollAreaWidgetContents->layout()->addItem(verticalSpacer);
 
 }

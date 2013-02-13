@@ -147,6 +147,7 @@ void swftPipelineLeafListView::addChildItems(swftPipelineLeafListViewItem *root,
                     value = this->Model->data(index);
                     name = value.toString();
                     child->name = name;
+                    child->parseTags();
 
                     this->nodeList.append(child);
 

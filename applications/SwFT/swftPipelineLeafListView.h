@@ -65,7 +65,39 @@ public:
     bool itemSelected;
 
     QString name;
+    QStringList tags;
+
     bool HasChildren;
+
+    void parseTags()
+    {
+        QStringList temp = this->name.split( "}");
+        QStringList temp2;
+
+        //strip off tags from pipeline name
+        //rename the object to the stripped version
+        if(temp.size() > 0)
+        {
+            temp2 = temp[0].split("{");
+            if(temp.size() > 1)
+            {
+                name = temp[1];
+
+            }
+        }
+
+        //parse the tags on the name, and store them in object tags list.
+        if(temp2.size() >= 2)
+        {
+            this->tags = temp2[1].split(",");
+            this->tags.removeAll(" ");
+        }
+
+//        for(int x=0; x < this->tags.size(); x++)
+//        {
+//            std::cout << "tag " << x << ": " << this->tags[x].toAscii().data() << std::endl;
+//        }
+    }
 
 };
 //====================================================
