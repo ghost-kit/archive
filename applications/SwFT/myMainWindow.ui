@@ -115,6 +115,15 @@
    </attribute>
    <widget class="pqObjectInspectorWidget" name="proxyTabWidget"/>
   </widget>
+  <widget class="QDockWidget" name="dockWidget">
+   <property name="windowTitle">
+    <string>Analysis Tools</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="swftAnalysisToolsWidget" name="mainTools"/>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>
@@ -162,6 +171,12 @@
    <class>swftSimplePipelineViewer</class>
    <extends>QWidget</extends>
    <header>swftSimplePipelineViewer.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>swftAnalysisToolsWidget</class>
+   <extends>QWidget</extends>
+   <header>swftAnalysisToolsWidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

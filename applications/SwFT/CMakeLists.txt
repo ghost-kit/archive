@@ -36,6 +36,7 @@ QT4_WRAP_CPP(MOC_BUILT_SOURCES
   swftSimplePipelineElement.h
   swftPipelineLeafListView.h
   swftLoadModelReaction.h
+swftAnalysisToolsWidget.h
 
     )
 
@@ -50,6 +51,7 @@ QT4_WRAP_UI(UI_BUILT_SOURCES
   swftStatusWindowWidget.ui
   swftSimplePipelineViewer.ui
   swftSimplePipelineElement.ui
+swftAnalysisToolsWidget.ui
 )
 
 SOURCE_GROUP("Generated" FILES
@@ -84,6 +86,8 @@ swftSimplePipelineElement.cpp
   swftPipelineLeafListView.cpp
 swftLoadModelReaction.h
 swftLoadModelReaction.cpp
+swftAnalysisToolsWidget.h
+swftAnalysisToolsWidget.cpp
   ${swft_RESOURCES_RCC}
   ${MOC_BUILT_SOURCES}
   ${UI_BUILT_SOURCES})
