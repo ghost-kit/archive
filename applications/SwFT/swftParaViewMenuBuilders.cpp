@@ -47,7 +47,6 @@
 #include "pqSaveDataReaction.h"
 #include "pqSaveScreenshotReaction.h"
 #include "pqSaveStateReaction.h"
-#include "pqSelectionToolbar.h"
 #include "pqServerConnectReaction.h"
 #include "pqServerDisconnectReaction.h"
 #include "pqSetName.h"

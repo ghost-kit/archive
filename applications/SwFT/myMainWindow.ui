@@ -116,6 +116,9 @@
    <widget class="pqObjectInspectorWidget" name="proxyTabWidget"/>
   </widget>
   <widget class="QDockWidget" name="dockWidget">
+   <property name="allowedAreas">
+    <set>Qt::LeftDockWidgetArea</set>
+   </property>
    <property name="windowTitle">
     <string>Analysis Tools</string>
    </property>
