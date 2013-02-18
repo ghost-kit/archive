@@ -8,6 +8,7 @@
 #include<map>
 #include<string>
 #include<vector>
+#include<QString>
 
 
 class vtkDataArraySelection;
@@ -22,6 +23,7 @@ class vtkTable;
 class vtkStructuredGrid;
 class vtkStructuredGridAlgorithm;
 
+
 namespace GRID_SCALE
 {
   enum ScaleType{
@@ -34,6 +36,27 @@ namespace GRID_SCALE
                                         6.5e6,
                                         6.955e8,
                                         1.5e11 };
+}
+
+namespace UNITS
+{
+    static const double emu = 1.67262158e-27;
+    static const double km2cm = 1e6;
+    static const double km2m = 1e3;
+}
+
+namespace DATA_TYPE
+{
+enum dataType{
+    PDENSITY = 0,
+    CDENSITY = 1,
+    TEMP = 2,
+    POLARITY = 3,
+    BFIELD = 4,
+    VELOCITY = 5
+};
+
+
 }
 
 
@@ -56,6 +79,10 @@ public:
   }
 
   vtkGetMacro(GridScaleType, int)
+
+  vtkSetMacro(DataUnits, int)
+  vtkGetMacro(DataUnits, int)
+
 
   vtkSetStringMacro(FileName)
   vtkGetStringMacro(FileName)
@@ -101,6 +128,7 @@ protected:
 
   char* FileName;            // Base file name
   int GridScaleType;
+  int DataUnits;
   bool gridClean;
   int numberOfArrays;
 

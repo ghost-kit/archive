@@ -28,9 +28,23 @@
         </Documentation>
       </IntVectorProperty>
 
+    <IntVectorProperty
+        name="DataUnits"
+        command="SetDataUnits"
+        number_of_elements="1"
+        default_values="0">
+        <EnumerationDomain name="enum">
+            <Entry value="0" text="Native ENLIL Units"/>
+            <Entry value="1" text="SWPC units"/>
+            <Entry value="2" text="other units will be listed as defined"/>
+        </EnumerationDomain>
+        <Documentation>
+            This propertly tells the reade which unit systems to use.  Default is the native Enlil Reader Units.
+        </Documentation>
+    </IntVectorProperty>
 
 
-    <StringVectorProperty
+  <!--  <StringVectorProperty
         name="CellArrayInfo"
         information_only="1">
 
@@ -62,7 +76,7 @@
           This is the Cell Array Selectors.
         </Documentation>
 
-      </StringVectorProperty>
+      </StringVectorProperty>-->
 
       <StringVectorProperty
         name="PointArrayInfo"
@@ -83,7 +97,7 @@
         number_of_elements_per_command="2"
         element_types = "2 0"
         information_property="PointArrayInfo"
-        label="Fields Available"
+        label="Point Arrays Available"
         default_values = "0">
 
         <ArraySelectionDomain name="array_list">

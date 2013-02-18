@@ -1,6 +1,9 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT("Enlil Reader 2.0.1")
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+
+
 ADD_SUBDIRECTORY(cxform-0.71)
 
 #Find_Library(cxform REQUIRED)
@@ -9,6 +12,7 @@ include_directories(cxform-0.71)
 
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
+
 
 ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0.1"
   SERVER_MANAGER_XML vtkEnlilReader.xml
