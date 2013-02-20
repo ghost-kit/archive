@@ -175,21 +175,21 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 
     if(status)
     {
-        std::cout << "Enabling " << name << std::endl;
+//        std::cout << "Enabling " << name << std::endl;
         this->PointDataArraySelection->EnableArray(name);
     }
     else
     {
-        std::cout << "Disabling " << name << std::endl;
+//        std::cout << "Disabling " << name << std::endl;
 
         this->PointDataArraySelection->DisableArray(name);
     }
 
     this->Modified();
 
-    std::cout /*<< __FILE__ << " " << __LINE__ << " " <<  __FUNCTION__*/
-            << " Status of Array " << name << ": "
-            << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
+//    std::cout /*<< __FILE__ << " " << __LINE__ << " " <<  __FUNCTION__*/
+//            << " Status of Array " << name << ": "
+//            << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
 
 }
 
@@ -583,9 +583,9 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
             //Load the current Point array
             if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-                                std::cout << "Loading Array " << array << std::endl;
-                                std::cout << "   ArrayStatusSelection: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str())
-                                             << std::endl;
+//                                std::cout << "Loading Array " << array << std::endl;
+//                                std::cout << "   ArrayStatusSelection: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str())
+//                                             << std::endl;
 
                 //when loading from state fiile, we may get some junk marking us to read bad data
                 if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
