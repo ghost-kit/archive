@@ -235,7 +235,7 @@ protected:
   bool ExtentOutOfBounds(int extToCheck[], int extStandard[]);
 
   // Required Paraview Functions
-  static int CanReadFile(const char* filename);
+  static int CanReadFiles(const char* filename);
 
   virtual int RequestData(
       vtkInformation* request,

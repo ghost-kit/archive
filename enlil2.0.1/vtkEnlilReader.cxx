@@ -62,6 +62,9 @@ vtkEnlilReader::vtkEnlilReader()
     //configure array status selectors
     this->PointDataArraySelection = vtkDataArraySelection::New();
     this->CellDataArraySelection  = vtkDataArraySelection::New();
+    this->PointDataArraySelection->DisableAllArrays();
+    this->CellDataArraySelection->DisableAllArrays();
+
     this->numberOfArrays = 0;
 
     //Configure sytem array interfaces
@@ -172,16 +175,21 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 
     if(status)
     {
+        std::cout << "Enabling " << name << std::endl;
         this->PointDataArraySelection->EnableArray(name);
     }
     else
     {
+        std::cout << "Disabling " << name << std::endl;
+
         this->PointDataArraySelection->DisableArray(name);
     }
 
-    //  std::cout << __FUNCTION__ << " Status of Array: " << name << ": " << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
-
     this->Modified();
+
+    std::cout /*<< __FILE__ << " " << __LINE__ << " " <<  __FUNCTION__*/
+            << " Status of Array " << name << ": "
+            << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
 
 }
 
@@ -211,7 +219,7 @@ void vtkEnlilReader::DisableAllPointArrays()
 {
     this->PointDataArraySelection->DisableAllArrays();
 
-    //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    std::cout << __FUNCTION__ << " Called " << std::endl;
 
     this->Modified();
 }
@@ -224,7 +232,7 @@ void vtkEnlilReader::DisableAllCellArrays()
 {
     this->CellDataArraySelection->DisableAllArrays();
 
-    //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
     this->Modified();
@@ -238,7 +246,7 @@ void vtkEnlilReader::EnableAllPointArrays()
 {
     this->PointDataArraySelection->EnableAllArrays();
 
-    //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    std::cout << __FUNCTION__ << " Called " << std::endl;
 
 
     this->Modified();
@@ -252,7 +260,7 @@ void vtkEnlilReader::EnableAllCellArrays()
 {
     this->CellDataArraySelection->EnableAllArrays();
 
-    //  std::cout << __FUNCTION__ << " Called " << std::endl;
+    std::cout << __FUNCTION__ << " Called " << std::endl;
 
     this->Modified();
 }
@@ -265,7 +273,7 @@ void vtkEnlilReader::EnableAllCellArrays()
 //  is implemented.
 //------------------------------------------------------------
 
-int vtkEnlilReader::CanReadFile(const char *filename)
+int vtkEnlilReader::CanReadFiles(const char *filename)
 {
     //This doesn't really do anything right now...
     return 1;
@@ -285,26 +293,13 @@ int vtkEnlilReader::RequestInformation(
                 DataOutputInfo,
                 (char*)" Array Name: Data Info Output Information");
 
-    //    std::cout << "Number of Files: " << this->GetNumberOfFileNames() << std::endl;
-
-    for(int g = 0; g < this->GetNumberOfFileNames(); g++)
-    {
-        //        std::cout << "FileName: " << this->fileNames[g] << std::endl;
-    }
-
-    //need to build the counts for time steps, and time intervals.
-
     //Set the Whole Extents and Time
     this->calculateTimeSteps();
-
-    //calculate postitions of artifacts
-    //this->calculateArtifacts();
 
     //Setup the grid date
     this->PopulateGridData();
 
-    //find requested timestep, and provide to ParaView
-    //TODO: Redirect all internal filename requests to CurrentFileName after this point
+    //get information from the first file in the list... it has to come from somewhere...
     this->CurrentFileName = (char*) this->fileNames[0].c_str();
     this->FileName = CurrentFileName;
 
@@ -313,21 +308,9 @@ int vtkEnlilReader::RequestInformation(
         //Work Around for restore state problems
         if(this->numberOfArrays == 0)
         {
-            if(this->PointDataArraySelection->GetNumberOfArrays() != 0)
-            {
-                this->PointDataArraySelection->RemoveAllArrays();
-                //                std::cout << "Removed Erroneous point Arrays" << std::endl;
-            }
-            if(this->CellDataArraySelection->GetNumberOfArrays() !=0)
-            {
-                this->CellDataArraySelection->RemoveAllArrays();
-                //                std::cout << "Removed Erroneus Cell Arrays" << std::endl;
-            }
 
             //Set the Names of the Arrays
             this->PopulateArrays();
-
-            //            std::cout << "Arrays Populated" << std::endl;
 
         }
 
@@ -501,11 +484,31 @@ unsigned int vtkEnlilReader::GetNumberOfFileNames()
 
 //-- Callback
 void vtkEnlilReader::SelectionCallback(
-        vtkObject*,
+        vtkObject* object,
         unsigned long vtkNotUsed(eventid),
         void* clientdata,
         void* vtkNotUsed(calldata))
 {
+
+    //    std::cout << "------------------------------------------------" << std::endl;
+    //    std::cout << "Selection Object has been modified." << std::endl;
+
+    //    int numOfArrays = static_cast<vtkEnlilReader*>(clientdata)->PointDataArraySelection->GetNumberOfArrays();
+    //    std::cout << "Number of Arrays in object: " << numOfArrays << std::endl;
+
+    //    for(int x = 0; x < numOfArrays; x++)
+    //    {
+    //        const char* name = static_cast<vtkEnlilReader*>(clientdata)->PointDataArraySelection->GetArrayName(x);
+    //         int status = static_cast<vtkEnlilReader*>(clientdata)->PointDataArraySelection->ArrayIsEnabled(name);
+    //        std::cout << "Array: " << name
+    //                  << "Status: " << status
+    //                  << std::endl;
+
+
+    //    }
+
+    //    std::cout << "------------------------------------------------" << std::endl;
+
     static_cast<vtkEnlilReader*>(clientdata)->Modified();
 }
 
@@ -580,6 +583,10 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
             //Load the current Point array
             if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
+                                std::cout << "Loading Array " << array << std::endl;
+                                std::cout << "   ArrayStatusSelection: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str())
+                                             << std::endl;
+
                 //when loading from state fiile, we may get some junk marking us to read bad data
                 if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
                 {
@@ -1210,7 +1217,7 @@ int vtkEnlilReader::PopulateArrays()
     this->addPointArray((char*)"B1", (char*)"B2", (char*)"B3");
     this->addPointArray((char*)"V1", (char*)"V2", (char*)"V3");
 
-    this->numberOfArrays = 6;
+    this->numberOfArrays = this->PointDataArraySelection->GetNumberOfArrays();
 
     return 1;
 }
@@ -1558,7 +1565,10 @@ void vtkEnlilReader::addPointArray(char* name)
         this->ScalarVariableMap[varname] = std::string(name);
 
         // Add it to the point grid
-        this->PointDataArraySelection->AddArray(varname.c_str());
+        if(!this->PointDataArraySelection->ArrayExists(varname.c_str()))
+        {
+            this->PointDataArraySelection->AddArray(varname.c_str());
+        }
     }
     catch (...)
     {
@@ -1595,7 +1605,10 @@ void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
         this->VectorVariableMap[varname2] = nameArray;
 
         //add array to point array name list
-        this->PointDataArraySelection->AddArray(varname2.c_str());
+        if(!this->PointDataArraySelection->ArrayExists(varname2.c_str()))
+        {
+            this->PointDataArraySelection->AddArray(varname2.c_str());
+        }
 
     }
     catch(...)
