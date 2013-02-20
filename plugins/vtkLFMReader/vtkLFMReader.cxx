@@ -10,11 +10,8 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkStructuredGrid.h"
 
-#include <vtkstd/map>
-#include <vtkstd/string>
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
 
 using namespace std;
 
@@ -28,7 +25,6 @@ vtkStandardNewMacro(vtkLFMReader);
 vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
-  this->NumberOfTimeSteps = 1;
   
   this->NumberOfPointArrays = 0;
   this->NumberOfCellArrays = 0;
@@ -169,8 +165,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   const int nkp2 = nkp1+1;
   const int nk = nkp1-1;
   
-  double timeRange[2];
-  
   int extent[6] = {0, nim1,
 		   0, njp1,
 		   0, nk};
@@ -184,31 +178,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   vtkInformation* outInfo = outputVector->GetInformationObject(0); 
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
-  //Set Time step Information
-  this->NumberOfTimeSteps = 1; // 1 step per file
-  this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
-  if (metaDoubles.count(string("mjd")) != 0){
-    this->TimeStepValues[0] = metaDoubles["mjd"];
-  }
-  else{
-    // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
-    this->TimeStepValues[0] = metaFloats["time"];
-  }
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-               &this->TimeStepValues[0],
-               static_cast<int>(this->TimeStepValues.size()));
-  
-  //Set Time Range for file
-  timeRange[0] = this->TimeStepValues.front();
-  timeRange[1] = this->TimeStepValues.back();
-  
-  //Update Pipeline
-  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
-
-  vtkDebugMacro(<< "number of timesteps in file=" << this->NumberOfTimeSteps);
-  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0]);
-
-
   return 1; 
 }
 
@@ -376,39 +345,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   vtkStructuredGrid *output = 
     vtkStructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
-  
-  /*^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^*/
-  /*----------------------------------------------*/
-  
-  //BEGIN UPDATE TIEM STEP
-  //Return the Current Time to the Calling Application
-  //Added by Joshua Murphy 1 DEC 2011
-  //==================================================
-  int myTime=0;
-  
-  int numRequestedTimeSteps; 
-  double * requestedTimeValues;
-  
-  double firstTime; 
-  double lastTime;
-  
-  
-  //This imports time step data into the system.
-  //TODO: Will Need to be adjusted for files with Multiple Time Steps
-  if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())){    
-    numRequestedTimeSteps = outInfo->Length(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
-    requestedTimeValues = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS());
-    
-    firstTime = requestedTimeValues[0];
-    lastTime = requestedTimeValues[numRequestedTimeSteps-1]; 
-    
-    double myAnswerTime = this->TimeStepValues[0];
-    
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEPS(), &myAnswerTime, 1);    
-  }
-  
-  //END UPDATE TIME STEP
-  
   
   // Fix x-axis caps (nj++ in nose, nj++ in tail)
   // close off grid (nk++)
@@ -1190,7 +1126,7 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 
 //----------------------------------------------------------------
 //This version of SetIfExists is for scalars
-void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string VarDescription)
+void vtkLFMReader::SetIfExists(Hdf4 &f, std::string VarName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
     //Set Variable->description map
@@ -1207,7 +1143,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string V
 
 //----------------------------------------------------------------
 //This Version of SetIfExists is for Vectors (3D)
-void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription)
+void vtkLFMReader::SetIfExists(Hdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
     //Set variable->desciption map
@@ -1226,7 +1162,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar
 
 //----------------------------------------------------------------
 //This Version adds a new array based on existence of a scalar
-void vtkLFMReader::SetNewIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::string ArrayIndexName, vtkstd::string VarDescription)
+void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string VarName, std::string ArrayIndexName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
     //Set Variable->description map
@@ -1243,7 +1179,7 @@ void vtkLFMReader::SetNewIfExists(Hdf4 &f, vtkstd::string VarName, vtkstd::strin
 
 //----------------------------------------------------------------
 // This version adds a new Array based on existence of a vector
-void vtkLFMReader::SetNewIfExists(Hdf4 &f, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string ArrayIndexName,  vtkstd::string VarDescription)
+void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
     //Set variable->desciption map

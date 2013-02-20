@@ -5,9 +5,9 @@
 #include "vtkDelimitedTextReader.h"
 #include "vtkToolkits.h"
 #include "vtkPolyDataAlgorithm.h"
-#include <vtkstd/string>
-#include <vtkstd/vector>
-#include <vtkstd/map>
+#include <vtksys/stl/string>
+#include <vtksys/stl/vector>
+#include <vtksys/stl/map>
 #include "Hdf4.h"
 
   //simple macros to point to dimensions
@@ -140,28 +140,16 @@ protected:
   
   char *HdfFileName;
   int GridScaleType;
-  
-    //THESE VALUES are needed for dealing with Time Steps
-    //  Added TimeStep Variables:
-    //    1) NumberOfTimeSteps
-    //    2) TimeStepValues
-    //
-    //  The BTX and ETX comments must encompase stl calls when in a header file
-    // Added by Joshua Murphy 1 DEC 2011
-  int NumberOfTimeSteps;
-  
-    //BTX    
-  vtkstd::vector<double> TimeStepValues;
-  
+    
     //Map of variable name to Description String
-  vtkstd::map<vtkstd::string, vtkstd::string> ArrayNameLookup;
+  std::map<std::string, std::string> ArrayNameLookup;
   
     //Point and Cell Array Status Information
-  vtkstd::vector<vtkstd::string> CellArrayName;
-  vtkstd::vector<vtkstd::string> PointArrayName;
+  std::vector<std::string> CellArrayName;
+  std::vector<std::string> PointArrayName;
   
-  vtkstd::map<vtkstd::string,int> CellArrayStatus;
-  vtkstd::map<vtkstd::string,int> PointArrayStatus;
+  std::map<std::string,int> CellArrayStatus;
+  std::map<std::string,int> PointArrayStatus;
     //ETX
   
   
@@ -173,7 +161,7 @@ protected:
     // helper values to clean up code
     //BTX
     //keep track of the master dimensions of the arrays.
-  vtkstd::map<vtkstd::string, int> dims;
+  std::map<std::string, int> dims;
     //ETX
   
   /**
@@ -218,17 +206,17 @@ protected:
     //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
     //  Can only be used to add existing variables in the file.
     //  if existence query fails, NOTHING happens
-  void SetIfExists(Hdf4 &filePointer, vtkstd::string VarName, vtkstd::string VarDescription);
-  void SetIfExists(Hdf4 &filePointer, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string VarDescription);
+  void SetIfExists(Hdf4 &filePointer, std::string VarName, std::string VarDescription);
+  void SetIfExists(Hdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription);
   
     //these methods will add an ARRAY to the available list indexed at "ArrayIndexName" with the 
     //  description value of "VarDescription".  This can be used to add dirived quantities to the system.
     //  
     //  If existence querry fails, NOTHING happens.
-  void SetNewIfExists(Hdf4 &filePointer, vtkstd::string VarName, vtkstd::string ArrayIndexName, vtkstd::string VarDescription);
-  void SetNewIfExists(Hdf4 &filePointer, vtkstd::string xVar, vtkstd::string yVar, vtkstd::string zVar, vtkstd::string ArrayIndexName,  vtkstd::string VarDescription);
+  void SetNewIfExists(Hdf4 &filePointer, std::string VarName, std::string ArrayIndexName, std::string VarDescription);
+  void SetNewIfExists(Hdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription);
   
-  vtkstd::string GetDesc(vtkstd::string varName)
+  std::string GetDesc(std::string varName)
   { return this->ArrayNameLookup[varName];}
   
     //ETX
