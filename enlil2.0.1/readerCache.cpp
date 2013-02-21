@@ -6,7 +6,137 @@ RCache::ReaderCache::ReaderCache()
 }
 
 //=========================================================================================
-RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6)
+RCache::ReaderCache::~ReaderCache()
+{
+
+    //if there is anything in the cache, we want to delete it from memory
+    if(this->cache.size() > 0)
+    {
+        std::map<double,cacheMap*>::iterator iter = this->cache.begin();
+        for( ; iter != this->cache.end(); ++iter)
+        {
+            //remove the cached items
+            //this will invoke their own delete routines
+            delete iter->second;
+        }
+    }
+}
+
+//=========================================================================================
+void RCache::ReaderCache::cacheElement(double time, RCache::extents xtents, vtkAbstractArray *array)
+{
+}
+
+//=========================================================================================
+vtkAbstractArray *RCache::ReaderCache::getExtentsFromCache(double time, RCache::extents xtents)
+{
+    std::map<double,cacheMap*>::iterator timeElement;
+    cacheMap* currentMap=NULL;
+
+    //this must be NULL to start with or algorithm won't work
+    vtkAbstractArray *currentArray = NULL;
+
+    //this will search the cache and return the element that is needed
+    if((timeElement=this->cache.find(time)) != this->cache.end())
+    {
+        //the time segment is actually in the cache
+        currentMap = timeElement->second;
+
+        //check to see if the exact extents exist
+        if((currentArray=currentMap->getCacheElement(xtents)) == NULL)
+        {
+            //if exact extents don't exist, check if subextent exist
+            if((currentArray=currentMap->getCacheElementContains(xtents)) != NULL)
+            {
+                //extract the correct extents from the superset
+                currentArray = ReaderCache::extractFromArray(xtents, currentArray);
+            }
+        }
+
+    }
+
+    //return the array if found... otherwise, return NULL
+    return currentArray;
+
+}
+
+//=========================================================================================
+vtkAbstractArray *RCache::ReaderCache::extractFromArray(RCache::extents xtents,  vtkAbstractArray *cacheArray)
+{
+    if(cacheArray->GetDataType() == VTK_FLOAT)
+    {
+        //cast to float array and call float function
+        vtkFloatArray* current = vtkFloatArray::SafeDownCast(cacheArray);
+        return RCache::ReaderCache::extractFromArray(xtents, current);
+    }
+    else if(cacheArray->GetDataType() == VTK_DOUBLE)
+    {
+        //cast to double array and call function
+        vtkDoubleArray* current = vtkDoubleArray::SafeDownCast(cacheArray);
+        return RCache::ReaderCache::extractFromArray(xtents, current);
+    }
+    else if(cacheArray->GetDataType() == VTK_INT)
+    {
+        //cast to int array and call function
+        vtkIntArray* current = vtkIntArray::SafeDownCast(cacheArray);
+        return RCache::ReaderCache::extractFromArray(xtents, current);
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+vtkDataArray *RCache::ReaderCache::extractFromArray(RCache::extents xtetnts,  vtkDataArray *cacheArray)
+{
+    //extract the proper extents and put in new object
+    return NULL;
+}
+
+vtkFloatArray *RCache::ReaderCache::extractFromArray(RCache::extents xtetnts,  vtkFloatArray *cacheArray)
+{
+    //extract the proper extents and put in new object
+    return NULL;
+}
+
+vtkIntArray *RCache::ReaderCache::extractFromArray(RCache::extents xtetnts,  vtkIntArray *cacheArray)
+{
+    //extract the proper extents and put in new object
+    return NULL;
+}
+
+//=========================================================================================
+bool RCache::ReaderCache::isInCache(double time, RCache::extents xtents)
+{
+    std::map<double,cacheMap*>::iterator timeElement;
+    cacheMap* currentMap=NULL;
+
+    if((timeElement=this->cache.find(time)) != this->cache.end())
+    {
+        currentMap = timeElement->second;
+
+        if(currentMap->getCacheElementContains(xtents) != NULL)
+        {
+            return true;
+        }
+    }
+
+    return false;
+
+}
+
+//=========================================================================================
+void RCache::ReaderCache::pruneTimeFromEndTo(double time)
+{
+}
+
+//=========================================================================================
+void RCache::ReaderCache::pruneExtentsFromTime(RCache::extents xtents)
+{
+}
+
+//=========================================================================================
+RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists=false)
 {
     this->xtents[0] = x1;
     this->xtents[1] = x2;
@@ -14,6 +144,8 @@ RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6)
     this->xtents[3] = x4;
     this->xtents[4] = x5;
     this->xtents[5] = x6;
+
+    this->persists = persists;
 }
 
 RCache::extents::extents(const int xtents[])
@@ -28,6 +160,7 @@ RCache::extents::extents(const int xtents[])
 
 RCache::extents::~extents()
 {
+    //nothing to do here at this time...
 }
 
 //=========================================================================================
@@ -120,6 +253,12 @@ int *RCache::extents::getExtents()
 }
 
 //=========================================================================================
+void RCache::extents::setPersistance(bool persists)
+{
+    this->persists = persists;
+}
+
+//=========================================================================================
 RCache::cacheMap::cacheMap()
 {
     //initalize cache size counter
@@ -204,6 +343,7 @@ void RCache::cacheMap::cleanCache()
         this->map.erase(iter);
     }
 }
+
 
 
 
