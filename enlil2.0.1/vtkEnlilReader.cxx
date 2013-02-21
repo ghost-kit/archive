@@ -40,6 +40,7 @@
 
 #include "DateTime.h"
 #include "cxform.h"
+#include "readerCache.h"
 
 #include <QString>
 vtkStandardNewMacro(vtkEnlilReader)
@@ -87,6 +88,8 @@ vtkEnlilReader::vtkEnlilReader()
     this->SelectionObserver->SetClientData(this);
     this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
     this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
+
+
 }
 
 //--
