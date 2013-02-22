@@ -26,7 +26,10 @@ void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, v
     if((timeElement=this->cache.find(time)) != this->cache.end())
     {
         currentMap = timeElement->second;
-        if(currentMap->getCacheElementContains(xtents) == NULL)
+
+        //disabled until we figure out how to make it work
+        //if(currentMap->getCacheElementContains(xtents) == NULL)
+        if(currentMap->getCacheElement(xtents) == NULL)
         {
             //the cache element is not in the map, so lets add it
             currentMap->addCacheElement(xtents, array);
@@ -86,18 +89,24 @@ RCache::cacheElement *RCache::ReaderCache::getExtentsFromCache(double time, RCac
         //the time segment is actually in the cache
         currentMap = timeElement->second;
 
+        std::cout << "Found Time: " << time << std::endl;
 
         //check to see if the exact extents exist
         if((currentArray=currentMap->getCacheElement(xtents)) == NULL)
         {
+            std::cout << "Found Element for xtents "
+                      << xtents.getExtent(0) << " " << xtents.getExtent(1) << " "
+                      << xtents.getExtent(2) << " " << xtents.getExtent(3) << " "
+                      << xtents.getExtent(4) << " " << xtents.getExtent(5) << std::endl;
 
             //if exact extents don't exist, check if subextent exist
-            if((currentArray=currentMap->getCacheElementContains(xtents)) != NULL)
-            {
+            //disabled until we know how to make it work
+//            if((currentArray=currentMap->getCacheElementContains(xtents)) != NULL)
+//            {
 
-                //extract the correct extents from the superset
-                currentArray = ReaderCache::extractFromArray(xtents, currentArray);
-            }
+//                //extract the correct extents from the superset
+//                currentArray = ReaderCache::extractFromArray(xtents, currentArray);
+//            }
         }
 
     }
@@ -195,7 +204,13 @@ bool RCache::ReaderCache::isInCache(double time, RCache::extents xtents)
     {
         currentMap = timeElement->second;
 
-        if(currentMap->getCacheElementContains(xtents) != NULL)
+        //this is deactivated until we figure out how to make it work
+//        if(currentMap->getCacheElementContains(xtents) != NULL)
+//        {
+//            return true;
+//        }
+
+        if(currentMap->getCacheElement(xtents) != NULL)
         {
             return true;
         }
@@ -381,9 +396,18 @@ void RCache::cacheMap::addCacheElement(RCache::extents xtents, vtkAbstractArray 
 //=========================================================================================
 RCache::cacheElement *RCache::cacheMap::getCacheElement(RCache::extents xtents)
 {
-    //returns the exact extent if it exists
-    if(this->map.find(xtents) != map.end()) return this->map[xtents];
-    else return NULL;
+
+    std::map<RCache::extents, RCache::cacheElement*>::iterator itr;
+
+    for(itr = this->map.begin(); itr != this->map.end(); ++itr)
+    {
+        if(itr->first == xtents)
+        {
+            return itr->second;
+        }
+    }
+
+    return NULL;
 }
 
 //=========================================================================================
@@ -392,19 +416,18 @@ RCache::cacheElement *RCache::cacheMap::getCacheElementContains(RCache::extents 
     //compare the key for each element with requested
     //and determine if it contains the requests extents
 
-    std::map<RCache::extents, RCache::cacheElement*>::iterator iter = this->map.begin();
-    std::map<RCache::extents, RCache::cacheElement*>::key_compare isContained = this->map.key_comp();
+//    std::map<RCache::extents, RCache::cacheElement*>::iterator iter = this->map.begin();
 
-    //iterate through the map until we find an object that CONTAINS the extents we are looking for
-    while(iter != this->map.end())
-    {
-        //checks to see if the requested extents are contained in the current entry
-        if(isContained(xtents, iter->first) || xtents == iter->first)
-        {
-            //return the vtkAbstractArray pointer for this mapped element
-            return iter->second;
-        }
-    }
+//    //iterate through the map until we find an object that CONTAINS the extents we are looking for
+//    while(iter != this->map.end())
+//    {
+//        //checks to see if the requested extents are contained in the current entry
+//        if(isContained(xtents, iter->first) || xtents == iter->first)
+//        {
+//            //return the vtkAbstractArray pointer for this mapped element
+//            return iter->second;
+//        }
+//    }
 
     return NULL;
 }
