@@ -128,6 +128,9 @@ public:
     // the extents are NOT in the cache
     cacheElement *getExtentsFromCache(double time, extents xtents);
 
+    //clean the cache when we need to dump it for something else
+    void cleanCache();
+
     //build a new data array of proper type and
     // extract requested elements from cacheElement in map
     static RCache::cacheElement* extractFromArray(extents xtetnts,  RCache::cacheElement* cacheArray);
@@ -149,7 +152,11 @@ protected:
 private:
     //this maps time to a specific cachemap
     std::map<double, cacheMap*> cache;
-    //if we need to dump cache and start over - i.e. change units in reader
+
+    //this store all of the pointers in the cache so that we may destroy them when needed
+    std::map<RCache::extents, vtkAbstractArray*> cacheVector;
+
+    //we need to clean our up
     bool dirty;
 
 };

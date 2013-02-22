@@ -81,7 +81,15 @@ public:
 
     vtkGetMacro(GridScaleType, int)
 
-    vtkSetMacro(DataUnits, int)
+
+    void SetDataUnits(int _arg)
+    {
+        this->DataUnits = _arg;
+        this->cleanCache();
+        this->gridClean=false;
+        this->Modified();
+    }
+
     vtkGetMacro(DataUnits, int)
 
 
@@ -122,7 +130,7 @@ public:
     vtkGetStringMacro(CurrentFileName);
 
 
-    void readVector(std::string array, vtkDoubleArray *DataArray, vtkInformationVector* outputVector, int dataID, vtkStructuredGrid *Data);
+    void readVector(std::string array, vtkDoubleArray *DataArray, vtkInformationVector* outputVector, const int &dataID, bool &cached);
     void readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID);
     void getDataID(std::string array, int &dataID);
 protected:
@@ -271,6 +279,9 @@ private:
     RCache::ReaderCache *velocityCache;
 
     RCache::ReaderCache *currentCache;
+
+    void cleanCache();
+
 
     vtkEnlilReader(const vtkEnlilReader&);  // Not implemented.
     void operator=(const vtkEnlilReader&);  // Not implemented.

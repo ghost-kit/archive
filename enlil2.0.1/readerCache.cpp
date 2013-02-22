@@ -3,29 +3,23 @@
 //=========================================================================================
 RCache::ReaderCache::ReaderCache()
 {
-    this->dirty=false;
+    this->dirty = false;
+
 }
 
 //=========================================================================================
 RCache::ReaderCache::~ReaderCache()
 {
+    this->cleanCache();
 
-    //if there is anything in the cache, we want to delete it from memory
-    if(this->cache.size() > 0)
-    {
-        std::map<double,cacheMap*>::iterator iter = this->cache.begin();
-        for( ; iter != this->cache.end(); ++iter)
-        {
-            //remove the cached items
-            //this will invoke their own delete routines
-            delete iter->second;
-        }
-    }
 }
 
 //=========================================================================================
 void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, vtkAbstractArray *array)
 {
+
+    std::cout << "Adding Element to time " << time << std::endl;
+
     std::map<double,cacheMap*>::iterator timeElement;
     cacheMap* currentMap=NULL;
 
@@ -36,16 +30,38 @@ void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, v
         {
             //the cache element is not in the map, so lets add it
             currentMap->addCacheElement(xtents, array);
+
+            //keep track of it so we can kill it when needed
+            std::cout << "reference count before caching: " << array->GetReferenceCount() << std::endl;
+            this->cacheVector[xtents] = array;
+            std::cout << "reference count after caching:  " << array->GetReferenceCount() << std::endl;
+
+            std::cout << "Added Element to Cache for time " << time  << std::endl;
+
+        }
+        else
+        {
+            //we are not adding this array, so mark it for deletion
+            array->Delete();
         }
     }
     else
     {
+        std::cout << "Adding new cache table for time " << time << std::endl;
         //add the time to the cache table
         this->cache[time] = new cacheMap;
         currentMap = this->cache[time];
 
+        std::cout << "Adding Element at time " << time << std::endl;
         //add the new element to the new time
         currentMap->addCacheElement(xtents, array);
+
+        //keep track of it so we can kill it when needed
+        std::cout << "reference count before caching: " << array->GetReferenceCount() << std::endl;
+        this->cacheVector[xtents] = array;
+        std::cout << "reference count after caching:  " << array->GetReferenceCount() << std::endl;
+
+        std::cout << "Added Element to Cache for time " << time  << std::endl;
     }
 
 }
@@ -59,12 +75,10 @@ RCache::cacheElement *RCache::ReaderCache::getExtentsFromCache(double time, RCac
     std::map<double,cacheMap*>::iterator timeElement;
     cacheMap* currentMap=NULL;
 
-    std::cout << __LINE__ << std::endl << std::flush;
 
     //this must be NULL to start with or algorithm won't work
     RCache::cacheElement *currentArray = NULL;
 
-    std::cout << __LINE__ << std::endl << std::flush;
 
     //this will search the cache and return the element that is needed
     if((timeElement=this->cache.find(time)) != this->cache.end())
@@ -72,31 +86,47 @@ RCache::cacheElement *RCache::ReaderCache::getExtentsFromCache(double time, RCac
         //the time segment is actually in the cache
         currentMap = timeElement->second;
 
-        std::cout << __LINE__ << std::endl << std::flush;
 
         //check to see if the exact extents exist
         if((currentArray=currentMap->getCacheElement(xtents)) == NULL)
         {
-            std::cout << __LINE__ << std::endl << std::flush;
 
             //if exact extents don't exist, check if subextent exist
             if((currentArray=currentMap->getCacheElementContains(xtents)) != NULL)
             {
-                std::cout << __LINE__ << std::endl << std::flush;
 
                 //extract the correct extents from the superset
                 currentArray = ReaderCache::extractFromArray(xtents, currentArray);
             }
         }
-        std::cout << __LINE__ << std::endl << std::flush;
 
     }
 
-    std::cout << __LINE__ << std::endl << std::flush;
 
-    std::cout << "ReturnValue: " << (currentArray ? (char*)(currentArray->xtents.getExtent(0)) : "NULL") << std::endl;
+    std::cout << "ReturnValue: " << ((currentArray != NULL) ? "GOOD" : "NULL" ) << std::endl;
     //return the array if found... otherwise, return NULL
     return currentArray;
+
+}
+
+//=========================================================================================
+void RCache::ReaderCache::cleanCache()
+{
+    std::map<RCache::extents, vtkAbstractArray*>::iterator iter;
+
+    //kill the cache map
+    this->cache.clear();
+
+    //mark arrays for deletion
+    for(iter = this->cacheVector.begin(); iter != this->cacheVector.end(); ++iter)
+    {
+        std::cout << "Reference Count: " <<  iter->second->GetReferenceCount() << std::endl;
+        iter->second->Delete();
+
+    }
+    this->cacheVector.clear();
+    this->dirty = true;
+
 
 }
 
@@ -383,13 +413,15 @@ RCache::cacheElement *RCache::cacheMap::getCacheElementContains(RCache::extents 
 void RCache::cacheMap::removeCacheElement(RCache::extents xtents)
 {
 
+    //THIS FUNCTION SHOULD BE MOVED TO THE ReaderCache LEVEL
+
     //finds the key if it exists, and erases the entry
     std::map<RCache::extents, RCache::cacheElement*>::iterator iter;
 
     if((iter=this->map.find(xtents)) != this->map.end())
     {
         //mark element for garbage collection
-        delete iter->second;
+        iter->second->data->Delete();
         //remove the entry
         this->map.erase(iter);
     }
@@ -404,10 +436,6 @@ void RCache::cacheMap::cleanCache()
 
     for(iter=this->map.begin(); iter != this->map.end(); ++iter)
     {
-
-        //TODO: Figure out how exactly to delete objects properly without causing PV to Crash
-
-        //delete the element
         this->map.erase(iter);
     }
 }
