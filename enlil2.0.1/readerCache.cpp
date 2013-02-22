@@ -23,18 +23,40 @@ RCache::ReaderCache::~ReaderCache()
 }
 
 //=========================================================================================
-void RCache::ReaderCache::cacheElement(double time, RCache::extents xtents, vtkAbstractArray *array)
+void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, vtkAbstractArray *array)
 {
+    std::map<double,cacheMap*>::iterator timeElement;
+    cacheMap* currentMap=NULL;
+
+    if((timeElement=this->cache.find(time)) != this->cache.end())
+    {
+        currentMap = timeElement->second;
+        if(currentMap->getCacheElementContains(xtents) == NULL)
+        {
+            //the cache element is not in the map, so lets add it
+            currentMap->addCacheElement(xtents, array);
+        }
+    }
+    else
+    {
+        //add the time to the cache table
+        this->cache[time] = new cacheMap;
+        currentMap = this->cache[time];
+
+        //add the new element to the new time
+        currentMap->addCacheElement(xtents, array);
+    }
+
 }
 
 //=========================================================================================
-vtkAbstractArray *RCache::ReaderCache::getExtentsFromCache(double time, RCache::extents xtents)
+RCache::cacheElement *RCache::ReaderCache::getExtentsFromCache(double time, RCache::extents xtents)
 {
     std::map<double,cacheMap*>::iterator timeElement;
     cacheMap* currentMap=NULL;
 
     //this must be NULL to start with or algorithm won't work
-    vtkAbstractArray *currentArray = NULL;
+    RCache::cacheElement *currentArray = NULL;
 
     //this will search the cache and return the element that is needed
     if((timeElement=this->cache.find(time)) != this->cache.end())
@@ -61,25 +83,25 @@ vtkAbstractArray *RCache::ReaderCache::getExtentsFromCache(double time, RCache::
 }
 
 //=========================================================================================
-vtkAbstractArray *RCache::ReaderCache::extractFromArray(RCache::extents xtents,  vtkAbstractArray *cacheArray)
+RCache::cacheElement *RCache::ReaderCache::extractFromArray(RCache::extents xtents,  RCache::cacheElement *cacheArray)
 {
-    if(cacheArray->GetDataType() == VTK_FLOAT)
+    if(cacheArray->data->GetDataType() == VTK_FLOAT)
     {
         //cast to float array and call float function
-        vtkFloatArray* current = vtkFloatArray::SafeDownCast(cacheArray);
-        return RCache::ReaderCache::extractFromArray(xtents, current);
+        vtkFloatArray* current = vtkFloatArray::SafeDownCast(cacheArray->data);
+        return RCache::ReaderCache::extractFromArray(xtents, cacheArray->xtents, current);
     }
-    else if(cacheArray->GetDataType() == VTK_DOUBLE)
+    else if(cacheArray->data->GetDataType() == VTK_DOUBLE)
     {
         //cast to double array and call function
-        vtkDoubleArray* current = vtkDoubleArray::SafeDownCast(cacheArray);
-        return RCache::ReaderCache::extractFromArray(xtents, current);
+        vtkDoubleArray* current = vtkDoubleArray::SafeDownCast(cacheArray->data);
+        return RCache::ReaderCache::extractFromArray(xtents, cacheArray->xtents, current);
     }
-    else if(cacheArray->GetDataType() == VTK_INT)
+    else if(cacheArray->data->GetDataType() == VTK_INT)
     {
         //cast to int array and call function
-        vtkIntArray* current = vtkIntArray::SafeDownCast(cacheArray);
-        return RCache::ReaderCache::extractFromArray(xtents, current);
+        vtkIntArray* current = vtkIntArray::SafeDownCast(cacheArray->data);
+        return RCache::ReaderCache::extractFromArray(xtents, cacheArray->xtents, current);
     }
     else
     {
@@ -87,21 +109,31 @@ vtkAbstractArray *RCache::ReaderCache::extractFromArray(RCache::extents xtents, 
     }
 }
 
-vtkDataArray *RCache::ReaderCache::extractFromArray(RCache::extents xtetnts,  vtkDataArray *cacheArray)
+RCache::cacheElement *RCache::ReaderCache::extractFromArray(RCache::extents newXtetnts, RCache::extents oldXtents,  vtkDoubleArray *cacheArray)
 {
     //extract the proper extents and put in new object
+    RCache::cacheElement *newElement = new cacheElement;
+    newElement->data = vtkDoubleArray::New();
+
+    return NULL;
+
+}
+
+RCache::cacheElement *RCache::ReaderCache::extractFromArray(RCache::extents newXtetnts, RCache::extents oldXtents, vtkFloatArray *cacheArray)
+{
+    //extract the proper extents and put in new object
+    RCache::cacheElement *newElement = new cacheElement;
+    newElement->data = vtkFloatArray::New();
+
     return NULL;
 }
 
-vtkFloatArray *RCache::ReaderCache::extractFromArray(RCache::extents xtetnts,  vtkFloatArray *cacheArray)
+RCache::cacheElement *RCache::ReaderCache::extractFromArray(RCache::extents newXtetnts, RCache::extents oldXtents,  vtkIntArray *cacheArray)
 {
     //extract the proper extents and put in new object
-    return NULL;
-}
+    RCache::cacheElement *newElement = new cacheElement;
+    newElement->data = vtkIntArray::New();
 
-vtkIntArray *RCache::ReaderCache::extractFromArray(RCache::extents xtetnts,  vtkIntArray *cacheArray)
-{
-    //extract the proper extents and put in new object
     return NULL;
 }
 
@@ -136,7 +168,7 @@ void RCache::ReaderCache::pruneExtentsFromTime(RCache::extents xtents)
 }
 
 //=========================================================================================
-RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists=false)
+RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists)
 {
     this->xtents[0] = x1;
     this->xtents[1] = x2;
@@ -148,7 +180,7 @@ RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6, bool pe
     this->persists = persists;
 }
 
-RCache::extents::extents(const int xtents[])
+RCache::extents::extents(const int xtents[], bool persists)
 {
     this->xtents[0] = xtents[0];
     this->xtents[1] = xtents[1];
@@ -156,6 +188,19 @@ RCache::extents::extents(const int xtents[])
     this->xtents[3] = xtents[3];
     this->xtents[4] = xtents[4];
     this->xtents[5] = xtents[5];
+
+    this->persists = persists;
+}
+
+RCache::extents::extents()
+{
+    this->xtents[0] = 0;
+    this->xtents[1] = 0;
+    this->xtents[2] = 0;
+    this->xtents[3] = 0;
+    this->xtents[4] = 0;
+    this->xtents[5] = 0;
+    this->persists = false;
 }
 
 RCache::extents::~extents()
@@ -274,15 +319,19 @@ RCache::cacheMap::~cacheMap()
 //=========================================================================================
 void RCache::cacheMap::addCacheElement(RCache::extents xtents, vtkAbstractArray *data)
 {
+    cacheElement* newElement = new cacheElement;
+    newElement->data = data;
+    newElement->xtents = xtents;
+
     //we only wnat to add the extent if it is not already in the cache
     if(this->map.find(xtents) == map.end())
     {
-        this->map[xtents] = data;
+        this->map[xtents] = newElement;
     }
 }
 
 //=========================================================================================
-vtkAbstractArray *RCache::cacheMap::getCacheElement(RCache::extents xtents)
+RCache::cacheElement *RCache::cacheMap::getCacheElement(RCache::extents xtents)
 {
     //returns the exact extent if it exists
     if(this->map.find(xtents) != map.end()) return this->map[xtents];
@@ -290,19 +339,19 @@ vtkAbstractArray *RCache::cacheMap::getCacheElement(RCache::extents xtents)
 }
 
 //=========================================================================================
-vtkAbstractArray *RCache::cacheMap::getCacheElementContains(RCache::extents xtents)
+RCache::cacheElement *RCache::cacheMap::getCacheElementContains(RCache::extents xtents)
 {
     //compare the key for each element with requested
     //and determine if it contains the requests extents
 
-    std::map<RCache::extents, vtkAbstractArray*>::iterator iter = this->map.begin();
-    std::map<RCache::extents, vtkAbstractArray*>::key_compare isContained = this->map.key_comp();
+    std::map<RCache::extents, RCache::cacheElement*>::iterator iter = this->map.begin();
+    std::map<RCache::extents, RCache::cacheElement*>::key_compare isContained = this->map.key_comp();
 
     //iterate through the map until we find an object that CONTAINS the extents we are looking for
     while(iter != this->map.end())
     {
         //checks to see if the requested extents are contained in the current entry
-        if(isContained(xtents, iter->first))
+        if(isContained(xtents, iter->first) || xtents == iter->first)
         {
             //return the vtkAbstractArray pointer for this mapped element
             return iter->second;
@@ -317,12 +366,12 @@ void RCache::cacheMap::removeCacheElement(RCache::extents xtents)
 {
 
     //finds the key if it exists, and erases the entry
-    std::map<RCache::extents, vtkAbstractArray*>::iterator iter;
+    std::map<RCache::extents, RCache::cacheElement*>::iterator iter;
 
     if((iter=this->map.find(xtents)) != this->map.end())
     {
         //mark element for garbage collection
-        iter->second->Delete();
+        delete iter->second;
         //remove the entry
         this->map.erase(iter);
     }
@@ -333,12 +382,13 @@ void RCache::cacheMap::cleanCache()
 {
     //this method will remove all items from the cache and mark
     //all cache elements for garbage collection
-    std::map<RCache::extents, vtkAbstractArray*>::iterator iter;
+    std::map<RCache::extents, RCache::cacheElement*>::iterator iter;
 
     for(iter=this->map.begin(); iter != this->map.end(); ++iter)
     {
-        //mark for garbage collection
-        iter->second->Delete();
+
+        //TODO: Figure out how exactly to delete objects properly without causing PV to Crash
+
         //delete the element
         this->map.erase(iter);
     }

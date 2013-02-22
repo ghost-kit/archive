@@ -22,9 +22,9 @@ ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0.1"
 
 SET(KIT_LIBS cxform vtkNetCDF_cxx )
 
-#vtkRenderingMatplotlib
-
 Target_LINK_LIBRARIES(vtkEnlilReader  ${ParaView_LIBRARIES} ${KIT_LIBS})
+
+
 
 add_custom_target(dist
     COMMAND ${CMAKE_COMMAND}  -DBINARY_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}

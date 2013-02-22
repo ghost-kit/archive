@@ -89,6 +89,36 @@ vtkEnlilReader::vtkEnlilReader()
     this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
     this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
 
+    //cache testing
+//    std::cout << "Initializing Cache:"  << std::endl << std::flush;
+
+//    RCache::ReaderCache cacheTest;
+//    RCache::extents testXtent(0,4,0,4,0,4);
+//    vtkDoubleArray* testArray = vtkDoubleArray::New();
+//    vtkDoubleArray* newArray = NULL;
+
+
+//    std::cout << "Creating Test Case: " << std::endl << std::flush;
+//    //create a test item
+//    testArray->InsertNextValue(5);
+//    testArray->InsertNextValue(10);
+//    testArray->InsertNextValue(11);
+
+//    std::cout << "Caching Items: " << std::endl << std::flush;
+//    //cache test item
+//    cacheTest.addCacheElement(1.0, testXtent, testArray);
+//    cacheTest.addCacheElement(2.0,testXtent,testArray);
+//    cacheTest.addCacheElement(1.0, testXtent, testArray);
+
+//    std::cout << "Retieving Cache Elements: " << std::endl << std::flush;
+//    //get cached item
+//    newArray = vtkDoubleArray::SafeDownCast(cacheTest.getExtentsFromCache(2.0,testXtent)->data);
+//    newArray = vtkDoubleArray::SafeDownCast(cacheTest.getExtentsFromCache(1.0,testXtent)->data);
+
+//    std::cout << "newArray: " << newArray->GetValue(0) << " "
+//              << newArray->GetValue(1) << " "
+//              << newArray->GetValue(2) << " " << std::endl << std::flush;
+
 
 }
 

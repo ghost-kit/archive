@@ -29,8 +29,10 @@ class extents
 {
 public:
 
-    extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists);
-    extents(const int xtents[6]);
+    extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists=false);
+    extents(const int xtents[6], bool persists=false);
+    extents();
+
     ~extents();
 
     //operators
@@ -56,6 +58,24 @@ public:
     bool persists;
 };
 
+//=========================================================================================
+class cacheElement
+{
+public:
+    cacheElement()
+    {
+        //nothing to do
+    }
+
+    ~cacheElement()
+    {
+        this->data->Delete();
+    }
+
+    extents xtents;
+    vtkAbstractArray* data;
+};
+
 
 //=========================================================================================
 class cacheMap
@@ -69,11 +89,11 @@ public:
     void addCacheElement(extents xtents, vtkAbstractArray* data);
 
     //returns the appropriate data segment from the cache
-    vtkAbstractArray* getCacheElement(extents xtents);
+    cacheElement* getCacheElement(extents xtents);
 
     //returns a dataset that CONTAINS the requested extent
     //user must parse to get required elements
-    vtkAbstractArray* getCacheElementContains(extents xtents);
+    cacheElement* getCacheElementContains(extents xtents);
 
     //removes a specific element from the cache map
     void removeCacheElement(extents xtents);
@@ -86,7 +106,7 @@ public:
 
 protected:
     //this is the map for caching objects
-    std::map<extents, vtkAbstractArray*> map;
+    std::map<extents, cacheElement*> map;
 
     //running total of memory usage
     double cacheSize;
@@ -102,18 +122,18 @@ public:
 
     //this will either cache the element or not
     //depending on wether the extents are in the cache already or not
-    void cacheElement(double time, extents xtents, vtkAbstractArray* array);
+    void addCacheElement(double time, extents xtents, vtkAbstractArray* array);
 
     //this will get the requested extents from the Cache, or return NULL if
     // the extents are NOT in the cache
-    vtkAbstractArray* getExtentsFromCache(double time, extents xtents);
+    cacheElement *getExtentsFromCache(double time, extents xtents);
 
     //build a new data array of proper type and
     // extract requested elements from cacheElement in map
-    static vtkAbstractArray* extractFromArray(extents xtetnts,  vtkAbstractArray* cacheArray);
-    static vtkDataArray* extractFromArray(extents xtetnts,  vtkDataArray* cacheArray);
-    static vtkFloatArray* extractFromArray(extents xtetnts,  vtkFloatArray* cacheArray);
-    static vtkIntArray* extractFromArray(extents xtetnts,  vtkIntArray* cacheArray);
+    static RCache::cacheElement* extractFromArray(extents xtetnts,  RCache::cacheElement* cacheArray);
+    static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkDoubleArray* cacheArray);
+    static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkFloatArray* cacheArray);
+    static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkIntArray* cacheArray);
 
 protected:
 
