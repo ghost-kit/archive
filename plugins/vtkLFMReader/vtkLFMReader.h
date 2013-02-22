@@ -140,6 +140,10 @@ protected:
   
   char *HdfFileName;
   int GridScaleType;
+
+  int NumberOfTimeSteps; 
+  std::vector<double> TimeStepValues;
+
     
     //Map of variable name to Description String
   std::map<std::string, std::string> ArrayNameLookup;

@@ -25,6 +25,8 @@ vtkStandardNewMacro(vtkLFMReader);
 vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
+
+  this->NumberOfTimeSteps = 1;
   
   this->NumberOfPointArrays = 0;
   this->NumberOfCellArrays = 0;
@@ -177,6 +179,32 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   //Set extents of grid
   vtkInformation* outInfo = outputVector->GetInformationObject(0); 
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
+  
+
+  //Set Time step Information
+  this->NumberOfTimeSteps = 1; // 1 step per file
+  this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
+  if (metaDoubles.count(string("mjd")) != 0){
+    this->TimeStepValues[0] = metaDoubles["mjd"];
+  }
+  else{
+    // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
+    this->TimeStepValues[0] = metaFloats["time"];
+  }
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+	       &this->TimeStepValues[0],
+	       static_cast<int>(this->TimeStepValues.size()));
+  
+  double timeRange[2];
+  //Set Time Range for file
+  timeRange[0] = this->TimeStepValues.front();
+  timeRange[1] = this->TimeStepValues.back();
+  
+  //Update Pipeline
+  outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
+  
+  vtkDebugMacro(<< "number of timesteps in file=" << this->NumberOfTimeSteps);
+  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0]);
   
   return 1; 
 }
