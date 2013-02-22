@@ -29,8 +29,8 @@ class extents
 {
 public:
 
-    extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists=false);
-    extents(const int xtents[6], bool persists=false);
+    extents(int &x1, int &x2, int &x3, int &x4, int &x5, int &x6, bool persists=false);
+    extents(const int *xtents, bool persists=false);
     extents();
 
     ~extents();
@@ -149,6 +149,8 @@ protected:
 private:
     //this maps time to a specific cachemap
     std::map<double, cacheMap*> cache;
+    //if we need to dump cache and start over - i.e. change units in reader
+    bool dirty;
 
 };
 

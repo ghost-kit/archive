@@ -3,6 +3,7 @@
 //=========================================================================================
 RCache::ReaderCache::ReaderCache()
 {
+    this->dirty=false;
 }
 
 //=========================================================================================
@@ -52,11 +53,18 @@ void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, v
 //=========================================================================================
 RCache::cacheElement *RCache::ReaderCache::getExtentsFromCache(double time, RCache::extents xtents)
 {
+
+    std::cout << __LINE__ << " " << __FUNCTION__ << std::endl << std::flush;
+
     std::map<double,cacheMap*>::iterator timeElement;
     cacheMap* currentMap=NULL;
 
+    std::cout << __LINE__ << std::endl << std::flush;
+
     //this must be NULL to start with or algorithm won't work
     RCache::cacheElement *currentArray = NULL;
+
+    std::cout << __LINE__ << std::endl << std::flush;
 
     //this will search the cache and return the element that is needed
     if((timeElement=this->cache.find(time)) != this->cache.end())
@@ -64,19 +72,29 @@ RCache::cacheElement *RCache::ReaderCache::getExtentsFromCache(double time, RCac
         //the time segment is actually in the cache
         currentMap = timeElement->second;
 
+        std::cout << __LINE__ << std::endl << std::flush;
+
         //check to see if the exact extents exist
         if((currentArray=currentMap->getCacheElement(xtents)) == NULL)
         {
+            std::cout << __LINE__ << std::endl << std::flush;
+
             //if exact extents don't exist, check if subextent exist
             if((currentArray=currentMap->getCacheElementContains(xtents)) != NULL)
             {
+                std::cout << __LINE__ << std::endl << std::flush;
+
                 //extract the correct extents from the superset
                 currentArray = ReaderCache::extractFromArray(xtents, currentArray);
             }
         }
+        std::cout << __LINE__ << std::endl << std::flush;
 
     }
 
+    std::cout << __LINE__ << std::endl << std::flush;
+
+    std::cout << "ReturnValue: " << (currentArray ? (char*)(currentArray->xtents.getExtent(0)) : "NULL") << std::endl;
     //return the array if found... otherwise, return NULL
     return currentArray;
 
@@ -168,7 +186,7 @@ void RCache::ReaderCache::pruneExtentsFromTime(RCache::extents xtents)
 }
 
 //=========================================================================================
-RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6, bool persists)
+RCache::extents::extents(int &x1, int &x2, int &x3, int &x4, int &x5, int &x6, bool persists)
 {
     this->xtents[0] = x1;
     this->xtents[1] = x2;
@@ -180,7 +198,7 @@ RCache::extents::extents(int x1, int x2, int x3, int x4, int x5, int x6, bool pe
     this->persists = persists;
 }
 
-RCache::extents::extents(const int xtents[], bool persists)
+RCache::extents::extents(const int *xtents, bool persists)
 {
     this->xtents[0] = xtents[0];
     this->xtents[1] = xtents[1];
@@ -275,7 +293,7 @@ bool RCache::extents::operator >=(const RCache::extents &rhs) const
 //=========================================================================================
 int RCache::extents::getExtent(int x)
 {
-    if(x > 0 && x < 6)
+    if(x >= 0 && x < 6)
         return this->xtents[x];
     else /*error condition*/
         return -1;

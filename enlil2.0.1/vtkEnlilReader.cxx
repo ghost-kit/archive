@@ -89,35 +89,15 @@ vtkEnlilReader::vtkEnlilReader()
     this->PointDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
     this->CellDataArraySelection->AddObserver(vtkCommand::ModifiedEvent, this->SelectionObserver);
 
-    //cache testing
-//    std::cout << "Initializing Cache:"  << std::endl << std::flush;
+    //intitialize Cache
+    this->pDensityCache     = new RCache::ReaderCache;
+    this->cDensityCache     = new RCache::ReaderCache;
+    this->temperatureCache   = new RCache::ReaderCache;
+    this->polarityCache     = new RCache::ReaderCache;
+    this->bFieldCache       = new RCache::ReaderCache;
+    this->velocityCache     = new RCache::ReaderCache;
 
-//    RCache::ReaderCache cacheTest;
-//    RCache::extents testXtent(0,4,0,4,0,4);
-//    vtkDoubleArray* testArray = vtkDoubleArray::New();
-//    vtkDoubleArray* newArray = NULL;
-
-
-//    std::cout << "Creating Test Case: " << std::endl << std::flush;
-//    //create a test item
-//    testArray->InsertNextValue(5);
-//    testArray->InsertNextValue(10);
-//    testArray->InsertNextValue(11);
-
-//    std::cout << "Caching Items: " << std::endl << std::flush;
-//    //cache test item
-//    cacheTest.addCacheElement(1.0, testXtent, testArray);
-//    cacheTest.addCacheElement(2.0,testXtent,testArray);
-//    cacheTest.addCacheElement(1.0, testXtent, testArray);
-
-//    std::cout << "Retieving Cache Elements: " << std::endl << std::flush;
-//    //get cached item
-//    newArray = vtkDoubleArray::SafeDownCast(cacheTest.getExtentsFromCache(2.0,testXtent)->data);
-//    newArray = vtkDoubleArray::SafeDownCast(cacheTest.getExtentsFromCache(1.0,testXtent)->data);
-
-//    std::cout << "newArray: " << newArray->GetValue(0) << " "
-//              << newArray->GetValue(1) << " "
-//              << newArray->GetValue(2) << " " << std::endl << std::flush;
+    this->currentCache = NULL;
 
 
 }
@@ -132,6 +112,16 @@ vtkEnlilReader::~vtkEnlilReader()
         this->Points->Delete();
 
     this->SelectionObserver->Delete();
+
+    //clean cache
+    this->currentCache = NULL;
+
+    delete this->pDensityCache;     this->pDensityCache = NULL;
+    delete this->cDensityCache;     this->cDensityCache = NULL;
+    delete this->temperatureCache;   this->temperatureCache = NULL;
+    delete this->polarityCache;     this->polarityCache = NULL;
+    delete this->bFieldCache;       this->bFieldCache = NULL;
+    delete this->velocityCache;     this->velocityCache = NULL;
 }
 
 //-------------------------------------------------------------
@@ -208,21 +198,21 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 
     if(status)
     {
-//        std::cout << "Enabling " << name << std::endl;
+        //        std::cout << "Enabling " << name << std::endl;
         this->PointDataArraySelection->EnableArray(name);
     }
     else
     {
-//        std::cout << "Disabling " << name << std::endl;
+        //        std::cout << "Disabling " << name << std::endl;
 
         this->PointDataArraySelection->DisableArray(name);
     }
 
     this->Modified();
 
-//    std::cout /*<< __FILE__ << " " << __LINE__ << " " <<  __FUNCTION__*/
-//            << " Status of Array " << name << ": "
-//            << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
+    //    std::cout /*<< __FILE__ << " " << __LINE__ << " " <<  __FUNCTION__*/
+    //            << " Status of Array " << name << ": "
+    //            << this->PointDataArraySelection->ArrayIsEnabled(name) << std::endl;
 
 }
 
@@ -616,9 +606,9 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
             //Load the current Point array
             if(this->PointDataArraySelection->ArrayIsEnabled(array.c_str()))
             {
-//                                std::cout << "Loading Array " << array << std::endl;
-//                                std::cout << "   ArrayStatusSelection: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str())
-//                                             << std::endl;
+                //                                std::cout << "Loading Array " << array << std::endl;
+                //                                std::cout << "   ArrayStatusSelection: " << this->PointDataArraySelection->ArrayIsEnabled(array.c_str())
+                //                                             << std::endl;
 
                 //when loading from state fiile, we may get some junk marking us to read bad data
                 if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
@@ -644,11 +634,167 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
 //This method will load the data and convert to the assigned "DataUnits" value.
 //Currently, this process includes 2 types of units: Native and SWPC. As this changes,
 //we will need to incorporate the changes here.
-int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* outputVector)
+void vtkEnlilReader::readVector(std::string array, vtkDoubleArray *DataArray,  vtkInformationVector* outputVector, int dataID, vtkStructuredGrid *Data)
 {
 
+    double xyz[3] = {0.0, 0.0, 0.0};
+
+    double* newArrayR;
+    double* newArrayT;
+    double* newArrayP;
+
+    int currentSize = 0;
+    double radius = 0.0;
+
+    //configure DataArray
+    DataArray->SetNumberOfComponents(3);  //3-Dim Vector
+
+    //read in the arrays
+    newArrayR
+            = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
+
+    newArrayT
+            = this->read3dPartialToArray((char*)this->VectorVariableMap[array][1].c_str(), this->SubExtent);
+
+    newArrayP
+            = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
+
+    //get vector meta-data
+    this->loadVarMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
+
+
+    // convert from spherical to cartesian
+    int loc=0;
+    int i,j,k;
+    for(k=0; k<this->SubDimension[2]; k++)
+    {
+        for(j=0; j<this->SubDimension[1]; j++)
+        {
+            for(i=0; i<this->SubDimension[0]; i++)
+
+            {
+
+                xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
+
+                xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
+                xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
+                xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
+
+                xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
+                xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
+
+                //adjust units:
+                if(this->DataUnits)
+                {
+                    switch(this->DataUnits)
+                    {
+                    case 1:
+                        switch(dataID)
+                        {
+                        case DATA_TYPE::VELOCITY:
+                            xyz[0] = xyz[0] / UNITS::km2m;
+                            xyz[1] = xyz[1] / UNITS::km2m;
+                            xyz[2] = xyz[2] / UNITS::km2m;
+                            break;
+
+                        default:
+                            break;
+                        }
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+
+
+                DataArray->InsertNextTuple(xyz);
+
+                loc++;
+
+            }
+        }
+
+
+
+    }
+    //Add array to grid
+    Data->GetPointData()->AddArray(DataArray);
+    DataArray->Delete();
+
+    //free temporary memory
+    delete [] newArrayR; newArrayR = NULL;
+    delete [] newArrayP; newArrayP = NULL;
+    delete [] newArrayT; newArrayT = NULL;
+}
+
+void vtkEnlilReader::readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID)
+{
+    DataArray->SetNumberOfComponents(1);  //Scalar
+
+    //array pointers
+    double* newArray;
+
+    //get data array
+    newArray
+            = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
+
+    //Load meta data for array
+    this->loadVarMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
+
+
+    //insert points
+    int k;
+    for(k=0; k<this->SubDimension[2]*this->SubDimension[1]*this->SubDimension[0]; k++)
+    {
+
+        //adjust units:
+        if(this->DataUnits)
+        {
+            switch(this->DataUnits)
+            {
+            case 1:
+                switch(dataID)
+                {
+                case DATA_TYPE::PDENSITY:
+                    newArray[k] = (newArray[k] * (this->Radius->GetValue(k)*this->Radius->GetValue(k)))/(UNITS::emu*UNITS::km2cm);
+                    break;
+
+                case DATA_TYPE::TEMP:
+                    break;
+
+                case DATA_TYPE::CDENSITY:
+                    break;
+
+                default:
+                    break;
+                }
+                break;
+
+            default:
+                break;
+            }
+        }
+
+
+        DataArray->InsertNextValue(newArray[k]);
+    }
+
+
+
+    //Add array to grid
+    Data->GetPointData()->AddArray(DataArray);
+    DataArray->Delete();
+
+    //free temporary memory
+    delete [] newArray; newArray = NULL;
+}
+
+void vtkEnlilReader::getDataID(std::string array, int &dataID)
+{
     QString arrayName(array.c_str());
-    int dataID = 0;
 
     if(arrayName.contains("Density") && arrayName.contains("cloud"))
     {
@@ -674,177 +820,171 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
     {
         dataID = DATA_TYPE::VELOCITY;
     }
+}
 
+int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* outputVector)
+{
+    //get the dataID
+    int dataID = 0;
+    getDataID(array, dataID);
 
     bool vector
             = (this->VectorVariableMap.find(std::string(array)) != this->VectorVariableMap.end());
 
-    double xyz[3] = {0.0, 0.0, 0.0};
-
     //get data from system
     vtkStructuredGrid *Data = vtkStructuredGrid::GetData(outputVector,0);
 
+    RCache::extents cacheExtents(this->SubExtent);
+
+    vtkDoubleArray *DataArray = NULL;
+
     //set up array to be added
-    vtkDoubleArray *DataArray = vtkDoubleArray::New();
-    DataArray->SetName(array.c_str());
 
-    if(vector)      //load as a vector
+    std::cout << "Loading Fields" << std::endl << std::flush;
+    std::cout << "Vector Status: " << (vector ? "TRUE" : "FALSE") << std::endl << std::flush;
+    std::cout << "DataID: " << dataID << std::endl << std::flush;
+
+    if(vector)  //load vector data
     {
-
-        //need three arrays for vector reads
-        double* newArrayR;
-        double* newArrayT;
-        double* newArrayP;
-
-        int currentSize = 0;
-        double radius = 0.0;
-
-        //configure DataArray
-        DataArray->SetNumberOfComponents(3);  //3-Dim Vector
-
-        //read in the arrays
-        newArrayR
-                = this->read3dPartialToArray((char*)this->VectorVariableMap[array][0].c_str(), this->SubExtent);
-
-        newArrayT
-                = this->read3dPartialToArray((char*)this->VectorVariableMap[array][1].c_str(), this->SubExtent);
-
-        newArrayP
-                = this->read3dPartialToArray((char*)this->VectorVariableMap[array][2].c_str(), this->SubExtent);
-
-        //get vector meta-data
-        this->loadVarMetaData((char*)this->VectorVariableMap[array][0].c_str(), array.c_str(), outputVector);
-
-
-        // convert from spherical to cartesian
-        int loc=0;
-        int i,j,k;
-        for(k=0; k<this->SubDimension[2]; k++)
+        switch(dataID)
         {
-            for(j=0; j<this->SubDimension[1]; j++)
+        case DATA_TYPE::BFIELD:
+            //read the fields
+            if(this->bFieldCache->getExtentsFromCache(this->current_MJD, cacheExtents) == NULL)
             {
-                for(i=0; i<this->SubDimension[0]; i++)
+                std::cout << "BFIELD" << std::endl << std::flush;
 
-                {
-
-                    xyz[0] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
-                    xyz[1] =newArrayR[loc]*sin(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
-                    xyz[2] =newArrayR[loc]*cos(this->sphericalGridCoords[1][j]);
-
-                    xyz[0] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*cos(this->sphericalGridCoords[2][k]);
-                    xyz[1] += newArrayT[loc]*cos(this->sphericalGridCoords[1][j])*sin(this->sphericalGridCoords[2][k]);
-                    xyz[2] += -1.0*newArrayT[loc]*sin(this->sphericalGridCoords[1][j]);
-
-                    xyz[0] += -1.0*newArrayP[loc]*sin(this->sphericalGridCoords[2][k]);
-                    xyz[1] += newArrayP[loc]*cos(this->sphericalGridCoords[2][k]);
-
-                    //adjust units:
-                    if(this->DataUnits)
-                    {
-                        switch(this->DataUnits)
-                        {
-                        case 1:
-                            switch(dataID)
-                            {
-                            case DATA_TYPE::VELOCITY:
-                                xyz[0] = xyz[0] / UNITS::km2m;
-                                xyz[1] = xyz[1] / UNITS::km2m;
-                                xyz[2] = xyz[2] / UNITS::km2m;
-                                break;
-
-                            default:
-                                break;
-                            }
-                            break;
-
-                        default:
-                            break;
-                        }
-                    }
-
-
-                    DataArray->InsertNextTuple(xyz);
-
-                    loc++;
-
-                }
+                DataArray = vtkDoubleArray::New();
+                DataArray->SetName(array.c_str());
+                //this means the data is not in cache, so lets get it
+                readVector(array, DataArray, outputVector, dataID, Data);
             }
+            else
+            {
+                std::cout << "BFIELD Cache" << std::endl << std::flush;
+
+                //populate with DataArray
+                //TODO: Split out DataArray fowarding from the readVector
+            }
+            break;
+
+        case DATA_TYPE::VELOCITY:
+
+            if(this->velocityCache->getExtentsFromCache(this->current_MJD, cacheExtents) == NULL)
+            {
+                std::cout << "VELOCITY" << std::endl << std::flush;
 
 
+                DataArray = vtkDoubleArray::New();
+                DataArray->SetName(array.c_str());
+                //this means the data is not in cache, so lets get it
+                readVector(array, DataArray, outputVector, dataID, Data);
+            }
+            else
+            {
+                std::cout << "VELOCITY Cache" << std::endl << std::flush;
+
+                //populate with DataArray
+                //TODO: Split out DataArray fowarding from the readVector
+            }
+            break;
+
+        default:
+            std::cout << "DEFAULT - THIS IS AN ERROR" << std::endl << std::flush;
+
+            break;
         }
-        //Add array to grid
-        Data->GetPointData()->AddArray(DataArray);
-        DataArray->Delete();
-
-        //free temporary memory
-        delete [] newArrayR; newArrayR = NULL;
-        delete [] newArrayP; newArrayP = NULL;
-        delete [] newArrayT; newArrayT = NULL;
 
     }
-    else
+    else    //load scalar data
     {
-        //load as a scalar
-        //configure DataArray
-        DataArray->SetNumberOfComponents(1);  //Scalar
 
-        //array pointers
-        double* newArray;
-
-        //get data array
-        newArray
-                = this->read3dPartialToArray((char*)this->ScalarVariableMap[array].c_str(), this->SubExtent);
-
-        //Load meta data for array
-        this->loadVarMetaData((char*)this->ScalarVariableMap[array].c_str(), array.c_str(), outputVector);
-
-
-        //insert points
-        int k;
-        for(k=0; k<this->SubDimension[2]*this->SubDimension[1]*this->SubDimension[0]; k++)
+        switch(dataID)
         {
+        case DATA_TYPE::PDENSITY:
 
-            //adjust units:
-            if(this->DataUnits)
+            std::cout << "Looking for PDentsity" << std::endl;
+            std::cout << "MJD: " << this->current_MJD << std::endl << std::flush;
+            std::cout << "Extents: " << cacheExtents.getExtent(0) << " " << cacheExtents.getExtent(1)
+                      << " " << cacheExtents.getExtent(2) << " " << cacheExtents.getExtent(3)
+                      << " " << cacheExtents.getExtent(4) << " " << cacheExtents.getExtent(5)
+                      << std::endl << std::flush;
+
+            if(this->pDensityCache->getExtentsFromCache(this->current_MJD, cacheExtents) == NULL)
             {
-                switch(this->DataUnits)
-                {
-                case 1:
-                    switch(dataID)
-                    {
-                    case DATA_TYPE::PDENSITY:
-                        newArray[k] = (newArray[k] * (this->Radius->GetValue(k)*this->Radius->GetValue(k)))/(UNITS::emu*UNITS::km2cm);
-                        break;
+                std::cout << "PDENSITY" << std::endl << std::flush;
 
-                    case DATA_TYPE::TEMP:
-                        break;
+                DataArray = vtkDoubleArray::New();
+                DataArray->SetName(array.c_str());
+                readScalar(Data, DataArray, array, outputVector, dataID);
+            }
+            else
+            {
+                //SafeDownCast it
+                std::cout << "PDENSITY Cache" << std::endl << std::flush;
 
-                    case DATA_TYPE::CDENSITY:
-                        break;
-
-                    default:
-                        break;
-                    }
-                    break;
-
-                default:
-                    break;
-                }
+                //load from cache
             }
 
+            break;
+        case DATA_TYPE::CDENSITY:
+            if(this->cDensityCache->getExtentsFromCache(this->current_MJD, cacheExtents) == NULL)
+            {
+                std::cout << "CDENSITY" << std::endl << std::flush;
 
-            DataArray->InsertNextValue(newArray[k]);
+
+                DataArray = vtkDoubleArray::New();
+                DataArray->SetName(array.c_str());
+                readScalar(Data, DataArray, array, outputVector, dataID);
+            }
+            else
+            {
+                std::cout << "CDENSITY Cache" << std::endl << std::flush;
+
+                //load from cache
+            }
+            break;
+
+        case DATA_TYPE::POLARITY:
+            if(this->polarityCache->getExtentsFromCache(this->current_MJD, cacheExtents) == NULL)
+            {
+                std::cout << "POLARITY" << std::endl << std::flush;
+
+                DataArray = vtkDoubleArray::New();
+                DataArray->SetName(array.c_str());
+                readScalar(Data, DataArray, array, outputVector, dataID);
+            }
+            else
+            {
+                std::cout << "POLARITY Cache" << std::endl << std::flush;
+
+                //load from cache
+            }
+            break;
+
+        case DATA_TYPE::TEMP:
+            if(this->temperatureCache->getExtentsFromCache(this->current_MJD, cacheExtents) == NULL)
+            {
+                std::cout << "TEMPURATURE" << std::endl;
+
+                DataArray = vtkDoubleArray::New();
+                DataArray->SetName(array.c_str());
+                readScalar(Data, DataArray, array, outputVector, dataID);
+            }
+            else
+            {
+                std::cout << "TEMPURATURE Cache" << std::endl;
+
+                //load from cache
+            }
+            break;
+
+        default:
+            std::cout << "DEFAULT - THIS IS AN ERROR" << std::endl;
+
+            break;
+
         }
-
-
-
-        //Add array to grid
-        Data->GetPointData()->AddArray(DataArray);
-        DataArray->Delete();
-
-        //free temporary memory
-        delete [] newArray; newArray = NULL;
-
     }
 
 

@@ -5,6 +5,7 @@
 #include "vtkStructuredGridAlgorithm.h"
 #include "vtkIOParallelNetCDFModule.h" // For export macro
 #include "cxform.h"
+#include "readerCache.h"
 #include<map>
 #include<string>
 #include<vector>
@@ -121,6 +122,9 @@ public:
     vtkGetStringMacro(CurrentFileName);
 
 
+    void readVector(std::string array, vtkDoubleArray *DataArray, vtkInformationVector* outputVector, int dataID, vtkStructuredGrid *Data);
+    void readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID);
+    void getDataID(std::string array, int &dataID);
 protected:
 
     vtkEnlilReader();
@@ -259,8 +263,14 @@ protected:
 private:
 
     //Caching implimentation
+    RCache::ReaderCache *pDensityCache;
+    RCache::ReaderCache *cDensityCache;
+    RCache::ReaderCache *temperatureCache;
+    RCache::ReaderCache *polarityCache;
+    RCache::ReaderCache *bFieldCache;
+    RCache::ReaderCache *velocityCache;
 
-
+    RCache::ReaderCache *currentCache;
 
     vtkEnlilReader(const vtkEnlilReader&);  // Not implemented.
     void operator=(const vtkEnlilReader&);  // Not implemented.
