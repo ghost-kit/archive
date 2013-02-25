@@ -3,8 +3,8 @@ PROJECT("Enlil Reader 2.0.1")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
-SET(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.1_OSX-10.7/paraview/src/paraview-build)
-SET(ParaVIew_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.1)
+#SET(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.1_OSX-10.7/paraview/src/paraview-build)
+#SET(ParaVIew_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.1)
 
 ADD_SUBDIRECTORY(cxform-0.71)
 
