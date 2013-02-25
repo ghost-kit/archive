@@ -3,6 +3,8 @@ PROJECT("Enlil Reader 2.0.1")
 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
+SET(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.1_OSX-10.7/paraview/src/paraview-build)
+SET(ParaVIew_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.1)
 
 ADD_SUBDIRECTORY(cxform-0.71)
 
@@ -25,11 +27,15 @@ SET(KIT_LIBS cxform vtkNetCDF_cxx )
 Target_LINK_LIBRARIES(vtkEnlilReader  ${ParaView_LIBRARIES} ${KIT_LIBS})
 
 
-
+# Adding 'dist' Make target to deploy plugin that's compatible with
+# KitWare release of ParaView for Mac OS-X.  Requires SuperBuild with
+# GIT_TAG set accordingly in versions.cmake.
 add_custom_target(dist
     COMMAND ${CMAKE_COMMAND}  -DBINARY_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
-                              -DINSTALL_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                              -DPV_SUPERBUILD_LIST_DIR:PATH=${ParaVIew_SuperBuild_DIR}/Projects
                               -DPARAVIEW_BINARY_DIR:PATH=${ParaView_DIR}
+ 			      -DQT_LIBRARY_DIR:PATH=${QT_LIBRARY_DIR}
                               -DTMP_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
-                              -Dbundle_name:STRING=${CMAKE_CURRENT_BINARY_DIR}/EnlilToolsPlugin.tgz
-                              -P ${CMAKE_CURRENT_LIST_DIR}/install_plugin.cmake)
+                              -Dbundle_name:STRING=${CMAKE_CURRENT_BINARY_DIR}/vtkEnlilReader.tgz
+                              -P ${CMAKE_CURRENT_LIST_DIR}/install_vtkEnlilReader.cmake
+)
