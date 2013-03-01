@@ -1,14 +1,17 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-set(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.1_OSX-10.7/paraview/src/paraview-build)
-set(ParaVIew_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.1)
+#set(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.1_OSX-10.7/paraview/src/paraview-build)
+#set(ParaVIew_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.1)
 #set(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.0_OSX-10.7/paraview/src/paraview-build)
 #set(ParaVIew_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.0)
 
 #SET(HDF4_DIR /Users/schmitt/paraview/opt/hdf-4.2.5-mac-intel-x86_64)
-SET(PKG_DIR /Users/schmitt/paraview/opt)
+#SET(PKG_DIR /Users/schmitt/paraview/opt)
 
 FIND_PACKAGE(ParaView REQUIRED)
+FIND_PACKAGE(hdf4 REQUIRED)
+set(PKG_DIR /usr/local/)
+
 INCLUDE(${PARAVIEW_USE_FILE})
 ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
   SERVER_MANAGER_XML vtkLFMReader.xml
@@ -19,7 +22,7 @@ ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
 INCLUDE_DIRECTORIES(${PKG_DIR}/include)
 LINK_DIRECTORIES(${PKG_DIR}/lib)
 
-FIND_LIBRARY(LIB_DF    df    ${PKG_DIR}/lib)
+#FIND_LIBRARY(LIB_DF    df    ${PKG_DIR}/lib)
 FIND_LIBRARY(LIB_JPEG  jpeg ${PKG_DIR}/lib)
 FIND_LIBRARY(LIB_MFHDF mfhdf ${PKG_DIR}/lib)
 #FIND_LIBRARY(LIB_SZ  sz)
