@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <QString>
+#include <QStack>
 #include "vtkAbstractArray.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
@@ -86,7 +87,7 @@ public:
     ~cacheMap();
 
     //adds a cache element to the maping if it doesn't already exist
-    void addCacheElement(extents xtents, vtkAbstractArray* data);
+    cacheElement *addCacheElement(extents xtents, vtkAbstractArray* data);
 
     //returns the appropriate data segment from the cache
     cacheElement* getCacheElement(extents xtents);
@@ -133,6 +134,7 @@ public:
 
     //build a new data array of proper type and
     // extract requested elements from cacheElement in map
+    //TODO: These need to be re-done so that it works solely with cacheElments
     static RCache::cacheElement* extractFromArray(extents xtetnts,  RCache::cacheElement* cacheArray);
     static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkDoubleArray* cacheArray);
     static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkFloatArray* cacheArray);
@@ -149,12 +151,19 @@ protected:
     //will remove extents (if they are discrete) from time series
     void pruneExtentsFromTime(extents xtents);
 
+    //this will move the cache element to the top of the stack
+    void promoteElement(double time, extents Xtents);
+
+
 private:
     //this maps time to a specific cachemap
     std::map<double, cacheMap*> cache;
 
     //this store all of the pointers in the cache so that we may destroy them when needed
     std::map<RCache::extents, vtkAbstractArray*> cacheVector;
+
+    //I am switching over to a stack for the cache
+    std::map<double, QStack<RCache::cacheElement*>* > cacheStack;
 
     //we need to clean our up
     bool dirty;

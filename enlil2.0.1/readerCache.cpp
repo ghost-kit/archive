@@ -18,6 +18,8 @@ RCache::ReaderCache::~ReaderCache()
 void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, vtkAbstractArray *array)
 {
 
+    array->SetReferenceCount(array->GetReferenceCount()+1);
+
     std::cout << "Adding Element to time " << time << std::endl;
 
     std::map<double,cacheMap*>::iterator timeElement;
@@ -32,20 +34,35 @@ void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, v
         if(currentMap->getCacheElement(xtents) == NULL)
         {
             //the cache element is not in the map, so lets add it
-            currentMap->addCacheElement(xtents, array);
+           RCache::cacheElement *currentElement = currentMap->addCacheElement(xtents, array);
 
             //keep track of it so we can kill it when needed
-            std::cout << "reference count before caching: " << array->GetReferenceCount() << std::endl;
-            this->cacheVector[xtents] = array;
-            std::cout << "reference count after caching:  " << array->GetReferenceCount() << std::endl;
+           if(currentElement != NULL)
+           {
 
+               this->cacheStack[time]->push(currentElement);
+               std::cout << "Added Elemnt to the Cache Stack" << std::endl;
+
+               //remove when stack is done...
+               this->cacheVector[xtents] = array;
+           }
+           else
+           {
+               //lets move the element with our xtents to the top of the stack
+               this->promoteElement(time, xtents);
+
+               std::cout << "Promoting Element to top of stack..." << std::endl;
+
+           }
             std::cout << "Added Element to Cache for time " << time  << std::endl;
 
         }
         else
         {
             //we are not adding this array, so mark it for deletion
-            array->Delete();
+//            array->Delete();
+
+            std::cout << "NOT ADDING ARRAY TO CACHE" << std::endl;
         }
     }
     else
@@ -54,6 +71,10 @@ void RCache::ReaderCache::addCacheElement(double time, RCache::extents xtents, v
         //add the time to the cache table
         this->cache[time] = new cacheMap;
         currentMap = this->cache[time];
+
+        //set up the cacheStack element
+        this->cacheStack[time] = new QStack<RCache::cacheElement*>;
+        std::cout << "Initialized CacheStack for time " << time << std::endl;
 
         std::cout << "Adding Element at time " << time << std::endl;
         //add the new element to the new time
@@ -131,6 +152,7 @@ void RCache::ReaderCache::cleanCache()
     {
         std::cout << "Reference Count: " <<  iter->second->GetReferenceCount() << std::endl;
         iter->second->Delete();
+        std::cout << "Reference Count: " << iter->second->GetReferenceCount() << std::endl;
 
     }
     this->cacheVector.clear();
@@ -228,6 +250,19 @@ void RCache::ReaderCache::pruneTimeFromEndTo(double time)
 //=========================================================================================
 void RCache::ReaderCache::pruneExtentsFromTime(RCache::extents xtents)
 {
+}
+
+//=========================================================================================
+void RCache::ReaderCache::promoteElement(double time, RCache::extents Xtents)
+{
+    std::map<double, QStack<RCache::cacheElement*>* >::iterator timeElement;
+    QStack<RCache::cacheElement*>*  currentStack;
+
+    if((timeElement=this->cacheStack.find(time)) != this->cacheStack.end())
+    {
+        currentStack = timeElement->second;
+    }
+
 }
 
 //=========================================================================================
@@ -380,7 +415,7 @@ RCache::cacheMap::~cacheMap()
 }
 
 //=========================================================================================
-void RCache::cacheMap::addCacheElement(RCache::extents xtents, vtkAbstractArray *data)
+RCache::cacheElement* RCache::cacheMap::addCacheElement(RCache::extents xtents, vtkAbstractArray *data)
 {
     cacheElement* newElement = new cacheElement;
     newElement->data = data;
@@ -390,7 +425,11 @@ void RCache::cacheMap::addCacheElement(RCache::extents xtents, vtkAbstractArray 
     if(this->map.find(xtents) == map.end())
     {
         this->map[xtents] = newElement;
+        return newElement;
+
     }
+
+    return NULL;
 }
 
 //=========================================================================================

@@ -102,7 +102,7 @@ vtkEnlilReader::vtkEnlilReader()
 
 }
 
-//--
+//---------------------------------------------------------------------------------------------
 vtkEnlilReader::~vtkEnlilReader()
 {
     this->PointDataArraySelection->Delete();
@@ -124,6 +124,7 @@ vtkEnlilReader::~vtkEnlilReader()
     delete this->velocityCache;     this->velocityCache = NULL;
 }
 
+//---------------------------------------------------------------------------------------------
 //-------------------------------------------------------------
 //    The following Methods provide basic functionality for
 //  Selective read arrays.  These methods provide the list of
@@ -142,7 +143,7 @@ int vtkEnlilReader::GetNumberOfPointArrays()
 {
     return this->PointDataArraySelection->GetNumberOfArrays();
 }
-
+//---------------------------------------------------------------------------------------------
 /*
  * The Number of Cell Arrays in current selection
  *  This is an internal function
@@ -151,7 +152,7 @@ int vtkEnlilReader::GetNumberOfCellArrays()
 {
     return this->CellDataArraySelection->GetNumberOfArrays();
 }
-
+//---------------------------------------------------------------------------------------------
 /*
  *Return the NAME (characters) of the Point array at index
  *   This is an internal function
@@ -161,6 +162,7 @@ const char* vtkEnlilReader::GetPointArrayName(int index)
     return this->PointDataArraySelection->GetArrayName(index);
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Return the NAME (characters) of the Cell array at index
  *   This is an internal function
@@ -170,6 +172,7 @@ const char* vtkEnlilReader::GetCellArrayName(int index)
     return this->CellDataArraySelection->GetArrayName(index);
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Get the status of the Point Array of "name"
  *   This is an internal function
@@ -179,6 +182,7 @@ int vtkEnlilReader::GetPointArrayStatus(const char *name)
     return this->PointDataArraySelection->GetArraySetting(name);
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Get the status of the Cell Array of "name"
  *   This is an internal function
@@ -188,6 +192,7 @@ int vtkEnlilReader::GetCellArrayStatus(const char *name)
     return this->CellDataArraySelection->GetArraySetting(name);
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Set the status of the Point Array of "name"
  *   This is an internal function
@@ -216,6 +221,7 @@ void vtkEnlilReader::SetPointArrayStatus(const char *name, int status)
 
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Set the status of the Cell Array of "name"
  *   This is an internal function
@@ -234,6 +240,7 @@ void vtkEnlilReader::SetCellArrayStatus(const char *name, int status)
 
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Disables ALL Point arrays registered in system
  *   This is an internal function
@@ -247,6 +254,7 @@ void vtkEnlilReader::DisableAllPointArrays()
     this->Modified();
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Disables ALL Cell arrays registered in system
  *   This is an internal function
@@ -261,6 +269,7 @@ void vtkEnlilReader::DisableAllCellArrays()
     this->Modified();
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Enables ALL Point arrays registered in system
  *   This is an internal function
@@ -275,6 +284,7 @@ void vtkEnlilReader::EnableAllPointArrays()
     this->Modified();
 }
 
+//---------------------------------------------------------------------------------------------
 /*
  *Enables ALL Cell arrays registered in system
  *   This is an internal function
@@ -289,6 +299,7 @@ void vtkEnlilReader::EnableAllCellArrays()
 }
 //=============== END SELECTIVE READER METHODS================
 
+//---------------------------------------------------------------------------------------------
 //------------------------------------------------------------
 //    These functions are the meat of the readers... i.e. they
 //  are the calls that ParaView uses to get information from
@@ -302,7 +313,7 @@ int vtkEnlilReader::CanReadFiles(const char *filename)
     return 1;
 }
 
-//--
+//---------------------------------------------------------------------------------------------
 int vtkEnlilReader::RequestInformation(
         vtkInformation* request,
         vtkInformationVector** inputVector,
@@ -376,7 +387,8 @@ int vtkEnlilReader::RequestInformation(
     return 1;
 }
 
-//--
+
+//---------------------------------------------------------------------------------------------
 int vtkEnlilReader::RequestData(
         vtkInformation* request,
         vtkInformationVector** inputVector,
@@ -414,6 +426,7 @@ int vtkEnlilReader::RequestData(
 
 }
 
+//---------------------------------------------------------------------------------------------
 //Get the Requested Time Step
 double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 {
@@ -477,6 +490,7 @@ double vtkEnlilReader::getRequestedTime(vtkInformationVector* outputVector)
 }
 
 
+//---------------------------------------------------------------------------------------------
 //Methods for file series
 
 void vtkEnlilReader::AddFileName(const char *fname)
@@ -503,6 +517,7 @@ unsigned int vtkEnlilReader::GetNumberOfFileNames()
 
 //=================== END CORE METHODS =======================
 
+//---------------------------------------------------------------------------------------------
 //-- Callback
 void vtkEnlilReader::SelectionCallback(
         vtkObject* object,
@@ -534,6 +549,7 @@ void vtkEnlilReader::SelectionCallback(
 }
 
 
+//---------------------------------------------------------------------------------------------
 //------------------------------------------------------------
 //    These methods to load the requested variables.
 //  These are provided so that we can abstract out the reading
@@ -627,6 +643,7 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
     return 1;
 }
 
+//---------------------------------------------------------------------------------------------
 //-- Return 0 for Failure, 1 for Success --//
 
 //This method will load the data and convert to the assigned "DataUnits" value.
@@ -725,6 +742,7 @@ void vtkEnlilReader::readVector(std::string array, vtkDoubleArray *DataArray,  v
     delete [] newArrayT; newArrayT = NULL;
 }
 
+//---------------------------------------------------------------------------------------------
 void vtkEnlilReader::readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID)
 {
     DataArray->SetNumberOfComponents(1);  //Scalar
@@ -781,6 +799,8 @@ void vtkEnlilReader::readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArr
     delete [] newArray; newArray = NULL;
 }
 
+
+//---------------------------------------------------------------------------------------------
 void vtkEnlilReader::getDataID(std::string array, int &dataID)
 {
     QString arrayName(array.c_str());
@@ -811,6 +831,8 @@ void vtkEnlilReader::getDataID(std::string array, int &dataID)
     }
 }
 
+
+//---------------------------------------------------------------------------------------------
 int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* outputVector)
 {
     //get the dataID
@@ -933,12 +955,8 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
 
         //Add array to grid
         Data->GetPointData()->AddArray(DataArray);
+        DataArray->Delete();
 
-        //if we are caching the value, we need to use other forms of memory management
-        if(!cached)
-        {
-            DataArray->Delete();
-        }
 
 
     }
@@ -1099,16 +1117,16 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
 
         //Add array to grid
         Data->GetPointData()->AddArray(DataArray);
-        if(!cached)
-        {
-            DataArray->Delete();
-        }
+
+        DataArray->Delete();
+
     }
 
 
     return 1;
 }
 
+//---------------------------------------------------------------------------------------------
 //-- returns array read via partial IO limited by extents --//
 /* This method will automatically adjust for the periodic boundary
  *  condition that does not exist sequentially in file */
@@ -1264,6 +1282,7 @@ double* vtkEnlilReader::read3dPartialToArray(char* arrayName, int extents[])
 
 }
 
+//---------------------------------------------------------------------------------------------
 //-- returns array read via partial IO limited by extents --//
 /* This method will automatically adjust for the periodic boundary
  *  condition that does not exist sequentially in file */
@@ -1383,7 +1402,7 @@ double* vtkEnlilReader::readGridPartialToArray(char *arrayName, int subExtents[]
     return array;
 }
 
-
+//---------------------------------------------------------------------------------------------
 //Loading Meta-Data from Variables
 void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
                                      vtkInformationVector *outputVector,
@@ -1495,6 +1514,7 @@ void vtkEnlilReader::loadVarMetaData(const char *array, const char* title,
 
 }
 
+//---------------------------------------------------------------------------------------------
 //-- Return 0 for failure, 1 for success --//
 /* You will want to over-ride this method to
  * Populate the system with your own arrays */
@@ -1513,6 +1533,7 @@ int vtkEnlilReader::PopulateArrays()
     return 1;
 }
 
+//---------------------------------------------------------------------------------------------
 //-- Meta Data Population
 int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
 {
@@ -1634,6 +1655,7 @@ int vtkEnlilReader::LoadMetaData(vtkInformationVector *outputVector)
     return 1;
 }
 
+//---------------------------------------------------------------------------------------------
 //Status Check
 int vtkEnlilReader::checkStatus(void *Object, char *name)
 {
@@ -1649,6 +1671,7 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
     return 1;
 }
 
+//---------------------------------------------------------------------------------------------
 //this function calculates the positions of artifacts in the system
 //void vtkEnlilReader::calculateArtifacts()
 //{
@@ -1684,6 +1707,8 @@ int vtkEnlilReader::checkStatus(void *Object, char *name)
 
 //    }
 //}
+
+//---------------------------------------------------------------------------------------------
 //-- Return 0 for failure, 1 for success --//
 /* Over-ride this method to provide the
  * extents of your data */
@@ -1745,6 +1770,8 @@ int vtkEnlilReader::calculateTimeSteps()
     return 1;
 }
 
+
+//---------------------------------------------------------------------------------------------
 //this function populates the grid data.  used to be calcuated with time steps, but
 //  the new timestep handling routine makes more sense to not include this.
 void vtkEnlilReader::PopulateGridData()
@@ -1771,7 +1798,7 @@ void vtkEnlilReader::PopulateGridData()
 
 }
 
-
+//---------------------------------------------------------------------------------------------
 //-- print extents --//
 void vtkEnlilReader::printExtents(int extent[], char* description)
 {
@@ -1784,6 +1811,7 @@ void vtkEnlilReader::printExtents(int extent[], char* description)
                  extent[5] << std::endl;
 }
 
+//---------------------------------------------------------------------------------------------
 void vtkEnlilReader::setMyExtents(int extentToSet[], int sourceExtent[])
 {
     extentToSet[0] = sourceExtent[0];
@@ -1795,6 +1823,7 @@ void vtkEnlilReader::setMyExtents(int extentToSet[], int sourceExtent[])
 
 }
 
+//---------------------------------------------------------------------------------------------
 //set exents to given array
 void vtkEnlilReader::setMyExtents(int extentToSet[], int dim1, int dim2, int dim3, int dim4, int dim5, int dim6)
 {
@@ -1806,6 +1835,7 @@ void vtkEnlilReader::setMyExtents(int extentToSet[], int dim1, int dim2, int dim
     extentToSet[5] = dim6;
 }
 
+//---------------------------------------------------------------------------------------------
 //check equality of extents
 bool vtkEnlilReader::eq(int extent1[], int extent2[])
 {
@@ -1814,6 +1844,7 @@ bool vtkEnlilReader::eq(int extent1[], int extent2[])
             && extent1[4] == extent2[4] && extent1[5] == extent2[5]);
 }
 
+//---------------------------------------------------------------------------------------------
 //check bounds of extents
 bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
 {
@@ -1836,6 +1867,7 @@ bool vtkEnlilReader::ExtentOutOfBounds(int extToCheck[], int extStandard[])
     return true;
 }
 
+//---------------------------------------------------------------------------------------------
 //get the dimensions from the extents provided
 void vtkEnlilReader::extractDimensions(int dims[], int extent[])
 {
@@ -1844,7 +1876,7 @@ void vtkEnlilReader::extractDimensions(int dims[], int extent[])
     dims[2] = extent[5] - extent[4]+1;
 }
 
-
+//---------------------------------------------------------------------------------------------
 //add a point array
 void vtkEnlilReader::addPointArray(char* name)
 {
@@ -1873,6 +1905,7 @@ void vtkEnlilReader::addPointArray(char* name)
     file.close();
 }
 
+//---------------------------------------------------------------------------------------------
 void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
 {
     NcFile file(this->FileName);
@@ -1914,6 +1947,7 @@ void vtkEnlilReader::addPointArray(char* name1, char* name2, char* name3)
     file.close();
 }
 
+//---------------------------------------------------------------------------------------------
 //-- Return 0 for failure, 1 for success --//
 /* You will need to over-ride this method to provide
  * your own grid-information */
@@ -2001,6 +2035,8 @@ int vtkEnlilReader::GenerateGrid()
 //=================== END USER METHODS =========================
 
 
+
+//---------------------------------------------------------------------------------------------
 //=================== Cache Control Methods ====================
 void vtkEnlilReader::cleanCache()
 {
@@ -2014,7 +2050,7 @@ void vtkEnlilReader::cleanCache()
 
 
 
-
+//---------------------------------------------------------------------------------------------
 //--------------------------------------------------------------
 //    Output Port Configuration
 //--------------------------------------------------------------
@@ -2032,7 +2068,7 @@ int vtkEnlilReader::FillOutputPortInformation(int port, vtkInformation* info)
     return 1;
 }
 
-
+//---------------------------------------------------------------------------------------------
 
 //================= END PORT CONFIGURATION ===================
 
