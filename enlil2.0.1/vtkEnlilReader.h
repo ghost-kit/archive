@@ -84,8 +84,11 @@ public:
 
     void SetDataUnits(int _arg)
     {
+
+        std::cout << "Updating Units: " << std::endl;
         this->DataUnits = _arg;
         this->cleanCache();
+
         this->gridClean=false;
         this->Modified();
     }

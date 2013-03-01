@@ -856,9 +856,9 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
     bool cached = false;
     //set up array to be added
 
-    std::cout << "Loading Fields" << std::endl << std::flush;
-    std::cout << "Vector Status: " << (vector ? "TRUE" : "FALSE") << std::endl << std::flush;
-    std::cout << "DataID: " << dataID << std::endl << std::flush;
+//    std::cout << "Loading Fields" << std::endl << std::flush;
+//    std::cout << "Vector Status: " << (vector ? "TRUE" : "FALSE") << std::endl << std::flush;
+//    std::cout << "DataID: " << dataID << std::endl << std::flush;
 
     if(vector)  //load vector data
     {
@@ -868,7 +868,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             //read the fields
             if(this->bFieldCache->getExtentsFromCache(this->current_MJD, subExtents) == NULL)
             {
-                std::cout << "BFIELD" << std::endl << std::flush;
+//                std::cout << "BFIELD" << std::endl << std::flush;
 
                 DataArray = vtkDoubleArray::New();
                 DataArray->SetName(array.c_str());
@@ -890,10 +890,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             }
             else
             {
-                std::cout << "BFIELD Cache" << std::endl << std::flush;
-                std::cout << "Getting Data From the Cache: " << std::endl;
-                this->printExtents(SubExtent, (char*)"Current Extents: ");
-                std::cout << "Current Time: " << this->current_MJD << std::endl;
+//                std::cout << "BFIELD Cache" << std::endl << std::flush;
+//                std::cout << "Getting Data From the Cache: " << std::endl;
+//                this->printExtents(SubExtent, (char*)"Current Extents: ");
+//                std::cout << "Current Time: " << this->current_MJD << std::endl;
 
                 //get the data array from the cache system
                 DataArray = vtkDoubleArray::SafeDownCast(this->bFieldCache->getExtentsFromCache(this->current_MJD, subExtents)->data);
@@ -909,7 +909,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
 
             if(this->velocityCache->getExtentsFromCache(this->current_MJD, subExtents) == NULL)
             {
-                std::cout << "VELOCITY" << std::endl << std::flush;
+//                std::cout << "VELOCITY" << std::endl << std::flush;
 
 
                 DataArray = vtkDoubleArray::New();
@@ -931,10 +931,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             }
             else
             {
-                std::cout << "VELOCITY Cache" << std::endl << std::flush;
-                std::cout << "Getting Data From the Cache: " << std::endl;
-                this->printExtents(SubExtent, (char*)"Current Extents: ");
-                std::cout << "Current Time: " << this->current_MJD << std::endl;
+//                std::cout << "VELOCITY Cache" << std::endl << std::flush;
+//                std::cout << "Getting Data From the Cache: " << std::endl;
+//                this->printExtents(SubExtent, (char*)"Current Extents: ");
+//                std::cout << "Current Time: " << this->current_MJD << std::endl;
 
                 //get the data array from the cache system
                 DataArray = vtkDoubleArray::SafeDownCast(this->velocityCache->getExtentsFromCache(this->current_MJD, subExtents)->data);
@@ -955,7 +955,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
 
         //Add array to grid
         Data->GetPointData()->AddArray(DataArray);
-        DataArray->Delete();
+        //DataArray->Delete();
 
 
 
@@ -967,16 +967,16 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
         {
         case DATA_TYPE::PDENSITY:
 
-            std::cout << "Looking for PDentsity" << std::endl;
-            std::cout << "MJD: " << this->current_MJD << std::endl << std::flush;
-            std::cout << "Extents: " << subExtents.getExtent(0) << " " << subExtents.getExtent(1)
-                      << " " << subExtents.getExtent(2) << " " << subExtents.getExtent(3)
-                      << " " << subExtents.getExtent(4) << " " << subExtents.getExtent(5)
-                      << std::endl << std::flush;
+//            std::cout << "Looking for PDentsity" << std::endl;
+//            std::cout << "MJD: " << this->current_MJD << std::endl << std::flush;
+//            std::cout << "Extents: " << subExtents.getExtent(0) << " " << subExtents.getExtent(1)
+//                      << " " << subExtents.getExtent(2) << " " << subExtents.getExtent(3)
+//                      << " " << subExtents.getExtent(4) << " " << subExtents.getExtent(5)
+//                      << std::endl << std::flush;
 
             if(this->pDensityCache->getExtentsFromCache(this->current_MJD, subExtents) == NULL)
             {
-                std::cout << "PDENSITY" << std::endl << std::flush;
+//                std::cout << "PDENSITY" << std::endl << std::flush;
 
                 DataArray = vtkDoubleArray::New();
                 DataArray->SetName(array.c_str());
@@ -994,10 +994,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             else
             {
                 //SafeDownCast it
-                std::cout << "PDENSITY Cache" << std::endl << std::flush;
-                std::cout << "Getting Data From the Cache: " << std::endl;
-                this->printExtents(SubExtent, (char*)"Current Extents: ");
-                std::cout << "Current Time: " << this->current_MJD << std::endl;
+//                std::cout << "PDENSITY Cache" << std::endl << std::flush;
+//                std::cout << "Getting Data From the Cache: " << std::endl;
+//                this->printExtents(SubExtent, (char*)"Current Extents: ");
+//                std::cout << "Current Time: " << this->current_MJD << std::endl;
 
                 //get the data array from the cache system
                 DataArray = vtkDoubleArray::SafeDownCast(this->pDensityCache->getExtentsFromCache(this->current_MJD, subExtents)->data);
@@ -1010,7 +1010,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
         case DATA_TYPE::CDENSITY:
             if(this->cDensityCache->getExtentsFromCache(this->current_MJD, subExtents) == NULL)
             {
-                std::cout << "CDENSITY" << std::endl << std::flush;
+//                std::cout << "CDENSITY" << std::endl << std::flush;
 
 
                 DataArray = vtkDoubleArray::New();
@@ -1028,10 +1028,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             }
             else
             {
-                std::cout << "CDENSITY Cache" << std::endl << std::flush;
-                std::cout << "Getting Data From the Cache: " << std::endl;
-                this->printExtents(SubExtent, (char*)"Current Extents: ");
-                std::cout << "Current Time: " << this->current_MJD << std::endl;
+//                std::cout << "CDENSITY Cache" << std::endl << std::flush;
+//                std::cout << "Getting Data From the Cache: " << std::endl;
+//                this->printExtents(SubExtent, (char*)"Current Extents: ");
+//                std::cout << "Current Time: " << this->current_MJD << std::endl;
 
                 //get the data array from the cache system
                 DataArray = vtkDoubleArray::SafeDownCast(this->cDensityCache->getExtentsFromCache(this->current_MJD, subExtents)->data);
@@ -1044,7 +1044,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
         case DATA_TYPE::POLARITY:
             if(this->polarityCache->getExtentsFromCache(this->current_MJD, subExtents) == NULL)
             {
-                std::cout << "POLARITY" << std::endl << std::flush;
+//                std::cout << "POLARITY" << std::endl << std::flush;
 
                 DataArray = vtkDoubleArray::New();
                 DataArray->SetName(array.c_str());
@@ -1061,10 +1061,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             }
             else
             {
-                std::cout << "POLARITY Cache" << std::endl << std::flush;
-                std::cout << "Getting Data From the Cache: " << std::endl;
-                this->printExtents(SubExtent, (char*)"Current Extents: ");
-                std::cout << "Current Time: " << this->current_MJD << std::endl;
+//                std::cout << "POLARITY Cache" << std::endl << std::flush;
+//                std::cout << "Getting Data From the Cache: " << std::endl;
+//                this->printExtents(SubExtent, (char*)"Current Extents: ");
+//                std::cout << "Current Time: " << this->current_MJD << std::endl;
 
                 //get the data array from the cache system
                 DataArray = vtkDoubleArray::SafeDownCast(this->polarityCache->getExtentsFromCache(this->current_MJD, subExtents)->data);
@@ -1077,7 +1077,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
         case DATA_TYPE::TEMP:
             if(this->temperatureCache->getExtentsFromCache(this->current_MJD, subExtents) == NULL)
             {
-                std::cout << "TEMPURATURE" << std::endl;
+//                std::cout << "TEMPURATURE" << std::endl;
 
                 DataArray = vtkDoubleArray::New();
                 DataArray->SetName(array.c_str());
@@ -1095,10 +1095,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             }
             else
             {
-                std::cout << "TEMPURATURE Cache" << std::endl;
-                std::cout << "Getting Data From the Cache: " << std::endl;
-                this->printExtents(SubExtent, (char*)"Current Extents: ");
-                std::cout << "Current Time: " << this->current_MJD << std::endl;
+//                std::cout << "TEMPURATURE Cache" << std::endl;
+//                std::cout << "Getting Data From the Cache: " << std::endl;
+//                this->printExtents(SubExtent, (char*)"Current Extents: ");
+//                std::cout << "Current Time: " << this->current_MJD << std::endl;
 
                 //get the data array from the cache system
                 DataArray = vtkDoubleArray::SafeDownCast(this->temperatureCache->getExtentsFromCache(this->current_MJD, subExtents)->data);
@@ -1109,7 +1109,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
             break;
 
         default:
-            std::cout << "DEFAULT - THIS IS AN ERROR" << std::endl;
+//            std::cout << "DEFAULT - THIS IS AN ERROR" << std::endl;
 
             break;
 
@@ -1118,7 +1118,7 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
         //Add array to grid
         Data->GetPointData()->AddArray(DataArray);
 
-        DataArray->Delete();
+        //DataArray->Delete();
 
     }
 
@@ -2040,6 +2040,9 @@ int vtkEnlilReader::GenerateGrid()
 //=================== Cache Control Methods ====================
 void vtkEnlilReader::cleanCache()
 {
+
+    std::cout << "Cleaning Cache..." << std::endl;
+
     this->pDensityCache->cleanCache();
     this->cDensityCache->cleanCache();
     this->polarityCache->cleanCache();

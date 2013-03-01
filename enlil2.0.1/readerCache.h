@@ -11,6 +11,8 @@
 #include "vtkIntArray.h"
 #include "vtkStringArray.h"
 #include "vtkSetGet.h"
+#include <QMap>
+#include <iostream>
 
 
 class vtkStringArray;
@@ -66,11 +68,12 @@ public:
     cacheElement()
     {
         //nothing to do
+        std::cout << "Creating a Data Element... " << std::flush << std::endl;
     }
 
     ~cacheElement()
-    {
-        this->data->Delete();
+    {    
+
     }
 
     extents xtents;
@@ -100,7 +103,7 @@ public:
     void removeCacheElement(extents xtents);
 
     //removes all elements from the cache map
-    void cleanCache();
+    void clearCacheMap();
 
     //return the amount of memory being used by cache
     double getCacheUsage() { return this->cacheSize; }
@@ -159,11 +162,8 @@ private:
     //this maps time to a specific cachemap
     std::map<double, cacheMap*> cache;
 
-    //this store all of the pointers in the cache so that we may destroy them when needed
-    std::map<RCache::extents, vtkAbstractArray*> cacheVector;
-
     //I am switching over to a stack for the cache
-    std::map<double, QStack<RCache::cacheElement*>* > cacheStack;
+    QMap<double, QStack<RCache::cacheElement*>* > cacheStack;
 
     //we need to clean our up
     bool dirty;
