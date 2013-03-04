@@ -11,9 +11,11 @@
 #include "vtkIntArray.h"
 #include "vtkStringArray.h"
 #include "vtkSetGet.h"
+#include "vtkSmartPointer.h"
+
+
 #include <QMap>
 #include <iostream>
-
 
 class vtkStringArray;
 class vtkDoubleArray;
@@ -77,7 +79,7 @@ public:
     }
 
     extents xtents;
-    vtkAbstractArray* data;
+    vtkSmartPointer<vtkAbstractArray> data;
 };
 
 
@@ -110,7 +112,7 @@ public:
 
 protected:
     //this is the map for caching objects
-    std::map<extents, cacheElement*> map;
+    std::map<extents, cacheElement> map;
 
     //running total of memory usage
     double cacheSize;
@@ -160,10 +162,10 @@ protected:
 
 private:
     //this maps time to a specific cachemap
-    std::map<double, cacheMap*> cache;
+    std::map<double, cacheMap> cache;
 
     //I am switching over to a stack for the cache
-    QMap<double, QStack<RCache::cacheElement*>* > cacheStack;
+    //QMap<double, QStack<RCache::cacheElement> > cacheStack;
 
     //we need to clean our up
     bool dirty;

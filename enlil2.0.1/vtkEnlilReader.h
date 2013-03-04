@@ -6,6 +6,7 @@
 #include "vtkIOParallelNetCDFModule.h" // For export macro
 #include "cxform.h"
 #include "readerCache.h"
+#include "vtkSmartPointer.h"
 #include<map>
 #include<string>
 #include<vector>
@@ -133,7 +134,7 @@ public:
     vtkGetStringMacro(CurrentFileName);
 
 
-    void readVector(std::string array, vtkDoubleArray *DataArray, vtkInformationVector* outputVector, const int &dataID, bool &cached);
+    void readVector(std::string array, vtkDoubleArray *DataArray, vtkInformationVector* outputVector, const int &dataID);
     void readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID);
     void getDataID(std::string array, int &dataID);
 protected:
@@ -161,8 +162,8 @@ protected:
     bool infoClean;
 
     //Data interface information
-    vtkPoints* Points;        // Structured grid geometry
-    vtkDoubleArray* Radius;   // Radius Grid Data
+    vtkSmartPointer<vtkPoints> Points;        // Structured grid geometry
+    vtkSmartPointer<vtkDoubleArray> Radius;   // Radius Grid Data
 
     std::vector<std::string> MetaDataNames;
     std::map<std::string, std::string> ScalarVariableMap;
