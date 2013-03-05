@@ -18,7 +18,7 @@ class vtkCallbackCommand;
 class vtkMultibockProcessController;
 class vtkStringArray;
 class vtkFloatArray;
-class vtkDoubleArray;
+class vtkFloatArray;
 class vtkIntArray;
 class vtkPoints;
 class vtkTable;
@@ -134,8 +134,8 @@ public:
     vtkGetStringMacro(CurrentFileName);
 
 
-    void readVector(std::string array, vtkDoubleArray *DataArray, vtkInformationVector* outputVector, const int &dataID);
-    void readScalar(vtkStructuredGrid *Data, vtkDoubleArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID);
+    void readVector(std::string array, vtkFloatArray *DataArray, vtkInformationVector* outputVector, const int &dataID);
+    void readScalar(vtkStructuredGrid *Data, vtkFloatArray *DataArray, std::string array, vtkInformationVector* outputVector, int dataID);
     void getDataID(std::string array, int &dataID);
 protected:
 
@@ -163,7 +163,7 @@ protected:
 
     //Data interface information
     vtkSmartPointer<vtkPoints> Points;        // Structured grid geometry
-    vtkSmartPointer<vtkDoubleArray> Radius;   // Radius Grid Data
+    vtkSmartPointer<vtkFloatArray> Radius;   // Radius Grid Data
 
     std::vector<std::string> MetaDataNames;
     std::map<std::string, std::string> ScalarVariableMap;
@@ -275,14 +275,12 @@ protected:
 private:
 
     //Caching implimentation
-    RCache::ReaderCache *pDensityCache;
-    RCache::ReaderCache *cDensityCache;
-    RCache::ReaderCache *temperatureCache;
-    RCache::ReaderCache *polarityCache;
-    RCache::ReaderCache *bFieldCache;
-    RCache::ReaderCache *velocityCache;
-
-    RCache::ReaderCache *currentCache;
+    RCache::ReaderCache pDensityCache;
+    RCache::ReaderCache cDensityCache;
+    RCache::ReaderCache temperatureCache;
+    RCache::ReaderCache polarityCache;
+    RCache::ReaderCache bFieldCache;
+    RCache::ReaderCache velocityCache;
 
     void cleanCache();
 

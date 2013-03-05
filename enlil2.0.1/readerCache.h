@@ -15,6 +15,7 @@
 
 
 #include <QMap>
+#include <QLinkedList>
 #include <iostream>
 
 class vtkStringArray;
@@ -69,6 +70,7 @@ class cacheElement
 public:
     cacheElement()
     {
+        this->initd = false;
         //nothing to do
         std::cout << "Creating a Data Element... " << std::flush << std::endl;
     }
@@ -80,6 +82,8 @@ public:
 
     extents xtents;
     vtkSmartPointer<vtkAbstractArray> data;
+    bool initd;
+
 };
 
 
@@ -92,10 +96,13 @@ public:
     ~cacheMap();
 
     //adds a cache element to the maping if it doesn't already exist
-    cacheElement *addCacheElement(extents xtents, vtkAbstractArray* data);
+    void addCacheElement(extents xtents, vtkAbstractArray* data);
 
     //returns the appropriate data segment from the cache
     cacheElement* getCacheElement(extents xtents);
+
+    //returns true or false if it contains or doesn't cantain the element
+    bool hasCacheElement(extents xtents);
 
     //returns a dataset that CONTAINS the requested extent
     //user must parse to get required elements
@@ -110,12 +117,24 @@ public:
     //return the amount of memory being used by cache
     double getCacheUsage() { return this->cacheSize; }
 
+    //initialize
+    void initialize() {this->initd = true;}
+
+    //number of items in the cache
+    int getNumberElments();
+
 protected:
     //this is the map for caching objects
-    std::map<extents, cacheElement> map;
+//    std::map<extents, cacheElement> map;
+
+    //I am switching over to a stack for the cache
+    QList<RCache::cacheElement>  cacheStack;
 
     //running total of memory usage
     double cacheSize;
+
+    //flag for initalization
+    bool initd;
 };
 
 //=========================================================================================
@@ -128,7 +147,7 @@ public:
 
     //this will either cache the element or not
     //depending on wether the extents are in the cache already or not
-    void addCacheElement(double time, extents xtents, vtkAbstractArray* array);
+    void addCacheElement(double time,  extents xtents,  vtkAbstractArray *array);
 
     //this will get the requested extents from the Cache, or return NULL if
     // the extents are NOT in the cache
@@ -145,6 +164,7 @@ public:
     static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkFloatArray* cacheArray);
     static RCache::cacheElement* extractFromArray(extents newXtetnts, extents oldXtents,  vtkIntArray* cacheArray);
 
+    void addTimeLevel(double time);
 protected:
 
     //will return true if extents are already in the cache
@@ -162,10 +182,7 @@ protected:
 
 private:
     //this maps time to a specific cachemap
-    std::map<double, cacheMap> cache;
-
-    //I am switching over to a stack for the cache
-    //QMap<double, QStack<RCache::cacheElement> > cacheStack;
+    QMap<double, cacheMap> cache;
 
     //we need to clean our up
     bool dirty;
