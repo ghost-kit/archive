@@ -32,7 +32,7 @@ Target_LINK_LIBRARIES(vtkEnlilReader  ${ParaView_LIBRARIES} ${KIT_LIBS})
 # GIT_TAG set accordingly in versions.cmake.
 add_custom_target(dist
     COMMAND ${CMAKE_COMMAND}  -DBINARY_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
-                              -DPV_SUPERBUILD_LIST_DIR:PATH=${ParaVIew_SuperBuild_DIR}/Projects
+                              -DPV_SUPERBUILD_LIST_DIR:PATH=${ParaView_SuperBuild_DIR}/Projects
                               -DPARAVIEW_BINARY_DIR:PATH=${ParaView_DIR}
  			      -DQT_LIBRARY_DIR:PATH=${QT_LIBRARY_DIR}
                               -DTMP_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
