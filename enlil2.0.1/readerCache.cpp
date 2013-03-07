@@ -386,7 +386,7 @@ void RCache::cacheMap::addCacheElement(RCache::extents xtents, vtkAbstractArray 
             std::cout << "Found Existing Element ... promoting" << std::endl;
 
             //delete from current position and place on top of stack
-            this->cacheStack.move(index, 0);
+            //this->cacheStack.move(index, 0);
 
             return;
         }

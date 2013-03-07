@@ -19,7 +19,7 @@ INCLUDE(${PARAVIEW_USE_FILE})
 ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0.1"
   SERVER_MANAGER_XML vtkEnlilReader.xml
   SERVER_MANAGER_SOURCES vtkEnlilReader.cxx
-  SOURCES DateTime.C readerCache.cpp
+  SOURCES DateTime.C readerCache.cpp readerCacheManager.cpp
   GUI_RESOURCE_FILES vtkEnlilGUI.xml)
 
 SET(KIT_LIBS cxform vtkNetCDF_cxx )
