@@ -151,7 +151,7 @@ void swftPipelineLeafListView::addChildItems(swftPipelineLeafListViewItem *root,
 
                     this->nodeList.append(child);
 
-//                    std::cout << "Child Select state: " << child->itemSelected << " Name: " << name.toAscii().data() << std::endl;
+                    std::cout << "Child Select state: " << child->itemSelected << " Name: " << name.toAscii().data() << std::endl;
 
                     this->addChildItems(child,count);
 

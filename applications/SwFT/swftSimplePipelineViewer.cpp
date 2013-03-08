@@ -211,8 +211,13 @@ void swftSimplePipelineViewer::populateControls(pqView *view)
         //find the active units for this view, and build the controller objects
         for(int y = 0; y < this->leafList->nodeList.count(); y++)
         {
-            if(!this->leafList->nodeList[y]->HasChildren && (viewName.contains(this->leafList->nodeList[y]->tags[0]) || this->leafList->nodeList[y]->tags[0].contains("ALL",Qt::CaseInsensitive)))
+
+            if(this->leafList->nodeList[y]->tags.size() > 0 && viewName.contains(this->leafList->nodeList[y]->tags[0]))
             {
+                std::cout << "Parsing Control Elemenets" << std::endl;
+                std::cout << "View Name: " << viewName.toAscii().data() << std::endl;
+                std::cout << "Tag: " << this->leafList->nodeList[y]->tags[0].toAscii().data() << std::endl;
+
                 swftSimplePipelineElement *newControl = new swftSimplePipelineElement();
 
                 const QString toolName = this->leafList->nodeList[y]->name;
