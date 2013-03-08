@@ -4,7 +4,7 @@ PROJECT("Enlil Reader 2.0.1")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 #SET(ParaView_DIR /Volumes/Data/Development/SwFT/superbuild/paraview/src/paraview-build)
-#SET(ParaVIew_SuperBuild_DIR /Volumes/Data/Development/SwFT/ParaViewSuperbuild)
+#SET(ParaView_SuperBuild_DIR /Volumes/Data/Development/SwFT/ParaViewSuperbuild)
 
 ADD_SUBDIRECTORY(cxform-0.71)
 
