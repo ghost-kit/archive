@@ -12,7 +12,9 @@
 
 #include "vtkAbstractArray.h"
 #include "vtkCompositeDataIterator.h"
+#include "vtkDataSetAttributes.h"
 #include "vtkCompositeDataSet.h"
+#include "vtkDoubleArray.h"
 #include "vtkDataArray.h"
 #include "vtkDataObject.h"
 #include "vtkFieldData.h"
@@ -70,14 +72,13 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
     {
         std::cout << "Getting Number of Time steps" << std::flush << std::endl;
         this->NumberOfTimeSteps = inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-        double *test = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+        double *timeValues = inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 
         //push time steps into list
-        for (int y = 0; y < this->NumberOfTimeSteps; y++)  this->timeSteps.push_back(test[y]);
-
-        //debug
-//        for (int y = 0; y < this->NumberOfTimeSteps; y++) std::cout << this->timeSteps[y] << std::endl;
-        //end debug
+        for (int y = 0; y < this->NumberOfTimeSteps; y++)
+        {
+            this->timeSteps.push_back(timeValues[y]);
+        }
     }
     else
     {
@@ -114,12 +115,14 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
     vtkInformation* outInfo = outputVector->GetInformationObject(0);
     vtkTable *output = vtkTable::GetData(outInfo);
 
-    //Get the Input Data Object
-    vtkInformation* inInfo  = inputVector[0]->GetInformationObject(0);
-    vtkDataSet* input = vtkDataSet::GetData(inInfo);
+    //get time request data
+    if(outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
+    {
+        this->requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    }
 
     //call to get info from CDAWeb
-    bool result = this->processCDAWeb(inInfo, input, output);
+    bool result = this->processCDAWeb(output);
 
   return 1;
 }
@@ -164,12 +167,24 @@ bool vtkSpaceCraftInfo::getSCList()
     return true;
 }
 
-bool vtkSpaceCraftInfo::processCDAWeb(vtkInformation *inInfo, vtkDataSet *input, vtkTable *output)
+bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 {
     //get the data from CDAWeb, if it hasn't already been gotten.
     //  I will need to think about how to handle the retrieval
     //  WE need a list of avaiilable space craft, and then a way to get
     //  only the needed information.
+
+
+    vtkDoubleArray *timeArray = vtkDoubleArray::New();
+    timeArray->SetNumberOfComponents(1);
+    timeArray->SetName("Time");
+
+    timeArray->InsertNextValue(this->requestedTimeValue);
+    output->GetRowData()->AddArray(timeArray);
+
+    timeArray->Delete();
+
+
 
     return true;
 }

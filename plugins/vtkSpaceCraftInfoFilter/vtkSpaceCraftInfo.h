@@ -39,6 +39,7 @@ protected:
   //----- data -----//
   // Records the number of timesteps present
   int NumberOfTimeSteps;
+  double requestedTimeValue;
   double* getTimeSteps();
 
   // This Data Structure yeilds the value of the timestep by integer step
@@ -47,11 +48,11 @@ protected:
 
   // this data structure is as follows
   //    satPositions ["sat Name"] [timeStep] [x|y|z] = position[x|y|z]
-  QMap <QString, QList< QList < double > > > satPositions;
+  QMap <QString, QMap< double, double* > >  satPositions;
 
   //SpaceCraft Data Collection utilities
   bool getSCList();
-  bool processCDAWeb(vtkInformation *inInfo, vtkDataSet *input, vtkTable *output);
+  bool processCDAWeb(vtkTable *output);
 
 private:
   vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);
