@@ -10,9 +10,12 @@
 
 #include "vtkSpaceCraftInfo.h"
 
+#include "vtkCommand.h"
 #include "vtkAbstractArray.h"
+#include "vtkCallbackCommand.h"
 #include "vtkCompositeDataIterator.h"
 #include "vtkDataSetAttributes.h"
+#include "vtkDataArraySelection.h"
 #include "vtkCompositeDataSet.h"
 #include "vtkDoubleArray.h"
 #include "vtkDataArray.h"
@@ -27,6 +30,7 @@
 #include "vtkStructuredGrid.h"
 #include "vtkStructuredData.h"
 #include "vtkTable.h"
+#include "vtksys/SystemTools.hxx"
 
 #include "QtXml"
 #include "QHttp"
@@ -41,14 +45,18 @@ vtkStandardNewMacro(vtkSpaceCraftInfo)
 vtkSpaceCraftInfo::vtkSpaceCraftInfo()
 {
     this->NumberOfTimeSteps = 0;
+    this->NumberOfSCInfoArrays = 0;
+    this->SpaceCraftArraySelections = vtkDataArraySelection::New();
+
 }
 
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
 {
+    this->SpaceCraftArraySelections->Delete();
 }
 
 //----- required overides -----//
-
+//=========================================================================================//
 //Process Request
 int vtkSpaceCraftInfo::ProcessRequest(vtkInformation *request, vtkInformationVector ** inputVector, vtkInformationVector *outputVector)
 {
@@ -64,6 +72,7 @@ int vtkSpaceCraftInfo::ProcessRequest(vtkInformation *request, vtkInformationVec
     return this->Superclass::ProcessRequest(request, inputVector, outputVector);
 }
 
+//=========================================================================================//
 //Request Inoformation
 int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
@@ -98,16 +107,27 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
                  timeRange,
                  2);
 
-//    //provide extents
-//    int wholeExtent[6] = {0,0,0,0,0,0};
-//    wholeExtent[1] = this->NumberOfTimeSteps-1;
+    std::cout << "adding test arrays to array list" << std::endl;
+    //temporary activation of arrays
+    if(this->GetNumberOfSCinfoArrays() == 0)
+    {
+        this->SpaceCraftArraySelections->AddArray("Stereo A");
+        this->SpaceCraftArraySelections->AddArray("Stereo B");
+        this->SpaceCraftArraySelections->AddArray("Earth");
+        this->SpaceCraftArraySelections->AddArray("Mercury");
+        this->SpaceCraftArraySelections->AddArray("Mars");
+        this->SpaceCraftArraySelections->AddArray("Wind");
+        this->SpaceCraftArraySelections->AddArray("ACE");
 
-//    //provide extents to PV
-//    outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(), wholeExtent, 6);
+        this->SetNumberOfSCinfoArrays(7);
+    }
+
 
   return 1;
 }
 
+
+//=========================================================================================//
 //Request Data
 int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
@@ -128,6 +148,7 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
 }
 
 
+//=========================================================================================//
 //------ Port Information ------//
 int vtkSpaceCraftInfo::FillInputPortInformation(int port, vtkInformation *info)
 {
@@ -142,13 +163,10 @@ int vtkSpaceCraftInfo::FillOutputPortInformation(int port, vtkInformation *info)
 }
 
 
-//----- support copying of data arrays over -----//
-void vtkSpaceCraftInfo::CopyDataToOutput(vtkInformation *inInfo, vtkDataSet *input, vtkTable *output)
-{
-}
-
-
+//=========================================================================================//
 //----- helper function -----//
+//getTimeSteps() returns a NEW double array that *must*
+//  be managed by the caller. TODO: Fix this to manage memory slef.
 double *vtkSpaceCraftInfo::getTimeSteps()
 {
     double *ret = new double[this->NumberOfTimeSteps];
@@ -161,12 +179,27 @@ double *vtkSpaceCraftInfo::getTimeSteps()
     return ret;
 }
 
+
+//=========================================================================================//
+//------ get list of space craft -----//
 bool vtkSpaceCraftInfo::getSCList()
+{
+
+
+    return true;
+}
+
+
+//=========================================================================================//
+//------ get actuall space craft data -----//
+bool vtkSpaceCraftInfo::getSCData()
 {
 
     return true;
 }
 
+
+//=========================================================================================//
 bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 {
     //get the data from CDAWeb, if it hasn't already been gotten.
@@ -184,17 +217,71 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 
     timeArray->Delete();
 
-
-
     return true;
 }
 
+//----- GUI SC info array manipulators -----//
 
+//=========================================================================================//
+//set individual arrays
+void vtkSpaceCraftInfo::SetSCArrayStatus(const char *name, int status)
+{
+    if(status)
+    {
+        this->SpaceCraftArraySelections->EnableArray(name);
+    }
+    else
+    {
+        this->SpaceCraftArraySelections->DisableArray(name);
+    }
+
+    this->Modified();
+}
+
+
+//=========================================================================================//
+//get individual arrays status
+int vtkSpaceCraftInfo::GetSCinfoArrayStatus(const char *name)
+{
+    return this->SpaceCraftArraySelections->GetArraySetting(name);
+}
+
+
+//=========================================================================================//
+//disable all arrays
+void vtkSpaceCraftInfo::DisableAllSCArrays()
+{
+    this->SpaceCraftArraySelections->DisableAllArrays();
+    this->Modified();
+}
+
+
+//=========================================================================================//
+//enable all arrays
+void vtkSpaceCraftInfo::EnableAllSCArrays()
+{
+    this->SpaceCraftArraySelections->EnableAllArrays();
+    this->Modified();
+}
+
+
+//=========================================================================================//
 //----- other stuff needed ------//
 void vtkSpaceCraftInfo::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
     os << indent << "NumberOfTimeSteps: " << this->NumberOfTimeSteps << std::endl;
 }
+
+int vtkSpaceCraftInfo::GetNumberOfSCinfoArrays()
+{
+    return this->SpaceCraftArraySelections->GetNumberOfArrays();
+}
+
+const char *vtkSpaceCraftInfo::GetSCinfoArrayName(int index)
+{
+    return this->SpaceCraftArraySelections->GetArrayName(index);
+}
+
 
 

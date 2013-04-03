@@ -16,6 +16,41 @@
         <InputArrayDomain name="input_array" attribute_type="point"
           number_of_components="1" optional="0"/>
       </InputProperty>
+
+      <StringVectorProperty
+        name="AvailSCinfo"
+        information_only="1">
+        <ArraySelectionInformationHelper attribute_name="SCinfo"/>
+
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="AvailSCstatus"
+        command="SetSCArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types = "2 0"
+        information_property="AvailSCinfo"
+        label="Space Craft Information Available"
+        default_values = "0">
+
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="AvailSCinfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+
     </SourceProxy>
   </ProxyGroup>
   <!-- End SpaceCraftInfo -->
