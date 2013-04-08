@@ -34,6 +34,7 @@ vtkLFMReader::vtkLFMReader()
   // print vtkDebugMacro messages by turning debug mode on:
   // NOTE: This will make things VERY SLOW
   //this->DebugOn();
+  this->DebugOff();
 }
 
 //----------------------------------------------------------------
@@ -204,7 +205,9 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   
   vtkDebugMacro(<< "number of timesteps in file=" << this->NumberOfTimeSteps);
-  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0]);
+  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0] << endl
+                << "TimeStepValues=" << this->TimeStepValues[0] << " " << this->TimeStepValues[1] << endl
+                << "timeRange[0]=" << timeRange[0] <<" timeRange[1]=" << timeRange[1]);
   
   return 1; 
 }
@@ -220,7 +223,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 int vtkLFMReader::RequestData(vtkInformation* request,
                               vtkInformationVector** inputVector,
                               vtkInformationVector* outputVector)
-{  
+{
   vtkDebugMacro(<< "Reading LFM HDF file as a vtkStructuredGrid...");
   vtkDebugMacro(<< "GridScaleType is \"" << this->GetGridScaleType() << "\".");
   vtkDebugMacro(<< "GridScaleFactor is \"" << GRID_SCALE::ScaleFactor[this->GetGridScaleType()] << "\"");  
@@ -374,6 +377,18 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   vtkStructuredGrid *output = 
     vtkStructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   
+  // Tell ParaView what the requested time is. Without this, the GUI thinks a single file loaded in displays has a time of "0.0".
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP())){
+    double requestedTime = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    // Hack to get time displaying correctly for single time step visualization in ParaView-3.98.1:
+    if (fabs(requestedTime) <= 1e-6){
+      // Set the current time to the start of the time range.
+      double *timeRange=outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+      requestedTime = timeRange[0];
+    }
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTime);
+  }
+
   // Fix x-axis caps (nj++ in nose, nj++ in tail)
   // close off grid (nk++)
   output->SetDimensions(ni, njp2, nkp1);
