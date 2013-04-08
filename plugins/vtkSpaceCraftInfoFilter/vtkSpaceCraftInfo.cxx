@@ -32,9 +32,12 @@
 #include "vtkTable.h"
 #include "vtksys/SystemTools.hxx"
 
+
+#include "QObject"
 #include "QtXml"
-#include "QHttp"
-#include "Q3Url"
+#include "QNetworkAccessManager"
+#include "QNetworkReply"
+#include "QURL"
 
 #include <vector>
 #include <vtkSmartPointer.h>
@@ -48,11 +51,21 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     this->NumberOfSCInfoArrays = 0;
     this->SpaceCraftArraySelections = vtkDataArraySelection::New();
 
+    //URLs for CDAWeb
+    this->baseURL = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1");
+    this->getObservatoryURLext = QString("/dataviews/sp_phys/observatories");
+
+    //configure the network manager
+    this->netManager = new filterNetworkAccessModule();
+    this->networkAccessStatus = -1;
+
 }
 
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
 {
     this->SpaceCraftArraySelections->Delete();
+
+    //TODO: do i need to free the network access manager?
 }
 
 //----- required overides -----//
@@ -106,6 +119,16 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
                  timeRange,
                  2);
+
+
+    //get the space craft list
+    if(this->getSCList())
+    {
+        //process the space craft list
+        std::cout << "processing Space Craft information" << std::endl;
+    }
+
+
 
     std::cout << "adding test arrays to array list" << std::endl;
     //temporary activation of arrays
@@ -184,6 +207,8 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 //------ get list of space craft -----//
 bool vtkSpaceCraftInfo::getSCList()
 {
+    //get data from network
+    this->netManager->Get(this->baseURL+getObservatoryURLext);
 
 
     return true;
@@ -196,6 +221,11 @@ bool vtkSpaceCraftInfo::getSCData()
 {
 
     return true;
+}
+
+//=====================================//
+void vtkSpaceCraftInfo::networkReply()
+{
 }
 
 
@@ -282,6 +312,7 @@ const char *vtkSpaceCraftInfo::GetSCinfoArrayName(int index)
 {
     return this->SpaceCraftArraySelections->GetArrayName(index);
 }
+
 
 
 

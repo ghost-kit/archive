@@ -1,3 +1,13 @@
+//==============================================================================//
+// vtkSpaceCraftInfo filter.  This filter requests data from CDA-Web and        //
+//  processes it for use with ParaView time-dependent data sets.  The filter    //
+//  will also interpolate the requested information over time to get the proper //
+//  time positions.                                                             //
+//                                                                              //
+//  Author: Joshua Murphy                                                       //
+//  Date:   01 Apr 2013                                                         //
+//==============================================================================//
+
 #ifndef _vtkSpaceCraftInfo_h
 #define _vtkSpaceCraftInfo_h
 #include "vtkStructuredGridAlgorithm.h"
@@ -10,6 +20,10 @@
 #include "qmap.h"
 #include "qstring.h"
 #include "qlist.h"
+#include "qurl.h"
+#include "QNetworkAccessManager"
+
+#include "filterNetworkAccessModule.h"
 
 class vtkDataSet;
 class vtkTable;
@@ -85,6 +99,15 @@ protected:
   vtkDataArraySelection* SpaceCraftArraySelections;
   int NumberOfSCInfoArrays;
   void SetNumberOfSCinfoArrays(int set) {this->NumberOfSCInfoArrays = set;}
+
+  //CDAWEB
+  filterNetworkAccessModule *netManager;
+  QString baseURL;
+  QString getObservatoryURLext;
+  int networkAccessStatus;
+
+private slots:
+  void networkReply();
 
 private:
   vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);
