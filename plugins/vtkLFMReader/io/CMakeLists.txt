@@ -22,15 +22,19 @@ if (USE_MPI)
 endif (USE_MPI)
 
 if (HAS_HDF4)
-  SET( HDF4_SOURCES Hdf.C Hdf4.C )
+  SET( HDF4_SOURCES Hdf.hpp Hdf.C Hdf4.hpp Hdf4.C )
 endif (HAS_HDF4)
 
 if (HAS_HDF5)
-  SET( HDF5_SOURCES Hdf5.C )
+  SET( HDF5_SOURCES Hdf5.hpp Hdf5.C )
 endif (HAS_HDF5)
 
 if (HAS_PHDF5)
-  SET( PHDF5_SOURCES PHdf5.C )
+  SET( PHDF5_SOURCES PHdf5.hpp PHdf5.C )
 endif (HAS_PHDF5)
 
-add_library(io STATIC Io.C ${HDF4_SOURCES} ${HDF5_SOURCES} ${PHDF5_SOURCES})
+add_library(io STATIC Io.hpp Io.C
+            IoTemplates.hpp Util.hpp
+            ${HDF4_SOURCES}
+            ${HDF5_SOURCES}
+            ${PHDF5_SOURCES})
