@@ -11,11 +11,12 @@
 #include <A++.h>
 #endif//NOPP
 
-using namespace std;
-
 #include <string>
 #include <vector>
 #include <list>
+
+using namespace std;
+
 #include "Util.hpp"
 
 #ifndef MAX_ARRAY_DIMENSION
