@@ -1,7 +1,7 @@
-#ifndef __HDF4_H__
-#define __HDF4_H__
+#ifndef __DEPRECATEDHDF4_H__
+#define __DEPRECATEDHDF4_H__
 
-#include "Io.h"
+#include "DeprecatedIo.h"
 
 #ifndef MAX_VAR_DIMS
 #define MAX_VAR_DIMS H4_MAX_VAR_DIMS
@@ -19,13 +19,13 @@
 #include <sstream>
 #include <iostream>
 
-#define ERRORCHECK(STATUS) errorCheck(STATUS, __FILE__, __LINE__, __FUNCTION__, #STATUS)
+#define DEPRECATEDERRORCHECK(STATUS) errorCheck(STATUS, __FILE__, __LINE__, __FUNCTION__, #STATUS)
 
-class Hdf4 : public Io
+class DeprecatedHdf4 : public DeprecatedIo
 {
 public:
-  Hdf4();
-  ~Hdf4();
+  DeprecatedHdf4();
+  ~DeprecatedHdf4();
   void open(const std::string &filename, const int &ioType);
 
   /// Routines for Reading

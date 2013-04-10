@@ -1,6 +1,9 @@
 #include "vtkLFMReader.h"
 
-#include "Hdf4.h"
+//#include "Io.hpp"
+//#include "Hdf.hpp"
+
+#include "DeprecatedHdf4.h"
 
 #include "vtkPointData.h"
 #include "vtkInformation.h"
@@ -34,6 +37,7 @@ vtkLFMReader::vtkLFMReader()
   // print vtkDebugMacro messages by turning debug mode on:
   // NOTE: This will make things VERY SLOW
   //this->DebugOn();
+  this->DebugOff();
 }
 
 //----------------------------------------------------------------
@@ -50,7 +54,16 @@ vtkLFMReader::~vtkLFMReader()
 
 int vtkLFMReader::CanReadFile(const char *filename)
 {
-  Hdf4 f;
+//  Io *io = new Hdf(0);
+//  io->openRead(string(filename));
+
+//  double mjd;
+//  io->readAttribute(mjd, "mjd");
+//  io->close();
+//  delete io;
+//  io = NULL;
+
+  DeprecatedHdf4 f;
   f.open(string(filename), IO::READ);
   
   map<string, double> metaDoubles;
@@ -74,7 +87,7 @@ int vtkLFMReader::CanReadFile(const char *filename)
     
     return 0;
   }
-  
+
   // If we've made it this far, assume it's a valid file.
   return 1;
 }
@@ -88,7 +101,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 { 
   // Read entire extents from Hdf4 file.  This requires reading an
   // entire variable.  Let's arbitrarily choose X_grid:
-  Hdf4 f;
+  DeprecatedHdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
   float *X_grid;
@@ -204,7 +217,9 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   
   vtkDebugMacro(<< "number of timesteps in file=" << this->NumberOfTimeSteps);
-  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0]);
+  vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0] << endl
+                << "TimeStepValues=" << this->TimeStepValues[0] << " " << this->TimeStepValues[1] << endl
+                << "timeRange[0]=" << timeRange[0] <<" timeRange[1]=" << timeRange[1]);
   
   return 1; 
 }
@@ -220,7 +235,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 int vtkLFMReader::RequestData(vtkInformation* request,
                               vtkInformationVector** inputVector,
                               vtkInformationVector* outputVector)
-{  
+{
   vtkDebugMacro(<< "Reading LFM HDF file as a vtkStructuredGrid...");
   vtkDebugMacro(<< "GridScaleType is \"" << this->GetGridScaleType() << "\".");
   vtkDebugMacro(<< "GridScaleFactor is \"" << GRID_SCALE::ScaleFactor[this->GetGridScaleType()] << "\"");  
@@ -230,7 +245,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   ///////////////////
   
   //TODO: Implement Extent Restricted Read
-  Hdf4 f;
+  DeprecatedHdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
   int rank;
@@ -374,6 +389,18 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   vtkStructuredGrid *output = 
     vtkStructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   
+  // Tell ParaView what the requested time is. Without this, the GUI thinks a single file loaded in displays has a time of "0.0".
+  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP())){
+    double requestedTime = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    // Hack to get time displaying correctly for single time step visualization in ParaView-3.98.1:
+    if (fabs(requestedTime) <= 1e-6){
+      // Set the current time to the start of the time range.
+      double *timeRange=outInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+      requestedTime = timeRange[0];
+    }
+    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTime);
+  }
+
   // Fix x-axis caps (nj++ in nose, nj++ in tail)
   // close off grid (nk++)
   output->SetDimensions(ni, njp2, nkp1);
@@ -1154,7 +1181,7 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 
 //----------------------------------------------------------------
 //This version of SetIfExists is for scalars
-void vtkLFMReader::SetIfExists(Hdf4 &f, std::string VarName, std::string VarDescription)
+void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string VarName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
     //Set Variable->description map
@@ -1171,7 +1198,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, std::string VarName, std::string VarDesc
 
 //----------------------------------------------------------------
 //This Version of SetIfExists is for Vectors (3D)
-void vtkLFMReader::SetIfExists(Hdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
+void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
     //Set variable->desciption map
@@ -1190,7 +1217,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, std::string xVar, std::string yVar, std:
 
 //----------------------------------------------------------------
 //This Version adds a new array based on existence of a scalar
-void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string VarName, std::string ArrayIndexName, std::string VarDescription)
+void vtkLFMReader::SetNewIfExists(DeprecatedHdf4 &f, std::string VarName, std::string ArrayIndexName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
     //Set Variable->description map
@@ -1207,7 +1234,7 @@ void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string VarName, std::string Arra
 
 //----------------------------------------------------------------
 // This version adds a new Array based on existence of a vector
-void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription)
+void vtkLFMReader::SetNewIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
     //Set variable->desciption map

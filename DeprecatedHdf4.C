@@ -1,20 +1,20 @@
-#include "Hdf4.h"
+#include "DeprecatedHdf4.h"
 
 using namespace std;
 
-Hdf4::Hdf4()
+DeprecatedHdf4::DeprecatedHdf4()
 {
   fileId = -999;
 }
 
 
-Hdf4::~Hdf4()
+DeprecatedHdf4::~DeprecatedHdf4()
 {
   close();
 }
 
 
-void Hdf4::open(const string &filename, const int &ioType)
+void DeprecatedHdf4::open(const string &filename, const int &ioType)
 {
   int32 accessMode;
   
@@ -30,19 +30,19 @@ void Hdf4::open(const string &filename, const int &ioType)
     cerr << "ERROR:  " <<__FILE__ << "::" << __FUNCTION__ << "(" << __LINE__ << ") Did not understand ioType" << endl;
   }
     
-  ERRORCHECK( fileId = SDstart(filename.c_str(), accessMode) );
+  DEPRECATEDERRORCHECK( fileId = SDstart(filename.c_str(), accessMode) );
 }
 
 
-void Hdf4::close(void)
+void DeprecatedHdf4::close(void)
 {
   if (fileId >= 0){
-    ERRORCHECK( SDend(fileId) );
+    DEPRECATEDERRORCHECK( SDend(fileId) );
     fileId = -999;
   }
 }
 
-void Hdf4::errorCheck(const int &status, const char *file, const int &line, const char *func, const char *command)
+void DeprecatedHdf4::errorCheck(const int &status, const char *file, const int &line, const char *func, const char *command)
 {
   if (status < 0) {
     cerr << "*** Error in " << file << "(L " << line << "): " << func << "(...)" << endl;
@@ -57,7 +57,7 @@ void Hdf4::errorCheck(const int &status, const char *file, const int &line, cons
   }
 }
 
-void Hdf4::readMetaData(std::map<std::string, double> &metaDoubles,
+void DeprecatedHdf4::readMetaData(std::map<std::string, double> &metaDoubles,
 			std::map<std::string, float> &metaFloats,
 			std::map<std::string, int> &metaInts,
 			std::map<std::string, std::string> &metaStrings)
@@ -65,37 +65,37 @@ void Hdf4::readMetaData(std::map<std::string, double> &metaDoubles,
   int32 nDatasets;
   int32 nAttributes;
 
-  ERRORCHECK( SDfileinfo(fileId,&nDatasets ,&nAttributes) );
+  DEPRECATEDERRORCHECK( SDfileinfo(fileId,&nDatasets ,&nAttributes) );
 
   char attrName[MAX_NC_NAME];
   int32 dataType;
   int32 nCharacters;
   for (int32 i=0; i < nAttributes; i++){
     // Get attribute name
-    ERRORCHECK( SDattrinfo( fileId, i, attrName, &dataType, &nCharacters) );
+    DEPRECATEDERRORCHECK( SDattrinfo( fileId, i, attrName, &dataType, &nCharacters) );
 
     // Read the attribute.
     if (dataType == DFNT_FLOAT64){
       double attrValue;
-      ERRORCHECK( SDreadattr( fileId, i, &attrValue) );
+      DEPRECATEDERRORCHECK( SDreadattr( fileId, i, &attrValue) );
       metaDoubles.insert ( pair<string,double>( attrName, attrValue) );
     }
     else if (dataType == DFNT_FLOAT32){
       float attrValue;
-      ERRORCHECK( SDreadattr( fileId, i, &attrValue) );
+      DEPRECATEDERRORCHECK( SDreadattr( fileId, i, &attrValue) );
       metaFloats.insert ( pair<string,float>( attrName, attrValue) );
     }
     else if (dataType == DFNT_INT32){
       int attrValue;
-      ERRORCHECK( SDreadattr( fileId, i, &attrValue) );
+      DEPRECATEDERRORCHECK( SDreadattr( fileId, i, &attrValue) );
       metaInts.insert ( pair<string,int>( attrName, attrValue) );
     }
     else if (dataType == DFNT_CHAR8){
       char *attrValue = new char[nCharacters+1];
       // Silly trick to use Hdf4 error handling on bad allocations:
-      ERRORCHECK( (attrValue != NULL) -1 );
+      DEPRECATEDERRORCHECK( (attrValue != NULL) -1 );
       
-      ERRORCHECK( SDreadattr( fileId, i, attrValue) );    
+      DEPRECATEDERRORCHECK( SDreadattr( fileId, i, attrValue) );
       attrValue[nCharacters] = '\0';
       
       metaStrings.insert( pair<string, string>( attrName, attrValue) );
@@ -113,7 +113,7 @@ void Hdf4::readMetaData(std::map<std::string, double> &metaDoubles,
   }
 }
 
-void Hdf4::readString(const std::string&name, std::string &data)
+void DeprecatedHdf4::readString(const std::string&name, std::string &data)
 {
   int32 SDselectId;                    // HDF selection ID
   int32 varId;                         // HDF variable ID
@@ -133,10 +133,10 @@ void Hdf4::readString(const std::string&name, std::string &data)
     indexEnd[i] = 0;
   }
   /*Get the info about the dataset */
-  ERRORCHECK( varId = SDnametoindex(fileId,name.c_str()) );
+  DEPRECATEDERRORCHECK( varId = SDnametoindex(fileId,name.c_str()) );
 
   SDselectId = SDselect(fileId,varId);
-  ERRORCHECK( SDgetinfo(SDselectId,dataName,&rank,dimensions_i32,&dataType,&nAttributes) );
+  DEPRECATEDERRORCHECK( SDgetinfo(SDselectId,dataName,&rank,dimensions_i32,&dataType,&nAttributes) );
   
   /* Create reterival information arrays and allocate space */
   for(i=0;i<rank;i++) {
@@ -146,23 +146,23 @@ void Hdf4::readString(const std::string&name, std::string &data)
   }
   char *inData = new char [indexEnd[0]+1];
   // Silly trick to use Hdf4 error handling on bad allocations:
-  ERRORCHECK( (inData != NULL) -1 );
+  DEPRECATEDERRORCHECK( (inData != NULL) -1 );
     
   /* Get dataset */
-  ERRORCHECK( SDreaddata(SDselectId,indexStart,NULL,indexEnd,inData) );
+  DEPRECATEDERRORCHECK( SDreaddata(SDselectId,indexStart,NULL,indexEnd,inData) );
 
   data.reserve(indexEnd[0]+1);
   data = string(inData);
   delete []inData;
       
-  ERRORCHECK( SDendaccess(SDselectId) ); 
+  DEPRECATEDERRORCHECK( SDendaccess(SDselectId) );
 }
 
 
 /*******************************************************************************
  * Returns true if the current file contains a particular variable.
  ******************************************************************************/
-bool Hdf4::hasVariable(const std::string &variable)
+bool DeprecatedHdf4::hasVariable(const std::string &variable)
 {
   int32 varId = SDnametoindex(fileId, variable.c_str());
   if (varId == -1)
@@ -179,7 +179,7 @@ bool Hdf4::hasVariable(const std::string &variable)
  *   - Allocates data as 1-d array.
  *   - Allocates dims
  ******************************************************************************/
-void Hdf4::readVariable(const std::string &variable, float *&data, int &rank, int *&dims)
+void DeprecatedHdf4::readVariable(const std::string &variable, float *&data, int &rank, int *&dims)
 {
   int32 SDselectId;                    // HDF selection ID
   int32 varId;                         // HDF variable ID
@@ -199,17 +199,17 @@ void Hdf4::readVariable(const std::string &variable, float *&data, int &rank, in
     indexEnd[i] = 0;
   }
   /*Get the info about the dataset */
-   ERRORCHECK( varId = SDnametoindex(fileId,variable.c_str()) );
+   DEPRECATEDERRORCHECK( varId = SDnametoindex(fileId,variable.c_str()) );
 
   SDselectId = SDselect(fileId,varId);
-  ERRORCHECK( SDgetinfo(SDselectId,dataName,&rank_i32,dimensions_i32,&dataType,&nAttributes) );
+  DEPRECATEDERRORCHECK( SDgetinfo(SDselectId,dataName,&rank_i32,dimensions_i32,&dataType,&nAttributes) );
   
   /* Create reterival information arrays */
   int nPoints = 1;
   rank = rank_i32;
   dims = new int[rank];
   // Silly trick to use Hdf4 error handling on bad allocations:
-  ERRORCHECK( (dims != NULL) -1 );
+  DEPRECATEDERRORCHECK( (dims != NULL) -1 );
   for(i=0;i<rank;i++) {
     indexStart[i]=0;
     indexEnd[i]=dimensions_i32[rank-i-1];
@@ -222,12 +222,12 @@ void Hdf4::readVariable(const std::string &variable, float *&data, int &rank, in
   data = new float[nPoints];
 
   // Silly trick to use Hdf4 error handling on bad allocations:
-  ERRORCHECK( (data != NULL) -1 );
+  DEPRECATEDERRORCHECK( (data != NULL) -1 );
 
   /* Get dataset */
-  ERRORCHECK( SDreaddata(SDselectId,indexStart,NULL,indexEnd,data) );
+  DEPRECATEDERRORCHECK( SDreaddata(SDselectId,indexStart,NULL,indexEnd,data) );
       
-  ERRORCHECK( SDendaccess(SDselectId) );
+  DEPRECATEDERRORCHECK( SDendaccess(SDselectId) );
 }
 
 
@@ -236,10 +236,10 @@ void Hdf4::readVariable(const std::string &variable, float *&data, int &rank, in
  * Redimensions data & reads in data.  
  *
  * Note: This function only works for variables of up to 6 dimensions!
- * Search HDF4::readVariable(...) implementation for "data.redim(" for
+ * Search DeprecatedHdf4::readVariable(...) implementation for "data.redim(" for
  * more info.
  ******************************************************************************/
-void Hdf4::readVariable(const string &variable, floatArray &data)
+void DeprecatedHdf4::readVariable(const string &variable, floatArray &data)
 {
   // Read the data
   int inRank = 0;
@@ -250,7 +250,7 @@ void Hdf4::readVariable(const string &variable, floatArray &data)
   // Stored as A++/P++ floatArray
   /* Allocate space. Note that we transpose the dimensions here since
    *  HDF stores in column-ordered, but A++/P++ floatArray uses
-   *  Fortran ordered.  See Hdf4::writeVaraible(...) comments for more info.
+   *  Fortran ordered.  See DeprecatedHdf4::writeVaraible(...) comments for more info.
    *
    *  Also note: Trial & error shows that
    *       data.redim(dimensions_i32[0], 0)
@@ -333,7 +333,7 @@ void Hdf4::readVariable(const string &variable, floatArray &data)
     cerr << __FILE__ << " (L" << __LINE__ << "): " << __FUNCTION__ << "(...):" << endl
 	 << "Implementation supports arrays up to 6-dimensions, but you requested " << inRank << endl
 	 << "This is a silly hard-coded bug.  The fix is to add more cases to \"else if (inRank == n)\"." << endl;
-    ERRORCHECK (-1);
+    DEPRECATEDERRORCHECK (-1);
   }
   
   delete []inDims;
@@ -344,7 +344,7 @@ void Hdf4::readVariable(const string &variable, floatArray &data)
 #endif
 // defined(APLUSPLUS) || defined(PPLUSPLUS)
 
-void Hdf4::writeMetaData(const std::map<std::string, double> &metaDoubles,
+void DeprecatedHdf4::writeMetaData(const std::map<std::string, double> &metaDoubles,
 			 const std::map<std::string, float> &metaFloats,
 			 const std::map<std::string, int> &metaInts,
 			 const std::map<std::string, std::string> &metaStrings)
@@ -355,68 +355,68 @@ void Hdf4::writeMetaData(const std::map<std::string, double> &metaDoubles,
   writeMetaData(metaStrings);
 }
 
-void Hdf4::writeMetaData(const map<string, double> &metaDoubles)
+void DeprecatedHdf4::writeMetaData(const map<string, double> &metaDoubles)
 {
   typedef map<string, double> mapType;
   for (mapType::const_iterator it = metaDoubles.begin(); it != metaDoubles.end(); ++it){
     string attributeName = it->first; //aka the "key"
     double attributeData = it->second; // aka the "value"
     
-    ERRORCHECK( SDsetattr( fileId, attributeName.c_str(), DFNT_FLOAT64, 1, &attributeData) );
+    DEPRECATEDERRORCHECK( SDsetattr( fileId, attributeName.c_str(), DFNT_FLOAT64, 1, &attributeData) );
   }
 }
 
-void Hdf4::writeMetaData(const map<string, float> &metaFloats)
+void DeprecatedHdf4::writeMetaData(const map<string, float> &metaFloats)
 {
   typedef map<string, float> mapType;
   for (mapType::const_iterator it = metaFloats.begin(); it != metaFloats.end(); ++it){
     string attributeName = it->first; //aka the "key"
     float attributeData = it->second; // aka the "value"
     
-    ERRORCHECK( SDsetattr( fileId, attributeName.c_str(), DFNT_FLOAT32, 1, &attributeData) );
+    DEPRECATEDERRORCHECK( SDsetattr( fileId, attributeName.c_str(), DFNT_FLOAT32, 1, &attributeData) );
   }
 }
 
-void Hdf4::writeMetaData(const map<string, int> &metaInts)
+void DeprecatedHdf4::writeMetaData(const map<string, int> &metaInts)
 {
   typedef map<string, int> mapType;
   for (mapType::const_iterator it = metaInts.begin(); it != metaInts.end(); ++it){
     string attributeName = it->first; //aka the "key"
     int attributeData = it->second; // aka the "value"
     
-    ERRORCHECK( SDsetattr( fileId, attributeName.c_str(), DFNT_INT32, 1, &attributeData) );
+    DEPRECATEDERRORCHECK( SDsetattr( fileId, attributeName.c_str(), DFNT_INT32, 1, &attributeData) );
   }
 }
 
-void Hdf4::writeMetaData(const map<string, string> &metaStrings)
+void DeprecatedHdf4::writeMetaData(const map<string, string> &metaStrings)
 {
   typedef map<string, string> mapType;
   for (mapType::const_iterator it = metaStrings.begin(); it != metaStrings.end(); ++it){
     string attributeName = it->first; //aka the "key"
     string attributeData = it->second; // aka the "value"
     
-    // Hdf4 is unpredictable when writing 0-length data!
+    // DeprecatedHdf4 is unpredictable when writing 0-length data!
     assert(attributeName.length() > 0);    
     if (attributeData.length() > 0){
-      ERRORCHECK( SDsetattr( fileId, attributeName.c_str(), 
+      DEPRECATEDERRORCHECK( SDsetattr( fileId, attributeName.c_str(),
 			     DFNT_CHAR8, attributeData.length(), attributeData.c_str() ) );
     }
     else{
       // Empty strings should be output as null character.
       static const char nullString = '\0';
-      ERRORCHECK( SDsetattr( fileId, attributeName.c_str(), 
+      DEPRECATEDERRORCHECK( SDsetattr( fileId, attributeName.c_str(),
 			     DFNT_CHAR8, 1, nullString ) );      
     }
   }   
 }
 
-void Hdf4::writeString(const string &name, const string &data)
+void DeprecatedHdf4::writeString(const string &name, const string &data)
 {
   int32 varId;
   int32 rank1 = 1;
   int32 dimensions[MAX_VAR_DIMS];
   dimensions[0] = data.length()+1; //we will append a NULL ('\0') character
-  ERRORCHECK( varId = SDcreate(fileId, name.c_str(), DFNT_CHAR8, rank1, dimensions) );
+  DEPRECATEDERRORCHECK( varId = SDcreate(fileId, name.c_str(), DFNT_CHAR8, rank1, dimensions) );
   
   int32 indexStart[MAX_VAR_DIMS];
   indexStart[0] = 0;
@@ -430,11 +430,11 @@ void Hdf4::writeString(const string &name, const string &data)
   // C-strings.
   char *outputStr = new char[data.length()+1];
   // Silly trick to use Hdf4 error handling on bad allocations:
-  ERRORCHECK( (outputStr != NULL) -1 );
+  DEPRECATEDERRORCHECK( (outputStr != NULL) -1 );
 
   strncpy(outputStr, data.c_str(), data.length());
   outputStr[data.length()] = '\0';
-  ERRORCHECK( SDwritedata(varId, indexStart, NULL, indexEnd, outputStr) );
+  DEPRECATEDERRORCHECK( SDwritedata(varId, indexStart, NULL, indexEnd, outputStr) );
   delete []outputStr;
 }
 
@@ -447,7 +447,7 @@ void Hdf4::writeString(const string &name, const string &data)
  * expect.  See comments in writeVariable(...) implementation for
  * details.
  ******************************************************************************/
-void Hdf4::writeVariable(const std::string &variable, const float *data, const int &rank, const int *dims, const string &units)
+void DeprecatedHdf4::writeVariable(const std::string &variable, const float *data, const int &rank, const int *dims, const string &units)
 {
   int32 varId;                    // HDF variable ID
   int32 dataType = DFNT_FLOAT32;  // Internal HDF datatype of variable
@@ -462,10 +462,10 @@ void Hdf4::writeVariable(const std::string &variable, const float *data, const i
   }
 
   // Now do the I/O on processor 0.
-  ERRORCHECK( varId = SDcreate(fileId, variable.c_str(), dataType, rank, dimensions) );
+  DEPRECATEDERRORCHECK( varId = SDcreate(fileId, variable.c_str(), dataType, rank, dimensions) );
 
   // Set attributes
-  ERRORCHECK( SDsetattr( varId, "units", DFNT_CHAR8, units.length(), units.c_str() ) );
+  DEPRECATEDERRORCHECK( SDsetattr( varId, "units", DFNT_CHAR8, units.length(), units.c_str() ) );
 	
   /*
    * The original LFM HDF format includes dimensions as SD
@@ -489,14 +489,14 @@ void Hdf4::writeVariable(const std::string &variable, const float *data, const i
    * HDF4 SD attributes.
    */
 
-  ERRORCHECK( SDsetattr( varId, "ni", DFNT_INT32, 1, &dims[2] ) );
-  ERRORCHECK( SDsetattr( varId, "nj", DFNT_INT32, 1, &dims[1] ) );
-  ERRORCHECK( SDsetattr( varId, "nk", DFNT_INT32, 1, &dims[0] ) );
+  DEPRECATEDERRORCHECK( SDsetattr( varId, "ni", DFNT_INT32, 1, &dims[2] ) );
+  DEPRECATEDERRORCHECK( SDsetattr( varId, "nj", DFNT_INT32, 1, &dims[1] ) );
+  DEPRECATEDERRORCHECK( SDsetattr( varId, "nk", DFNT_INT32, 1, &dims[0] ) );
 
   // write the data
-  ERRORCHECK( SDwritedata(varId, indexStart, NULL, indexEnd, const_cast<float *>(data)) );
+  DEPRECATEDERRORCHECK( SDwritedata(varId, indexStart, NULL, indexEnd, const_cast<float *>(data)) );
   
-  ERRORCHECK( SDendaccess(varId) );
+  DEPRECATEDERRORCHECK( SDendaccess(varId) );
 }
 
 #if defined(APLUSPLUS) || defined(PPLUSPLUS)
@@ -506,7 +506,7 @@ void Hdf4::writeVariable(const std::string &variable, const float *data, const i
  * Note that changing the "data" type from floatArray requires
  * changing the "dataType" variable from DFNT_FLOAT32.
  ******************************************************************************/
-void Hdf4::writeVariable(const string &variable, const floatArray &data, const string &units)
+void DeprecatedHdf4::writeVariable(const string &variable, const floatArray &data, const string &units)
 {
   const int rank = data.numberOfDimensions();
   int dims[MAX_VAR_DIMS];
