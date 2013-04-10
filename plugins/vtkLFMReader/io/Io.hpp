@@ -1,15 +1,15 @@
 #ifndef IO_HPP__
 #define IO_HPP__
 
-#ifndef NOMPI
+#ifdef BUILD_WITH_MPI
 #include <mpi.h>
 #else
 #include "null-mpi/mpi.h"
-#endif//NOMPI
+#endif//BUILD_WITH_MPI
 
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
 #include <A++.h>
-#endif//NOPP
+#endif//BUILD_WITH_APP
 
 #include <string>
 #include <vector>
@@ -153,7 +153,7 @@ public:
   int getSuperSize() 
   { return superSize; }
 
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
   template<class PppArray> 
   array_info_t& fillInfo(const PppArray& data, 
 			 array_info_t& info, 
@@ -217,7 +217,7 @@ public:
   PppArray& readShape(PppArray& data,
 		      const string& group="",
 		      const bool& conformityCheck=true);
-#endif//NOPP
+#endif//BUILD_WITH_APP
 
 protected:
 
@@ -227,9 +227,9 @@ protected:
   
   bool c_order;
 
-#ifndef NOPP  
+#ifdef BUILD_WITH_APP  
   Partitioning_Type /*partitionAll,*/ partitionSuper;
-#endif//NOPP
+#endif//BUILD_WITH_APP
 };
 
 #include "IoTemplates.hpp"

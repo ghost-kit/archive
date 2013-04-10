@@ -48,7 +48,7 @@ void Hdf::getBcastArrayInfo( const string& group,
 #ifdef HAS_HDF4
   memset(&info,0,sizeof(info));
   char name[3] = { 'n', 0, 0 };
-
+#ifdef BUILD_WITH_MPI
   if (rank == 0) {
     int32 dims[MAX_ARRAY_DIMENSION], count=0;
     memset(&dims,0,sizeof(int32)*MAX_ARRAY_DIMENSION);
@@ -71,8 +71,11 @@ void Hdf::getBcastArrayInfo( const string& group,
     MPI_Bcast(info.globalDims, info.nDims, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(info.base, info.nDims, MPI_INT, 0, MPI_COMM_WORLD);
   }
-#endif
+#endif // BUILD_WITH_MPI
+#endif // HAS_HDF4
 }
+
+
 
 /*----------------------------------------------------------------------------*/
 

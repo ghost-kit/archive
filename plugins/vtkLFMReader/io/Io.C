@@ -8,22 +8,22 @@
 
 Io::Io(int superDomainSize) : superSize( superDomainSize ), c_order(true) {
 
-#ifndef NOMPI
+#ifdef BUILD_WITH_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size (MPI_COMM_WORLD, &nProcs);
 #else
   rank = 0;
   nProcs = 1;
-#endif//NOMPI
+#endif//BUILD_WITH_MPI
 
   if (rank == -1 && nProcs == 1) {
     rank = 0; 
     superSize = 1;
   }
 
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
   if (superSize>0) partitionSuper = Partitioning_Type(superSize);
-#endif//NOPP
+#endif//BUILD_WITH_APP
 
 }
 

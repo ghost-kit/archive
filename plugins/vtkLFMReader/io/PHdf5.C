@@ -251,9 +251,9 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
     } else {
       superSize = nProcs;
     }
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
     if (superSize>0) partitionSuper = Partitioning_Type(superSize);
-#endif//NOPP
+#endif//BUILD_WITH_APP
     setupComm();
   }
 

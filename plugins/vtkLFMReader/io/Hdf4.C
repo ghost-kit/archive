@@ -71,11 +71,13 @@ void Hdf4::errorCheck(const int &status, const char *file, const int &line, cons
     cerr << "*** Error in " << file << "(L " << line << "): " << func << "(...)" << endl;
     cerr << "HDF4 error code: " << status << endl;
     HEprint(stdout,0);
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
     Optimization_Manager::Exit_Virtual_Machine();
-#endif//NOPP
+#endif//BUILD_WITH_APP
+#ifdef BUILD_WITH_MPI
     MPI_Abort(MPI_COMM_WORLD,-1);
-    exit(-1); 
+#endif
+    exit(-1);
   }
 }
 #endif
@@ -186,6 +188,7 @@ void Hdf4::writeAttribute( const string& variable,
 void Hdf4::getBcastArrayInfo( const string& group,
 			      array_info_t& info  ) {
 #ifdef HAS_HDF4
+#ifdef BUILD_WITH_MPI
   if (rank==0) {
     info.nDims = Io::readAttribute(info.globalDims[0],"globalDims",group,MAX_ARRAY_DIMENSION);
     Io::readAttribute(info.base[0],"base",group,MAX_ARRAY_DIMENSION);
@@ -198,9 +201,11 @@ void Hdf4::getBcastArrayInfo( const string& group,
     MPI_Bcast(info.base, info.nDims, MPI_INT, 0, MPI_COMM_WORLD);
   }
 #endif
+#endif // BUILD_WITH_MPI
 }
 
 /*----------------------------------------------------------------------------*/
+
 
 void Hdf4::getLocalArrayInfo( const string& group,
 			      array_info_t& info  ) {
@@ -373,13 +378,15 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
 	ERRORCHECK(sdId);
 	Io::readAttribute(superSize,"superSize");
       }
+#ifdef BUILD_WITH_MPI
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif //BUILD_WITH_MPI
     } else {
       superSize = nProcs;
     }
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
     if (superSize>0) partitionSuper = Partitioning_Type(superSize);
-#endif//NOPP
+#endif//BUILD_WITH_APP
   }
 
   if (rank < superSize){
@@ -410,7 +417,7 @@ void Hdf4::close(void)
   if (rank < superSize){
     if (sdId >= 0){
       for ( map<string,int32>::iterator it=h4groups.begin(); it != h4groups.end(); it++ ) {
-	ERRORCHECK(SDendaccess((*it).second));
+        ERRORCHECK(SDendaccess((*it).second));
       }
       ERRORCHECK(SDend(sdId));
       sdId = -999;

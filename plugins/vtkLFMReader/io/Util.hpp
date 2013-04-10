@@ -83,7 +83,7 @@ inline std::string toStringSci (const T& t) {
   return toString(t,16,' ',7);
 }
 
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
 template<class PppArray> void displayInfo( const PppArray& data ){
   cout << "nDims:" 
        << data.numberOfDimensions() << "\n"
@@ -136,6 +136,6 @@ template<class PppArray> void displayInfo( const PppArray& data ){
   cout << endl;
   cout.flush();
 }
-#endif//NOPP
+#endif//BUILD_WITH_APP
 
 #endif //UTIL_HPP__

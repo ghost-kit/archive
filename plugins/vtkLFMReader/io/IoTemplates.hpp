@@ -1,7 +1,7 @@
 #ifndef IO_TEMPLATES_HPP__
 #define IO_TEMPLATES_HPP__
 
-#ifndef NOPP
+#ifdef BUILD_WITH_APP
 
 /*----------------------------------------------------------------------------*/
 
@@ -243,7 +243,7 @@ void Io::readMultiVarUnits(PppArray& data,
   readAttribute(units,"units",(group==""?variable:group+"/"+variable));
 }
 
-#endif//NOPP
+#endif//BUILD_WITH_APP
 
 /*----------------------------------------------------------------------------*/
 

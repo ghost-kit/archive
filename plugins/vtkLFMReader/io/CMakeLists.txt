@@ -10,31 +10,29 @@ option (HAS_PHDF5 "Build parallel HDF-5 Interface (requires USE_MPI=ON)" OFF)
 #FIXME:  Add "FIND_HDF5" to set include/lib paths for Hdf5
 #FIXME:  Add "FIND_PHDF5" to set include/lib paths for Parallel Hdf5
 
-add_definitions(-DNOPP)
-add_definitions(-DNOMPI)
-
 if (USE_APP)
-  remove_definitions(-DNOPP)
+  add_definitions(-DBUILD_WITH_APP)
 endif (USE_APP)
 
 if (USE_MPI)
-  remove_definitions(-DNOMPI)
+  add_definitions(-DBUILD_WITH_MPI)
 endif (USE_MPI)
 
 if (HAS_HDF4)
-  SET( HDF4_SOURCES Hdf.hpp Hdf.C Hdf4.hpp Hdf4.C )
+  add_definitions(-DHAS_HDF4)
 endif (HAS_HDF4)
 
 if (HAS_HDF5)
-  SET( HDF5_SOURCES Hdf5.hpp Hdf5.C )
+  add_definitions(-DHAS_HDF5)
 endif (HAS_HDF5)
 
 if (HAS_PHDF5)
-  SET( PHDF5_SOURCES PHdf5.hpp PHdf5.C )
+  add_definitions(-DHAS_PHDF5)
 endif (HAS_PHDF5)
 
 add_library(io STATIC Io.hpp Io.C
             IoTemplates.hpp Util.hpp
-            ${HDF4_SOURCES}
-            ${HDF5_SOURCES}
-            ${PHDF5_SOURCES})
+            Hdf.hpp Hdf.C Hdf4.hpp Hdf4.C
+            Hdf5.hpp Hdf5.C
+            PHdf5.hpp PHdf5.C)
+
