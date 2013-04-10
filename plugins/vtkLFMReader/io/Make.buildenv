@@ -1,0 +1,46 @@
+#-*- mode: makefile -*-
+
+ifdef HDF
+ifndef HDF4
+HDF4=$(HDF)
+endif
+endif
+
+ifdef HDF4
+IOFLAGS += -DHAS_HDF4
+IOAPPFLAGS += -DHAS_HDF4
+HDF4INC = -I$(HDF4)/include 
+HDF4LIB = -L$(HDF4)/lib -lmfhdf -ldf -ljpeg -lz
+endif
+
+ifdef HDF5
+IOFLAGS += -DHAS_HDF5
+HDF5INC = -I$(HDF5)/include 
+HDF5LIB = -L$(HDF5)/lib -Bstatic -lhdf5 -Bdynamic -lm -lz
+endif
+
+ifdef HDF5nompi
+HDF5INCnompi = -I$(HDF5nompi)/include 
+HDF5LIBnompi = -L$(HDF5nompi)/lib -Bstatic -lhdf5 -Bdynamic -lm -lz
+ifndef HDF5
+IOFLAGS += -DHAS_HDF5 -DNOH5MPIO
+HDF5INC = $(HDF5INCnompi)
+HDF5LIB = $(HDF5LIBnompi)
+endif
+IOAPPFLAGS += -DHAS_HDF5
+endif
+
+IOINCS = $(HDF4INC) $(HDF5INC) -I${P++}/include 
+IOLIBS = $(HDF4LIB) $(HDF5LIB) -L${P++}/lib -lPpp -lPpp_static
+
+IOAPPFLAGS += -DNOMPI
+IOAPPINCS = $(HDF4INC) $(HDF5INCnompi) -I${A++}/include 
+IOAPPLIBS = $(HDF4LIB) $(HDF5LIBnompi) -L${A++}/lib -lApp -lApp_static
+
+IONOPPFLAGS = $(IOFLAGS) -DNOPP
+IONOPPINCS = $(HDF4INC) $(HDF5INC)
+IONOPPLIBS = $(HDF4LIB) $(HDF5LIB)
+
+IONOPPNOMPIFLAGS = $(IOAPPFLAGS) -DNOPP
+IONOPPNOMPIINCS = $(HDF4INC) $(HDF5INCnompi)
+IONOPPNOMPILIBS = $(HDF4LIB) $(HDF5LIBnompi)

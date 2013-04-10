@@ -1,0 +1,178 @@
+//-*- mode: c++ -*-
+#ifndef __NOPPNOMPI_TEST_H__
+#define __NOPPNOMPI_TEST_H__
+
+#include <string>
+#include <sstream>
+
+#include <cxxtest/TestSuite.h>
+
+#include "Io.hpp"
+
+using namespace std;
+
+class TestNoppNompi : public CxxTest::TestSuite
+{
+ public:
+  string filename;
+
+  void setUp( )
+  {
+    filename = __FILE__;
+  }
+
+  void writeFile(const string &extension)
+  {
+    Io *io = Io::extSelector(extension);
+    if (io == NULL) {
+      stringstream errorMessage;
+      errorMessage << "ERROR:  Undefined I/O type ("<< extension << ").";
+      TS_WARN(errorMessage.str());      
+      TS_ASSERT(io);
+      return;
+    }
+
+    TS_ASSERT( io->enabled() );
+
+    TS_ASSERT( io->openWrite(filename) );
+
+    string swQuote = "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects.";
+    io->writeAttribute(swQuote, "Star Wars");
+
+    io->writeAttribute((double) 3.14159265358979311599796346854418516159057617187500000000000000000, "dPi");
+
+    io->writeAttribute((float) 3.1415926, "fPi");
+
+    double data8byte[10] = { 3.1415926535897931, 3, 1, 4, 1, 5, 9, 2, 6, 5 };    
+    array_info_t data8byteInfo;
+    data8byteInfo.nDims = 1;
+    data8byteInfo.nVars = 1;
+    // data8byteInfo.nAttr = 0; //???
+    // data8byteInfo.bytes = 0; //???
+    data8byteInfo.globalDims[0] = 10;
+    data8byteInfo.localDims[0] = 10;
+    data8byteInfo.offset[0] = 0;
+    data8byteInfo.base[0] = 0;
+    data8byteInfo.dataType = identify(data8byte[0]);
+    io->writeVariable("data8byte", "testGroup", data8byteInfo, data8byte);
+
+    float data4byte[100];
+    for (int i=0; i < 100; i++){
+      data4byte[i] = float(i) + float(i)/100.0;
+    }
+    array_info_t data4byteInfo;
+    data4byteInfo.nDims = 1;
+    data4byteInfo.nVars = 1;
+    // data4byteInfo.nAttr = 0; //???
+    // data4byteInfo.bytes = 0; //???
+    data4byteInfo.globalDims[0] = 100;
+    data4byteInfo.localDims[0] = 100;
+    data4byteInfo.offset[0] = 0;
+    data4byteInfo.base[0] = 0;
+    data4byteInfo.dataType = identify(data4byte[0]);
+    io->writeVariable("data4byte", "testGroup", data4byteInfo, data4byte);
+
+    io->close();
+
+    if (io){
+      delete io;
+      io = NULL;
+    }
+  }
+
+  void readFile( const string &extension )
+  {
+    Io *io = Io::extSelector(extension);
+    if (io == NULL) {
+      stringstream errorMessage;
+      errorMessage << "ERROR:  Undefined I/O type ("<< extension << ").";
+      TS_WARN(errorMessage.str());      
+      TS_ASSERT(io);
+      return;
+    }
+
+    TS_ASSERT( io->enabled() );
+
+    TS_ASSERT( io->openRead(filename) );
+
+    string swQuote;
+    io->readAttribute(swQuote, "Star Wars");
+    TS_ASSERT_EQUALS( swQuote,
+		      "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects."
+		      );
+
+    double dPi;
+    io->readAttribute(dPi, "dPi");
+    TS_ASSERT_DELTA( dPi, 3.1415926535897931, 1e-16);
+
+    float fPi;
+    io->readAttribute(fPi, "fPi");
+    TS_ASSERT_DELTA( fPi, 3.1415926, 1e-6 );
+
+    double data8byte[10];
+    array_info_t data8byteInfo;
+    data8byteInfo.nDims = 1;
+    data8byteInfo.nVars = 1;
+    // data8byteInfo.nAttr = 0; //???
+    // data8byteInfo.bytes = 0; //???
+    data8byteInfo.globalDims[0] = 10;
+    data8byteInfo.localDims[0] = 10;
+    data8byteInfo.offset[0] = 0;
+    data8byteInfo.base[0] = 0;
+    data8byteInfo.dataType = identify(data8byte[0]);
+
+    io->readVariable("data8byte", "testGroup", data8byteInfo, data8byte);
+
+    double expectedData8byte[10] = { 3.1415926535897931, 3, 1, 4, 1, 5, 9, 2, 6, 5 };        
+    for (int i=0; i < data8byteInfo.localDims[0]; i++){
+      TS_ASSERT_DELTA( data8byte[i], expectedData8byte[i], 1e-16 );
+    }
+
+
+    float data4byte[100];
+    array_info_t data4byteInfo;
+    data4byteInfo.nDims = 1;
+    data4byteInfo.nVars = 1;
+    // data4byteInfo.nAttr = 0; //???
+    // data4byteInfo.bytes = 0; //???
+    data4byteInfo.globalDims[0] = 100;
+    data4byteInfo.localDims[0] = 100;
+    data4byteInfo.offset[0] = 0;
+    data4byteInfo.base[0] = 0;
+    data4byteInfo.dataType = identify(data4byte[0]);
+
+    io->readVariable("data4byte", "testGroup", data4byteInfo, data4byte);
+
+    for (int i=0; i < data4byteInfo.localDims[0]; i++){
+      TS_ASSERT_DELTA( data4byte[i], float(i) + float(i)/100.0, 1e-5 );
+    }
+
+
+    io->close();
+
+    if (io){
+      delete io;
+      io = NULL;
+    }
+  }
+
+  void testHdf4( void )
+  {
+    writeFile("hdf");
+    readFile("hdf");
+  }
+
+  void testHdf5( void )
+  {
+    writeFile("hdf5");
+    readFile("hdf5");
+  }
+
+  void testPHdf5( void )
+  {
+    writeFile("phdf5");
+    readFile("phdf5");
+  }
+};
+
+#endif
