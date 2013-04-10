@@ -50,7 +50,7 @@ swftStatusWindowWidget::swftStatusWindowWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    ui->modelNameLabel->setText("... Please Load a Model Run to Start ...");
+    ui->modelNameLabel->setText("Enlil Model Information");
 
     this->VTKConnect = vtkEventQtSlotConnect::New();
     this->updateInformation();

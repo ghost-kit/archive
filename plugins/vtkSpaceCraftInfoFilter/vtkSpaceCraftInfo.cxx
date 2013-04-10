@@ -208,7 +208,7 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 bool vtkSpaceCraftInfo::getSCList()
 {
     //get data from network
-    this->netManager->Get(this->baseURL+getObservatoryURLext);
+    this->netManager->Get(this->baseURL+getObservatoryURLext, 1);
 
 
     return true;

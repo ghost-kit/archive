@@ -4,7 +4,9 @@
 #include <QNetworkReply>
 #include <QURL>
 #include <QObject>
-#include <QXmlSimpleReader>
+#include <QtXml>
+#include <QMap>
+#include <QXmlStreamReader>
 
 class filterNetworkAccessModule : public QObject
 {
@@ -14,17 +16,26 @@ public:
     ~filterNetworkAccessModule();
 
     void setRequestURL(QString URL);
+    void setAccessStep(int step);
     QNetworkReply* Get();
-    QNetworkReply* Get(QString URL);
+    QNetworkReply* Get(QString URL, int step);
 
 protected:
 
 
 private:
+    //URL parsing
     QString requestURL;
     QNetworkAccessManager *netManager;
     QNetworkReply *reply;
     int networkAccessStatus;
+    int accessStep;
+
+    //xml parsing
+    QXmlStreamReader xmlReader;
+
+    //xml map
+    QMap<QString, QString> xmlMap;
 
 
 

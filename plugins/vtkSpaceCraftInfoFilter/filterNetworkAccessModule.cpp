@@ -1,3 +1,5 @@
+
+
 #include "filterNetworkAccessModule.h"
 #include <iostream>
 #include <iomanip>
@@ -11,7 +13,7 @@ filterNetworkAccessModule::filterNetworkAccessModule()
 
 filterNetworkAccessModule::~filterNetworkAccessModule()
 {
-    delete [] netManager;
+    this->netManager->deleteLater();
 }
 
 
@@ -24,14 +26,68 @@ void filterNetworkAccessModule::networkReply()
         {
             //read data from reply
             std::cout << "No HTTP Error" << std::endl;
+
+            QByteArray scInfoXML = reply->readAll();
+
+            //parse XML
+            this->xmlReader.addData(scInfoXML);
+
+            while(!this->xmlReader.atEnd())
+            {
+                this->xmlReader.readNext();
+                if(this->xmlReader.isStartElement() && (this->xmlReader.qualifiedName() == QString("ObservatoryDescription")))
+                {
+                    QString obsName;
+                    QString obsShortDescrip;
+
+                    while(!(this->xmlReader.isEndElement()
+                            && this->xmlReader.qualifiedName() == QString("ObservatoryDescription")))
+                    {
+
+                        //add observatory name to map
+                        if(this->xmlReader.isStartElement()
+                                && this->xmlReader.qualifiedName() == QString("Name"))
+                        {
+                            while(!(this->xmlReader.isEndElement()
+                                    && this->xmlReader.qualifiedName() == QString("Name")))
+                            {
+                                if(this->xmlReader.tokenString() == QString("Characters"))
+                                {
+                                    obsName = this->xmlReader.text().toString();
+
+                                }
+
+                                this->xmlReader.readNext();
+                            }
+                        }
+                        else if (this->xmlReader.isStartElement()
+                                 && this->xmlReader.qualifiedName() == QString("ShortDescription"))
+                        {
+                            while(!(this->xmlReader.isEndElement()
+                                    && this->xmlReader.qualifiedName() == QString("ShortDescription")))
+                            {
+                                if(this->xmlReader.tokenString() == QString("Characters"))
+                                {
+                                    obsShortDescrip = this->xmlReader.text().toString();
+
+                                }
+
+                                this->xmlReader.readNext();
+                            }
+                        }
+
+                        this->xmlReader.readNext();
+
+                    }
+                    this->xmlMap.insert(obsName,obsShortDescrip);
+                    std::cout << "Name: " << obsName.toAscii().data()
+                              << " Description: " << obsShortDescrip.toAscii().data()
+                              << std::endl;
+                }
+            }
+
+            //mark activity as complete
             this->networkAccessStatus = 1;
-
-            QByteArray myCustomData = reply->readAll();
-
-            std::cout << "data: " << myCustomData.data() << std::endl;
-
-
-
         }
         else
         {
@@ -48,10 +104,11 @@ void filterNetworkAccessModule::networkReply()
 }
 
 
-QNetworkReply *filterNetworkAccessModule::Get(QString URL)
+QNetworkReply *filterNetworkAccessModule::Get(QString URL, int step)
 {
     //set URL (for last call info)
     this->requestURL = URL;
+    this->accessStep = step;
 
     //Perform the get operation
     return this->Get();
