@@ -1,5 +1,5 @@
-#ifndef __IO_H__
-#define __IO_H__
+#ifndef __DEPRECATEDIO_H__
+#define __DEPRECATEDIO_H__
 
 #if defined(APLUSPLUS) || defined(PPLUSPLUS)
 #include <A++.h>
@@ -34,11 +34,11 @@ namespace IO
  *        visualization/post-processing I/O.
  *
  */
-class Io
+class DeprecatedIo
 {
 public:
-  Io() {};
-  virtual ~Io() {};
+  DeprecatedIo() {};
+  virtual ~DeprecatedIo() {};
   virtual void open(const std::string &filename, const int &ioType) = 0;
   /// Routines for Reading:
   //@{

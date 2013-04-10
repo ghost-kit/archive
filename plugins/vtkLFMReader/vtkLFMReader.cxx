@@ -1,6 +1,9 @@
 #include "vtkLFMReader.h"
 
-#include "Hdf4.h"
+//#include "Io.hpp"
+//#include "Hdf.hpp"
+
+#include "DeprecatedHdf4.h"
 
 #include "vtkPointData.h"
 #include "vtkInformation.h"
@@ -51,7 +54,16 @@ vtkLFMReader::~vtkLFMReader()
 
 int vtkLFMReader::CanReadFile(const char *filename)
 {
-  Hdf4 f;
+//  Io *io = new Hdf(0);
+//  io->openRead(string(filename));
+
+//  double mjd;
+//  io->readAttribute(mjd, "mjd");
+//  io->close();
+//  delete io;
+//  io = NULL;
+
+  DeprecatedHdf4 f;
   f.open(string(filename), IO::READ);
   
   map<string, double> metaDoubles;
@@ -75,7 +87,7 @@ int vtkLFMReader::CanReadFile(const char *filename)
     
     return 0;
   }
-  
+
   // If we've made it this far, assume it's a valid file.
   return 1;
 }
@@ -89,7 +101,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 { 
   // Read entire extents from Hdf4 file.  This requires reading an
   // entire variable.  Let's arbitrarily choose X_grid:
-  Hdf4 f;
+  DeprecatedHdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
   float *X_grid;
@@ -233,7 +245,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   ///////////////////
   
   //TODO: Implement Extent Restricted Read
-  Hdf4 f;
+  DeprecatedHdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
   int rank;
@@ -1169,7 +1181,7 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 
 //----------------------------------------------------------------
 //This version of SetIfExists is for scalars
-void vtkLFMReader::SetIfExists(Hdf4 &f, std::string VarName, std::string VarDescription)
+void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string VarName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
     //Set Variable->description map
@@ -1186,7 +1198,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, std::string VarName, std::string VarDesc
 
 //----------------------------------------------------------------
 //This Version of SetIfExists is for Vectors (3D)
-void vtkLFMReader::SetIfExists(Hdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
+void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
     //Set variable->desciption map
@@ -1205,7 +1217,7 @@ void vtkLFMReader::SetIfExists(Hdf4 &f, std::string xVar, std::string yVar, std:
 
 //----------------------------------------------------------------
 //This Version adds a new array based on existence of a scalar
-void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string VarName, std::string ArrayIndexName, std::string VarDescription)
+void vtkLFMReader::SetNewIfExists(DeprecatedHdf4 &f, std::string VarName, std::string ArrayIndexName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
     //Set Variable->description map
@@ -1222,7 +1234,7 @@ void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string VarName, std::string Arra
 
 //----------------------------------------------------------------
 // This version adds a new Array based on existence of a vector
-void vtkLFMReader::SetNewIfExists(Hdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription)
+void vtkLFMReader::SetNewIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
     //Set variable->desciption map

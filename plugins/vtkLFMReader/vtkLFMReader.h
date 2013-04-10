@@ -8,7 +8,7 @@
 #include <vtksys/stl/string>
 #include <vtksys/stl/vector>
 #include <vtksys/stl/map>
-#include "Hdf4.h"
+#include "DeprecatedHdf4.h"
 
   //simple macros to point to dimensions
 #define NI this->dims["x"]-1
@@ -210,15 +210,15 @@ protected:
     //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
     //  Can only be used to add existing variables in the file.
     //  if existence query fails, NOTHING happens
-  void SetIfExists(Hdf4 &filePointer, std::string VarName, std::string VarDescription);
-  void SetIfExists(Hdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription);
+  void SetIfExists(DeprecatedHdf4 &filePointer, std::string VarName, std::string VarDescription);
+  void SetIfExists(DeprecatedHdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription);
   
     //these methods will add an ARRAY to the available list indexed at "ArrayIndexName" with the 
     //  description value of "VarDescription".  This can be used to add dirived quantities to the system.
     //  
     //  If existence querry fails, NOTHING happens.
-  void SetNewIfExists(Hdf4 &filePointer, std::string VarName, std::string ArrayIndexName, std::string VarDescription);
-  void SetNewIfExists(Hdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription);
+  void SetNewIfExists(DeprecatedHdf4 &filePointer, std::string VarName, std::string ArrayIndexName, std::string VarDescription);
+  void SetNewIfExists(DeprecatedHdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription);
   
   std::string GetDesc(std::string varName)
   { return this->ArrayNameLookup[varName];}
