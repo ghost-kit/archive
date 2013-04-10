@@ -16,6 +16,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 #SET(HDF4_DIR /Users/schmitt/paraview/opt/hdf-4.2.5-mac-intel-x86_64)
 
+########################################################################
+
 FIND_PACKAGE(ParaView REQUIRED)
 #FIND_PACKAGE(hdf4 REQUIRED)
 
@@ -26,6 +28,9 @@ ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
   SOURCES Hdf4.C
   GUI_RESOURCE_FILES vtkLFMGUI.xml)
 
+include_directories ("${PROJECT_SOURCE_DIR}/io")
+add_subdirectory(io) 
+
 INCLUDE_DIRECTORIES(${HDF4_DIR}/include)
 LINK_DIRECTORIES(${HDF4_DIR}/lib)
 
@@ -35,8 +40,8 @@ FIND_LIBRARY(LIB_MFHDF mfhdf ${HDF4_DIR}/lib)
 #FIND_LIBRARY(LIB_SZ  sz)
 #FIND_LIBRARY(LIB_Z  z)
 
-
 Target_LINK_LIBRARIES(vtkLFMReader 
+  io
   ${LIB_JPEG}
   ${LIB_MFHDF}
   ${LIB_DF}
