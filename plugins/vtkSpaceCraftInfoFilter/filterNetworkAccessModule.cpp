@@ -35,56 +35,16 @@ void filterNetworkAccessModule::networkReply()
             while(!this->xmlReader.atEnd())
             {
                 this->xmlReader.readNext();
-                if(this->xmlReader.isStartElement() && (this->xmlReader.qualifiedName() == QString("ObservatoryDescription")))
+                if(this->xmlReader.isStartElement())
                 {
-                    QString obsName;
-                    QString obsShortDescrip;
-
-                    while(!(this->xmlReader.isEndElement()
-                            && this->xmlReader.qualifiedName() == QString("ObservatoryDescription")))
-                    {
-
-                        //add observatory name to map
-                        if(this->xmlReader.isStartElement()
-                                && this->xmlReader.qualifiedName() == QString("Name"))
-                        {
-                            while(!(this->xmlReader.isEndElement()
-                                    && this->xmlReader.qualifiedName() == QString("Name")))
-                            {
-                                if(this->xmlReader.tokenString() == QString("Characters"))
-                                {
-                                    obsName = this->xmlReader.text().toString();
-
-                                }
-
-                                this->xmlReader.readNext();
-                            }
-                        }
-                        else if (this->xmlReader.isStartElement()
-                                 && this->xmlReader.qualifiedName() == QString("ShortDescription"))
-                        {
-                            while(!(this->xmlReader.isEndElement()
-                                    && this->xmlReader.qualifiedName() == QString("ShortDescription")))
-                            {
-                                if(this->xmlReader.tokenString() == QString("Characters"))
-                                {
-                                    obsShortDescrip = this->xmlReader.text().toString();
-
-                                }
-
-                                this->xmlReader.readNext();
-                            }
-                        }
-
-                        this->xmlReader.readNext();
-
-                    }
-                    this->xmlMap.insert(obsName,obsShortDescrip);
-                    std::cout << "Name: " << obsName.toAscii().data()
-                              << " Description: " << obsShortDescrip.toAscii().data()
-                              << std::endl;
+                    this->parseXMLBlock();
                 }
+
+                std::cout << "Parsing next block" << std::endl;
+                std::cout << "Top Level: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
+
             }
+
 
             //mark activity as complete
             this->networkAccessStatus = 1;
@@ -112,6 +72,40 @@ QNetworkReply *filterNetworkAccessModule::Get(QString URL, int step)
 
     //Perform the get operation
     return this->Get();
+}
+
+
+// XML Parser... RECURSIVE ...
+void filterNetworkAccessModule::parseXMLBlock()
+{
+    if(this->xmlReader.isStartElement())
+    {
+        QString levelName = this->xmlReader.tokenString();
+
+        while(!(this->xmlReader.isEndElement() && this->xmlReader.tokenString() == levelName) && !this->xmlReader.atEnd())
+        {
+            this->xmlReader.readNext();
+
+            //get field information
+            QString fieldText = this->xmlReader.text().toString();
+            QString qualifiedName = this->xmlReader.qualifiedName().toString();
+            QString tokenString = this->xmlReader.tokenString();
+
+            std::cout << "fieldText: " << fieldText.toAscii().data() <<
+                         ": qualified Name: " << qualifiedName.toAscii().data() <<
+                         ": token String: " << tokenString.toAscii().data() << std::endl;
+
+            if(this->xmlReader.isStartElement())
+            {
+                std::cout << "Parsing next inner block" << std::endl;
+                this->parseXMLBlock();
+
+            }
+
+
+        }
+
+    }
 }
 
 

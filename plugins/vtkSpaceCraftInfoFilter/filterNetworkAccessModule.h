@@ -37,6 +37,8 @@ private:
     //xml map
     QMap<QString, QString> xmlMap;
 
+    //xml parser
+    void parseXMLBlock();
 
 
 protected slots:
