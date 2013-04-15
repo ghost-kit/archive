@@ -6,7 +6,14 @@
 #include <QObject>
 #include <QtXml>
 #include <QMap>
+#include <QString>
 #include <QXmlStreamReader>
+
+class xmlTree
+{
+    QMap <QString, QString> map;
+    QList<xmlTree*> childern;
+};
 
 class filterNetworkAccessModule : public QObject
 {
@@ -35,10 +42,11 @@ private:
     QXmlStreamReader xmlReader;
 
     //xml map
-    QMap<QString, QString> xmlMap;
 
     //xml parser
     void parseXMLBlock();
+
+    //xml tree
 
 
 protected slots:
