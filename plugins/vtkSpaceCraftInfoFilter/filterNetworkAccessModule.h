@@ -9,11 +9,27 @@
 #include <QString>
 #include <QXmlStreamReader>
 
-class xmlTree
+
+class xmlTreeObject
 {
-    QMap <QString, QString> map;
-    QList<xmlTree*> childern;
+public:
+    xmlTreeObject()
+    {
+        this->parentNode = NULL;
+    }
+    ~xmlTreeObject()
+    {
+        //TODO: need to walk the tree to delete items
+    }
+
+    QString name;
+    QString contents;
+    QString parent;
+    xmlTreeObject* parentNode;
+    QList <xmlTreeObject*> map;
+
 };
+
 
 class filterNetworkAccessModule : public QObject
 {
@@ -42,12 +58,10 @@ private:
     QXmlStreamReader xmlReader;
 
     //xml map
+    xmlTreeObject* parseTreeHead;
 
     //xml parser
-    void parseXMLBlock();
-
-    //xml tree
-
+    void parseXMLBlock(xmlTreeObject *treeblock);
 
 protected slots:
     void networkReply();

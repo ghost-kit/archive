@@ -32,19 +32,29 @@ void filterNetworkAccessModule::networkReply()
             //parse XML
             this->xmlReader.addData(scInfoXML);
 
-            while(!this->xmlReader.atEnd())
+            this->parseTreeHead = new xmlTreeObject;
+
+            this->parseTreeHead->name = QString("XML TREE HEAD");
+            this->parseTreeHead->contents = QString("N/A");
+
+            //read the first element
+            this->xmlReader.readNext();
+
+            QString topLevel = this->xmlReader.tokenString();
+
+            while(!(this->xmlReader.isEndElement() && this->xmlReader.tokenString() == topLevel) && !this->xmlReader.atEnd())
             {
-                this->xmlReader.readNext();
+                //parse
                 if(this->xmlReader.isStartElement())
                 {
-                    this->parseXMLBlock();
+                    this->parseXMLBlock(this->parseTreeHead);
+                    std::cout << "processing... " << topLevel.toAscii().data() << std::endl;
                 }
 
-                std::cout << "Parsing next block" << std::endl;
-                std::cout << "Top Level: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
-
+                //advance the element
+                this->xmlReader.readNext();
             }
-
+            std::cout << "Number of Children: " << this->parseTreeHead->map.size() << std::endl;
 
             //mark activity as complete
             this->networkAccessStatus = 1;
@@ -76,36 +86,56 @@ QNetworkReply *filterNetworkAccessModule::Get(QString URL, int step)
 
 
 // XML Parser... RECURSIVE ...
-void filterNetworkAccessModule::parseXMLBlock()
+void filterNetworkAccessModule::parseXMLBlock(xmlTreeObject *treeblock)
 {
-    if(this->xmlReader.isStartElement())
+
+    //get type of current parse block
+    QString levelName = this->xmlReader.tokenString();
+
+    //set the name of current parseblock
+    if(this->xmlReader.qualifiedName().toString() == "")
     {
-        QString levelName = this->xmlReader.tokenString();
+        treeblock->name = QString("Leaf");
+    }
+    else
+    {
+        treeblock->name = this->xmlReader.qualifiedName().toString();
+    }
 
-        while(!(this->xmlReader.isEndElement() && this->xmlReader.tokenString() == levelName) && !this->xmlReader.atEnd())
+    //set the payload for the parseblock
+    if(this->xmlReader.isCharacters())
+    {
+        treeblock->contents = this->xmlReader.text().toString();
+    }
+    else
+    {
+        treeblock->contents = QString("N/A");
+    }
+
+    if(treeblock->parentNode != NULL) std::cout << "Parent: " << treeblock->parentNode->name.toAscii().data() << std::endl;
+    std::cout << "Block Name: " << treeblock->name.toAscii().data() << std::endl;
+    std::cout << "Text: " << treeblock->contents.toAscii().data() << std::endl;
+    std::cout << "===================================" << std::endl;
+
+    //populate the current parseblock
+    while(!(this->xmlReader.isEndElement() && this->xmlReader.tokenString() == levelName) && !this->xmlReader.atEnd())
+    {
+        //parse new unit
+        this->xmlReader.readNext();
+
+        if(this->xmlReader.isStartElement() || this->xmlReader.isCharacters())
         {
-            this->xmlReader.readNext();
+            xmlTreeObject *newObject = new xmlTreeObject;
+            newObject->parent = treeblock->name;
+            newObject->parentNode = treeblock;
+            treeblock->map.push_back(newObject);
 
-            //get field information
-            QString fieldText = this->xmlReader.text().toString();
-            QString qualifiedName = this->xmlReader.qualifiedName().toString();
-            QString tokenString = this->xmlReader.tokenString();
-
-            std::cout << "fieldText: " << fieldText.toAscii().data() <<
-                         ": qualified Name: " << qualifiedName.toAscii().data() <<
-                         ": token String: " << tokenString.toAscii().data() << std::endl;
-
-            if(this->xmlReader.isStartElement())
-            {
-                std::cout << "Parsing next inner block" << std::endl;
-                this->parseXMLBlock();
-
-            }
-
-
+            this->parseXMLBlock(newObject);
         }
 
     }
+    std::cout << "Child Count for " << treeblock->name.toAscii().data() <<": " << treeblock->map.size() << std::endl;
+
 }
 
 
