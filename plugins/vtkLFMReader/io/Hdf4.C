@@ -367,14 +367,13 @@ int32 Hdf4::createGroup(const string &group)
 
 bool Hdf4::open(const string &filename, const int32 &accessMode)
 {
-  string file = filename + "_" + toString(rank) + "." + ext;
   sdId = -1;
 
   if (superSize == -1) {
     if (accessMode == DFACC_RDONLY) {
       if (rank == 0) {      
 	superSize = 1;
-	sdId = SDstart(file.c_str(), accessMode);            
+	sdId = SDstart(filename.c_str(), accessMode);
 	ERRORCHECK(sdId);
 	Io::readAttribute(superSize,"superSize");
       }
@@ -392,10 +391,10 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
   if (rank < superSize){
     if (accessMode == DFACC_RDONLY) {
       if (sdId == -1) {
-	sdId = SDstart(file.c_str(), accessMode);            
+        sdId = SDstart(filename.c_str(), accessMode);
       }
     } else if (accessMode == DFACC_CREATE) {
-      sdId = SDstart(file.c_str(), accessMode);
+      sdId = SDstart(filename.c_str(), accessMode);
       Io::writeAttribute(superSize,"superSize");
       Io::writeAttribute(rank,"rank");
     } else {

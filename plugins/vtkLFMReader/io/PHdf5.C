@@ -236,14 +236,13 @@ bool PHdf5::verifyShape( const string& variable,
 #ifdef HAS_PHDF5
 bool PHdf5::open(const string& filename, const hid_t& accessMode)
 {
-  string file = filename + "." + ext;
   fileId = -1;
 
   if (superSize == -1) {
     if (accessMode ==  H5F_ACC_RDONLY) {
       if (rank == 0) {      
 	superSize = 1;
-	fileId = H5Fopen(file.c_str(), accessMode, H5P_DEFAULT);
+	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
 	Io::readAttribute(superSize,"superSize");
       }
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -260,7 +259,7 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
 
     if (accessMode ==  H5F_ACC_RDONLY) {
 
-      if (fileId == -1) fileId = H5Fopen(file.c_str(), accessMode, H5P_DEFAULT);
+      if (fileId == -1) fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
       ERRORCHECK( fileId );
 
     } else if (accessMode == H5F_ACC_TRUNC){
@@ -270,7 +269,7 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
 #ifndef NOH5MPIO
       ERRORCHECK( H5Pset_fapl_mpio(plistId, comm, MPI_INFO_NULL) );
 #endif
-      fileId = H5Fcreate(file.c_str(), accessMode, H5P_DEFAULT, plistId);
+      fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, plistId);
       ERRORCHECK( fileId );
       H5Pclose(plistId);
       Io::writeAttribute(superSize,"superSize");

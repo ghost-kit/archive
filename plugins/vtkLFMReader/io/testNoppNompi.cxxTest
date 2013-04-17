@@ -14,11 +14,11 @@ using namespace std;
 class TestNoppNompi : public CxxTest::TestSuite
 {
  public:
-  string filename;
+  string baseFilename;
 
   void setUp( )
   {
-    filename = __FILE__;
+    baseFilename = __FILE__;
   }
 
   void writeFile(const string &extension)
@@ -34,6 +34,7 @@ class TestNoppNompi : public CxxTest::TestSuite
 
     TS_ASSERT( io->enabled() );
 
+    string filename = baseFilename + string(".") + extension;
     TS_ASSERT( io->openWrite(filename) );
 
     string swQuote = "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects.";
@@ -93,6 +94,7 @@ class TestNoppNompi : public CxxTest::TestSuite
 
     TS_ASSERT( io->enabled() );
 
+    string filename = baseFilename + string(".") + extension;
     TS_ASSERT( io->openRead(filename) );
 
     string swQuote;

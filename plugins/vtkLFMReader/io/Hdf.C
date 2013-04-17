@@ -98,13 +98,12 @@ void Hdf::putArrayInfo( const string& group,
 #ifdef HAS_HDF4
 bool Hdf::open(const string& filename, const int32& accessMode)
 {
-  string file = filename + "." + ext;
   sdId = -1;
   if (rank < superSize) {
-    sdId = SDstart(file.c_str(), accessMode);            
+    sdId = SDstart(filename.c_str(), accessMode);
     if (sdId<0)
       {
-	cout << "Cannot open " << file.c_str() << " with mode " << 
+        cout << "Cannot open " << filename << " with mode " <<
 	  (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
       }
     ERRORCHECK(sdId);

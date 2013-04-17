@@ -380,14 +380,13 @@ hid_t Hdf5::createGroup(const string& group)
 
 bool Hdf5::open(const string& filename, const hid_t& accessMode)
 {
-  string file = filename + "_" + toString(rank) + "." + ext;
   fileId = -1;
 
   if (superSize == -1) {
     if (accessMode ==  H5F_ACC_RDONLY) {
       if (rank == 0) {      
 	superSize=1;
-	fileId = H5Fopen(file.c_str(), accessMode, H5P_DEFAULT);
+	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
 	Io::readAttribute(superSize,"superSize");
       }
 #ifdef BUILD_WITH_MPI
@@ -403,9 +402,9 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
 
   if (rank < superSize){
     if (accessMode == H5F_ACC_RDONLY) {
-      if (fileId == -1) fileId = H5Fopen(file.c_str(), accessMode, H5P_DEFAULT);
+      if (fileId == -1) fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
     } else if (accessMode == H5F_ACC_TRUNC) {
-      if (fileId == -1) fileId = H5Fcreate(file.c_str(), accessMode, H5P_DEFAULT, H5P_DEFAULT);
+      if (fileId == -1) fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, H5P_DEFAULT);
       Io::writeAttribute(superSize,"superSize");
       Io::writeAttribute(rank,"rank");
     } else {
