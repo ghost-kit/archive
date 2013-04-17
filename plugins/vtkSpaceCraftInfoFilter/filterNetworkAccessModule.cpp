@@ -19,123 +19,147 @@ filterNetworkAccessModule::~filterNetworkAccessModule()
 
 void filterNetworkAccessModule::networkReply()
 {
+    //get the data
     this->reply = qobject_cast<QNetworkReply*>(sender());
+
+    while(!this->reply->isFinished()){/*spin until done*/}
+
     if(reply)
     {
-        if(reply->error() == QNetworkReply::NoError)
+        //get XML data
+        this->xmlReader.addData(reply->readAll());
+
+        //parse the xml
+        while(!this->xmlReader.atEnd())
         {
-            //read data from reply
-            std::cout << "No HTTP Error" << std::endl;
-
-            QByteArray scInfoXML = reply->readAll();
-
-            //parse XML
-            this->xmlReader.addData(scInfoXML);
-
-            this->parseTreeHead = new xmlTreeObject;
-
-            this->parseTreeHead->name = QString("XML TREE HEAD");
-            this->parseTreeHead->contents = QString("N/A");
-
-            //read the first element
             this->xmlReader.readNext();
 
-            QString topLevel = this->xmlReader.tokenString();
-
-            while(!(this->xmlReader.isEndElement() && this->xmlReader.tokenString() == topLevel) && !this->xmlReader.atEnd())
-            {
-                //parse
-                if(this->xmlReader.isStartElement())
-                {
-                    this->parseXMLBlock(this->parseTreeHead);
-                    std::cout << "processing... " << topLevel.toAscii().data() << std::endl;
-                }
-
-                //advance the element
-                this->xmlReader.readNext();
-            }
-            std::cout << "Number of Children: " << this->parseTreeHead->map.size() << std::endl;
-
-            //mark activity as complete
-            this->networkAccessStatus = 1;
-        }
-        else
-        {
-            //get http status code
-            int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-
-            //process error
-            std::cout << "HTTP ERROR: " << httpStatus << std::endl;
-            this->networkAccessStatus = httpStatus;
+            //parse XML
+            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
+            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
+            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
+            this->parseTypeStack.push_front(this->xmlReader.tokenType());
+            this->parseQnStack.push_front(this->xmlReader.qualifiedName().toString());
+            this->parseTextStack.push_front(this->xmlReader.text().toString());
         }
 
-        this->reply->deleteLater();
+
+        this->consolodate_stacks();
+
     }
+    else
+    {
+        //get http status code
+        QString netStatus = reply->errorString();
+
+        //process error
+        this->networkAccessStatus = reply->error();
+        std::cout << "HTTP ERROR: " << this->networkAccessStatus << " : "<< netStatus.toAscii().data() << std::endl;
+    }
+
 }
 
 
-QNetworkReply *filterNetworkAccessModule::Get(QString URL, int step)
+QNetworkReply *filterNetworkAccessModule::Get(QString URL, QString TopLevel)
 {
     //set URL (for last call info)
     this->requestURL = URL;
-    this->accessStep = step;
+    this->TopLevel = TopLevel;
 
     //Perform the get operation
     return this->Get();
 }
 
-
-// XML Parser... RECURSIVE ...
-void filterNetworkAccessModule::parseXMLBlock(xmlTreeObject *treeblock)
+void filterNetworkAccessModule::consolodate_stacks()
 {
-
-    //get type of current parse block
-    QString levelName = this->xmlReader.tokenString();
-
-    //set the name of current parseblock
-    if(this->xmlReader.qualifiedName().toString() == "")
+    if(this->TopLevel.isEmpty())
     {
-        treeblock->name = QString("Leaf");
+        //there is an erros, and it needs to be addressed.
+        std::cerr << "ERROR: XML Parser: TopLevel not set" << std::endl;
+        exit(1);
     }
     else
     {
-        treeblock->name = this->xmlReader.qualifiedName().toString();
-    }
+        //strip the top level, consolodate text to its corrosponding name type
 
-    //set the payload for the parseblock
-    if(this->xmlReader.isCharacters())
-    {
-        treeblock->contents = this->xmlReader.text().toString();
-    }
-    else
-    {
-        treeblock->contents = QString("N/A");
-    }
+        //these stacks are used for stripping... after done, swap them back
+        QStack<QXmlStreamReader::TokenType> tempTypeStack;
+        QStack<QString> tempQnStack;
+        QStack<QString> tempTextStack;
 
-    if(treeblock->parentNode != NULL) std::cout << "Parent: " << treeblock->parentNode->name.toAscii().data() << std::endl;
-    std::cout << "Block Name: " << treeblock->name.toAscii().data() << std::endl;
-    std::cout << "Text: " << treeblock->contents.toAscii().data() << std::endl;
-    std::cout << "===================================" << std::endl;
-
-    //populate the current parseblock
-    while(!(this->xmlReader.isEndElement() && this->xmlReader.tokenString() == levelName) && !this->xmlReader.atEnd())
-    {
-        //parse new unit
-        this->xmlReader.readNext();
-
-        if(this->xmlReader.isStartElement() || this->xmlReader.isCharacters())
+        //parse!
+        while(!this->parseTypeStack.isEmpty())
         {
-            xmlTreeObject *newObject = new xmlTreeObject;
-            newObject->parent = treeblock->name;
-            newObject->parentNode = treeblock;
-            treeblock->map.push_back(newObject);
+            QXmlStreamReader::TokenType tempType = this->parseTypeStack.pop();
+            QString tempQn = this->parseQnStack.pop();
+            QString tempText = this->parseTextStack.pop();
 
-            this->parseXMLBlock(newObject);
+            //strip out everything we don't want, then consolodate text fields
+            switch(tempType)
+            {
+            //strip out everything we don't want
+            case QXmlStreamReader::EndElement:
+            case QXmlStreamReader::Invalid:
+            case QXmlStreamReader::StartDocument:
+            case QXmlStreamReader::EndDocument:
+                break;
+
+            //handle the text cases
+            case QXmlStreamReader::Characters:
+                //process characters
+                std::cout << "Characters..." << std::endl;
+
+                //this assumes that the first element is NOT a character element
+                if(tempTextStack.isEmpty())
+                {
+                    //TODO: We will want to gracefully handle this in future so PV wont crash
+                    std::cerr << "ERROR: While parsing XML, found ill-formed Character field" << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+                else
+                {
+
+                    //take off the previous
+                    std::cout << "Poping off blank text from previous tag" << std::endl;
+                    tempTextStack.pop();
+                    tempTextStack.push(tempText);
+                }
+
+                break;
+
+            //keep everything that we want
+            default:
+                std::cout << "Everything else..." << std::endl;
+                if(tempQn != this->TopLevel)
+                {
+                    //put everything (except the top level)
+                    //TODO: see if we need to eliminate everythin UP TO and INCLUDING the toplevel
+                    tempTypeStack.push(tempType);
+                    tempQnStack.push(tempQn);
+                    tempTextStack.push(tempText);
+                }
+                break;
+            }
+
         }
 
-    }
-    std::cout << "Child Count for " << treeblock->name.toAscii().data() <<": " << treeblock->map.size() << std::endl;
+        //let us swap the stacks
+        this->parseQnStack.swap(tempQnStack);
+        this->parseTypeStack.swap(tempTypeStack);
+        this->parseTextStack.swap(tempTextStack);
 
+        //remember the stack is upside down at this point
+
+        //DEBUG: print out...
+        for(int x = 0; x < this->parseTextStack.size(); x++)
+        {
+            std::cout << "Element: " << this->parseQnStack[x].toAscii().data()
+                      << " : " << this->parseTextStack[x].toAscii().data()
+                      <<  std::endl;
+        }
+
+
+    }
 }
 
 

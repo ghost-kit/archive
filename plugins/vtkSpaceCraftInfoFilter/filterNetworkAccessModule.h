@@ -8,27 +8,7 @@
 #include <QMap>
 #include <QString>
 #include <QXmlStreamReader>
-
-
-class xmlTreeObject
-{
-public:
-    xmlTreeObject()
-    {
-        this->parentNode = NULL;
-    }
-    ~xmlTreeObject()
-    {
-        //TODO: need to walk the tree to delete items
-    }
-
-    QString name;
-    QString contents;
-    QString parent;
-    xmlTreeObject* parentNode;
-    QList <xmlTreeObject*> map;
-
-};
+#include <QStack>
 
 
 class filterNetworkAccessModule : public QObject
@@ -41,10 +21,15 @@ public:
     void setRequestURL(QString URL);
     void setAccessStep(int step);
     QNetworkReply* Get();
-    QNetworkReply* Get(QString URL, int step);
+    QNetworkReply* Get(QString URL, QString TopLevel);
+
+    void setTopLevel(QString topLevel)
+    {
+        this->TopLevel = topLevel;
+    }
 
 protected:
-
+    QString TopLevel;
 
 private:
     //URL parsing
@@ -57,11 +42,13 @@ private:
     //xml parsing
     QXmlStreamReader xmlReader;
 
-    //xml map
-    xmlTreeObject* parseTreeHead;
+    //xml parse stack
+    QStack<QXmlStreamReader::TokenType> parseTypeStack;
+    QStack<QString> parseQnStack;
+    QStack<QString> parseTextStack;
 
-    //xml parser
-    void parseXMLBlock(xmlTreeObject *treeblock);
+    //parsing functions
+    void consolodate_stacks();
 
 protected slots:
     void networkReply();
