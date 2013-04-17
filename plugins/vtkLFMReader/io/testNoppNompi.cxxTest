@@ -158,20 +158,32 @@ class TestNoppNompi : public CxxTest::TestSuite
 
   void testHdf4( void )
   {
+#ifdef HAS_HDF4
     writeFile("hdf");
     readFile("hdf");
+#else
+    TS_WARN("HAS_HDF4 not defined. Skipping Hdf4 test");
+#endif
   }
 
   void testHdf5( void )
   {
+#ifdef HAS_HDF5
     writeFile("hdf5");
     readFile("hdf5");
+#else
+    TS_WARN("HAS_HDF5 not defined. Skipping Hdf5 test");
+#endif
   }
 
   void testPHdf5( void )
   {
+#ifdef HAS_PHDF5
     writeFile("phdf5");
     readFile("phdf5");
+#else
+    TS_WARN("HAS_PHDF5 not defined. Skipping PHdf5 test");
+#endif
   }
 };
 
