@@ -14,12 +14,16 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 #set(ParaView_DIR /Users/schmitt/paraview/opt/ParaView-3.98.0_OSX-10.7/paraview/src/paraview-build)
 #set(ParaView_SuperBuild_DIR /Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.0)
 
-#SET(HDF4_DIR /Users/schmitt/paraview/opt/hdf-4.2.5-mac-intel-x86_64)
-
 ########################################################################
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+add_subdirectory(io) 
+GET_DIRECTORY_PROPERTY(IO_INCLUDES DIRECTORY io DEFINITION IO_INCLUDES)
+GET_DIRECTORY_PROPERTY(IO_LIBRARIES DIRECTORY io DEFINITION IO_LIBRARIES)
+include_directories( ${IO_INCLUDES} )
+
 FIND_PACKAGE(ParaView REQUIRED)
-#FIND_PACKAGE(hdf4 REQUIRED)
 
 INCLUDE(${PARAVIEW_USE_FILE})
 ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
@@ -28,24 +32,9 @@ ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
   SOURCES DeprecatedIo.h DeprecatedHdf4.h DeprecatedHdf4.C
   GUI_RESOURCE_FILES vtkLFMGUI.xml)
 
-include_directories ("${PROJECT_SOURCE_DIR}/io")
-add_subdirectory(io) 
-
-INCLUDE_DIRECTORIES(${HDF4_DIR}/include)
-LINK_DIRECTORIES(${HDF4_DIR}/lib)
-
-FIND_LIBRARY(LIB_DF    df    ${HDF4_DIR}/lib)
-FIND_LIBRARY(LIB_JPEG  jpeg ${HDF4_DIR}/lib)
-FIND_LIBRARY(LIB_MFHDF mfhdf ${HDF4_DIR}/lib)
-#FIND_LIBRARY(LIB_SZ  sz)
-#FIND_LIBRARY(LIB_Z  z)
-
 Target_LINK_LIBRARIES(vtkLFMReader 
   io
-  ${LIB_JPEG}
-  ${LIB_MFHDF}
-  ${LIB_DF}
-#  ${LIB_Z}
+  ${IO_LIBRARIES}
 )
 
 
