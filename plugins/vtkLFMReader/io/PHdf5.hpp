@@ -31,7 +31,7 @@ class PHdf5 : public Hdf5 {
 
  protected:
 
-#ifdef HAS_HDF5
+#ifdef HAS_PHDF5
   bool open(const string& filename, const hid_t& accessMode );
 
   MPI_Comm comm;

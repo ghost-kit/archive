@@ -76,7 +76,9 @@ void Hdf5::pushError(const string &e, const char *file, const int &line, const c
 {
   H5Epush(H5E_DEFAULT,file,func,line,classId,majorErrorId,minorErrorId,e.c_str());
   H5Eprint(H5E_DEFAULT, stderr);
+#ifdef BUILD_WITH_MPI
   MPI_Abort(MPI_COMM_WORLD,-1);
+#endif // BUILD_WITH_MPI
   exit(-1);
 }
 
@@ -213,6 +215,7 @@ void Hdf5::writeAttribute( const string& variable,
 void Hdf5::getBcastArrayInfo( const string& group,
 			      array_info_t& info  ) {
 #ifdef HAS_HDF5
+#ifdef BUILD_WITH_MPI
   if (rank==0) {
     info.nDims = Io::readAttribute(info.globalDims[0],"globalDims",group,MAX_ARRAY_DIMENSION);
     Io::readAttribute(info.base[0],"base",group,MAX_ARRAY_DIMENSION);
@@ -224,7 +227,8 @@ void Hdf5::getBcastArrayInfo( const string& group,
     MPI_Bcast(info.globalDims, info.nDims, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(info.base, info.nDims, MPI_INT, 0, MPI_COMM_WORLD);
   }
-#endif
+#endif // BUILD_WITH_MPI
+#endif // HAS_HDF5
 }
 
 /*----------------------------------------------------------------------------*/
@@ -386,7 +390,9 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
 	fileId = H5Fopen(file.c_str(), accessMode, H5P_DEFAULT);
 	Io::readAttribute(superSize,"superSize");
       }
+#ifdef BUILD_WITH_MPI
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif //BUILD_WITH_MPI
     } else {
       superSize = nProcs;
     }
@@ -410,7 +416,7 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
   }
   return true;
 }
-#endif
+#endif //HAS_HDF5
 
 /*----------------------------------------------------------------------------*/
 

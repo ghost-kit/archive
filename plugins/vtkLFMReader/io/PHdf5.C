@@ -18,7 +18,7 @@ PHdf5::PHdf5(int superDomainSize) :
   superDomainSize = 1;
 #endif
 
-#ifdef HAS_HDF5
+#ifdef HAS_PHDF5
   if (superDomainSize != -1) setupComm();
   collectiveRead = collectiveWrite = false;
 #endif
@@ -26,7 +26,7 @@ PHdf5::PHdf5(int superDomainSize) :
 
 /*----------------------------------------------------------------------------*/
 
-#ifdef HAS_HDF5  
+#ifdef HAS_PHDF5
 void PHdf5::setupComm() 
 {
   MPI_Group  worldGroup, commGroup;
@@ -50,7 +50,7 @@ bool PHdf5::readVariable( const string& variable,
 			  const array_info_t& info,
 			  void* data ) 
 {
-#ifdef HAS_HDF5
+#ifdef HAS_PHDF5
   hsize_t ones[MAX_ARRAY_DIMENSION], dims[MAX_ARRAY_DIMENSION], offset[MAX_ARRAY_DIMENSION];
   for (int i=0; i<MAX_ARRAY_DIMENSION; i++) ones[i] = 1;
 
@@ -102,7 +102,7 @@ void PHdf5::writeVariable( const string& variable,
 			   const array_info_t& info,
 			   const void* data ) 
 {
-#ifdef HAS_HDF5  
+#ifdef HAS_PHDF5
   hsize_t ones[MAX_ARRAY_DIMENSION], localDims[MAX_ARRAY_DIMENSION], 
     offset[MAX_ARRAY_DIMENSION], globalDims[MAX_ARRAY_DIMENSION];
   for (int i=0; i<MAX_ARRAY_DIMENSION; i++) ones[i] = 1;
@@ -153,7 +153,7 @@ void PHdf5::writeVariable( const string& variable,
 void PHdf5::getBcastArrayInfo( const string& group,
 			 array_info_t& info  ) 
 {
-#ifdef HAS_HDF5
+#ifdef HAS_PHDF5
   if (rank == 0) {
     info.nDims = readAttribute("globalDims",group,identify(info.globalDims[0]),
 			       info.globalDims,MAX_ARRAY_DIMENSION);
@@ -174,7 +174,7 @@ void PHdf5::getBcastArrayInfo( const string& group,
 void PHdf5::putArrayInfo( const string& group,
 			  const array_info_t& info ) 
 {
-#ifdef HAS_HDF5
+#ifdef HAS_PHDF5
   writeAttribute("globalDims",group,identify(info.globalDims[0]),info.globalDims,info.nDims);
   writeAttribute("base",group,identify(info.base[0]),info.base,info.nDims);
 #endif
@@ -186,7 +186,7 @@ bool PHdf5::verifyShape( const string& variable,
 			 const string& group,
 			 const array_info_t& info ) 
 {
-#ifdef HAS_HDF5
+#ifdef HAS_PHDF5
   int error = 0, errorAll = 0;
   hsize_t nPoints = 0;
   hsize_t dims[MAX_ARRAY_DIMENSION], maxDims[MAX_ARRAY_DIMENSION];
@@ -232,11 +232,10 @@ bool PHdf5::verifyShape( const string& variable,
 
 
 /*----------------------------------------------------------------------------*/
-#ifdef HAS_HDF5
 
+#ifdef HAS_PHDF5
 bool PHdf5::open(const string& filename, const hid_t& accessMode)
 {
-
   string file = filename + "." + ext;
   fileId = -1;
 
@@ -283,5 +282,5 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
   }
   return true;
 }
+#endif //HAS_PHDF5
 
-#endif //HAS_HDF5
