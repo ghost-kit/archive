@@ -1,0 +1,7 @@
+# Emacs backup files #
+######################
+*~
+
+# QtCreator CMake files #
+#########################
+*CMakeLists.txt.user
