@@ -9,11 +9,13 @@ filterNetworkAccessModule::filterNetworkAccessModule()
 {
     this->networkAccessStatus = -1;
     this->netManager = new QNetworkAccessManager();
+    this->finalObjects = new QList< QMap < QString, QString>* >;
 }
 
 filterNetworkAccessModule::~filterNetworkAccessModule()
 {
     this->netManager->deleteLater();
+    //TODO: need to manage memory for finalObjects
 }
 
 
@@ -44,8 +46,10 @@ void filterNetworkAccessModule::networkReply()
         }
 
 
-        this->consolodate_stacks();
+        this->consolodateStacks();
+        this->extractObjects();
 
+        this->networkAccessStatus = 1;
     }
     else
     {
@@ -55,22 +59,24 @@ void filterNetworkAccessModule::networkReply()
         //process error
         this->networkAccessStatus = reply->error();
         std::cout << "HTTP ERROR: " << this->networkAccessStatus << " : "<< netStatus.toAscii().data() << std::endl;
+        this->networkAccessStatus = 999;
     }
 
 }
 
 
-QNetworkReply *filterNetworkAccessModule::Get(QString URL, QString TopLevel)
+QNetworkReply *filterNetworkAccessModule::Get(QString URL, QString TopLevel, QString ObjectLevel)
 {
     //set URL (for last call info)
     this->requestURL = URL;
     this->TopLevel = TopLevel;
+    this->ObjectLevel = ObjectLevel;
 
     //Perform the get operation
     return this->Get();
 }
 
-void filterNetworkAccessModule::consolodate_stacks()
+void filterNetworkAccessModule::consolodateStacks()
 {
     if(this->TopLevel.isEmpty())
     {
@@ -104,7 +110,7 @@ void filterNetworkAccessModule::consolodate_stacks()
             case QXmlStreamReader::EndDocument:
                 break;
 
-            //handle the text cases
+                //handle the text cases
             case QXmlStreamReader::Characters:
                 //process characters
                 std::cout << "Characters..." << std::endl;
@@ -127,7 +133,7 @@ void filterNetworkAccessModule::consolodate_stacks()
 
                 break;
 
-            //keep everything that we want
+                //keep everything that we want
             default:
                 std::cout << "Everything else..." << std::endl;
                 if(tempQn != this->TopLevel)
@@ -160,6 +166,61 @@ void filterNetworkAccessModule::consolodate_stacks()
 
 
     }
+}
+
+void filterNetworkAccessModule::extractObjects()
+{
+    if(!this->parseQnStack.isEmpty() && this->parseQnStack.back() == this->ObjectLevel)
+    {
+        while(!this->parseQnStack.isEmpty())
+        {
+            QXmlStreamReader::TokenType tempType = this->parseTypeStack.back();
+            this->parseTypeStack.pop_back();
+            QString tempQn = this->parseQnStack.back();
+            this->parseQnStack.pop_back();
+            QString tempText = this->parseTextStack.back();
+            this->parseTextStack.pop_back();
+
+            std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
+
+            //create a new object for the stack
+            QMap<QString, QString> *temp = new QMap<QString, QString>;
+            do
+            {
+                //get the next item from the stack
+                tempType = this->parseTypeStack.back();
+                this->parseTypeStack.pop_back();
+
+                tempQn = this->parseQnStack.back();
+                this->parseQnStack.pop_back();
+
+                tempText = this->parseTextStack.back();
+                this->parseTextStack.pop_back();
+
+                //DEBUG
+                std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
+
+                //create object
+                temp->insert(tempQn, tempText);
+
+
+            }while(!this->parseQnStack.isEmpty() && this->parseQnStack.back() != this->ObjectLevel);
+
+            //add object to list
+            this->finalObjects->push_back(temp);
+            std::cout << "==================================" << std::endl;
+
+        }
+    }
+    else
+    {
+    std::cerr << "ERROR: ObjectLevel does not seem to be correct" << std::endl;
+    this->networkAccessStatus = 999;
+
+    }
+
+    //debug: lists
+    std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
 }
 
 

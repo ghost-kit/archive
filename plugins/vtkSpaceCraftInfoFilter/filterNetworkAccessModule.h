@@ -1,5 +1,6 @@
 #ifndef FILTERNETWORKACCESSMODULE_H
 #define FILTERNETWORKACCESSMODULE_H
+#include <iostream>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QURL>
@@ -21,15 +22,28 @@ public:
     void setRequestURL(QString URL);
     void setAccessStep(int step);
     QNetworkReply* Get();
-    QNetworkReply* Get(QString URL, QString TopLevel);
+    QNetworkReply* Get(QString URL, QString TopLevel, QString ObjectLevel);
 
     void setTopLevel(QString topLevel)
     {
         this->TopLevel = topLevel;
     }
 
+    void setObjectLevel(QString ObjectLevel)
+    {
+        this->ObjectLevel = ObjectLevel;
+    }
+
+    QList< QMap <QString, QString>* > *getFinalOjects()
+    {
+        return this->finalObjects;
+    }
+
+    int getNetworkAccessStatus() {return this->networkAccessStatus;}
+
 protected:
     QString TopLevel;
+    QString ObjectLevel;
 
 private:
     //URL parsing
@@ -47,11 +61,18 @@ private:
     QStack<QString> parseQnStack;
     QStack<QString> parseTextStack;
 
+    //final parse breakdown
+    QList< QMap < QString, QString>* > *finalObjects;
+
     //parsing functions
-    void consolodate_stacks();
+    void consolodateStacks();
+    void extractObjects();
 
 protected slots:
     void networkReply();
+
+signals:
+    void dataRetrieved();
 };
 
 #endif // FILTERNETWORKACCESSMODULE_H

@@ -31,7 +31,7 @@ class vtkDataSetAttributes;
 class vtkDataArraySelection;
 class vtkCallbackCommand;
 
-class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm
+class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm, QObject
 {
 public:
   static vtkSpaceCraftInfo *New();
@@ -101,13 +101,16 @@ protected:
   void SetNumberOfSCinfoArrays(int set) {this->NumberOfSCInfoArrays = set;}
 
   //CDAWEB
-  filterNetworkAccessModule *netManager;
+  filterNetworkAccessModule *SCListManager;
   QString baseURL;
   QString getObservatoryURLext;
   int networkAccessStatus;
 
 private slots:
   void networkReply();
+  void buildSCList();
+  void buildSCDataList();
+  void populateSCData();
 
 private:
   vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);

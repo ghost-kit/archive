@@ -56,9 +56,11 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     this->getObservatoryURLext = QString("/dataviews/sp_phys/observatories");
 
     //configure the network manager
-    this->netManager = new filterNetworkAccessModule();
+    this->SCListManager = new filterNetworkAccessModule();
     this->networkAccessStatus = -1;
 
+    //connect
+    QObject::connect(this->SCListManager, SIGNAL(dataRetrieved()), this, SLOT(buildSCDataList()));
 }
 
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
@@ -129,21 +131,23 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
     }
 
 
+    //place default information for panel here
 
-    std::cout << "adding test arrays to array list" << std::endl;
-    //temporary activation of arrays
-    if(this->GetNumberOfSCinfoArrays() == 0)
-    {
-        this->SpaceCraftArraySelections->AddArray("Stereo A");
-        this->SpaceCraftArraySelections->AddArray("Stereo B");
-        this->SpaceCraftArraySelections->AddArray("Earth");
-        this->SpaceCraftArraySelections->AddArray("Mercury");
-        this->SpaceCraftArraySelections->AddArray("Mars");
-        this->SpaceCraftArraySelections->AddArray("Wind");
-        this->SpaceCraftArraySelections->AddArray("ACE");
 
-        this->SetNumberOfSCinfoArrays(7);
-    }
+//    std::cout << "adding test arrays to array list" << std::endl;
+//    //temporary activation of arrays
+//    if(this->GetNumberOfSCinfoArrays() == 0)
+//    {
+//        this->SpaceCraftArraySelections->AddArray("Stereo A");
+//        this->SpaceCraftArraySelections->AddArray("Stereo B");
+//        this->SpaceCraftArraySelections->AddArray("Earth");
+//        this->SpaceCraftArraySelections->AddArray("Mercury");
+//        this->SpaceCraftArraySelections->AddArray("Mars");
+//        this->SpaceCraftArraySelections->AddArray("Wind");
+//        this->SpaceCraftArraySelections->AddArray("ACE");
+
+//        this->SetNumberOfSCinfoArrays(7);
+//    }
 
 
   return 1;
@@ -208,7 +212,7 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 bool vtkSpaceCraftInfo::getSCList()
 {
     //get data from network
-    this->netManager->Get(this->baseURL+getObservatoryURLext, QString("Observatories"));
+    this->SCListManager->Get(this->baseURL+getObservatoryURLext, QString("Observatories"), QString("ObservatoryDescription"));
 
 
     return true;
@@ -226,6 +230,11 @@ bool vtkSpaceCraftInfo::getSCData()
 //=====================================//
 void vtkSpaceCraftInfo::networkReply()
 {
+}
+
+void vtkSpaceCraftInfo::buildSCList()
+{
+    std::cout << "I AM DONE PROCESSING MY DATA!" << std::endl;
 }
 
 
