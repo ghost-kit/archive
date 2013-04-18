@@ -106,11 +106,6 @@ protected:
   QString getObservatoryURLext;
   int networkAccessStatus;
 
-private slots:
-  void networkReply();
-  void buildSCList();
-  void buildSCDataList();
-  void populateSCData();
 
 private:
   vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);

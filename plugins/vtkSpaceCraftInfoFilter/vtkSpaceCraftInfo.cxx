@@ -58,9 +58,6 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     //configure the network manager
     this->SCListManager = new filterNetworkAccessModule();
     this->networkAccessStatus = -1;
-
-    //connect
-    QObject::connect(this->SCListManager, SIGNAL(dataRetrieved()), this, SLOT(buildSCDataList()));
 }
 
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
@@ -214,8 +211,10 @@ bool vtkSpaceCraftInfo::getSCList()
     //get data from network
     this->SCListManager->Get(this->baseURL+getObservatoryURLext, QString("Observatories"), QString("ObservatoryDescription"));
 
-
-    return true;
+    if(this->SCListManager->getNetworkAccessStatus() == 0)
+        return true;
+    else
+        return false;
 }
 
 
@@ -227,15 +226,7 @@ bool vtkSpaceCraftInfo::getSCData()
     return true;
 }
 
-//=====================================//
-void vtkSpaceCraftInfo::networkReply()
-{
-}
 
-void vtkSpaceCraftInfo::buildSCList()
-{
-    std::cout << "I AM DONE PROCESSING MY DATA!" << std::endl;
-}
 
 
 //=========================================================================================//

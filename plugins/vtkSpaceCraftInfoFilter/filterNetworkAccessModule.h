@@ -70,9 +70,11 @@ private:
 
 protected slots:
     void networkReply();
+    void dataHasBeenProcessed();
 
 signals:
     void dataRetrieved();
+    void dataProcessed();
 };
 
 #endif // FILTERNETWORKACCESSMODULE_H

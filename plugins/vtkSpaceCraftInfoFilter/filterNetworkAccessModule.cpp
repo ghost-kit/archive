@@ -4,12 +4,15 @@
 #include <iostream>
 #include <iomanip>
 #include <stdio.h>
+#include <QSplashScreen>
 
 filterNetworkAccessModule::filterNetworkAccessModule()
 {
     this->networkAccessStatus = -1;
     this->netManager = new QNetworkAccessManager();
     this->finalObjects = new QList< QMap < QString, QString>* >;
+
+    connect(this, SIGNAL(dataProcessed()), this, SLOT(dataHasBeenProcessed()));
 }
 
 filterNetworkAccessModule::~filterNetworkAccessModule()
@@ -37,9 +40,9 @@ void filterNetworkAccessModule::networkReply()
             this->xmlReader.readNext();
 
             //parse XML
-            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
-            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
-            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
+//            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
+//            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
+//            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
             this->parseTypeStack.push_front(this->xmlReader.tokenType());
             this->parseQnStack.push_front(this->xmlReader.qualifiedName().toString());
             this->parseTextStack.push_front(this->xmlReader.text().toString());
@@ -62,6 +65,14 @@ void filterNetworkAccessModule::networkReply()
         this->networkAccessStatus = 999;
     }
 
+    emit this->dataProcessed();
+
+}
+
+void filterNetworkAccessModule::dataHasBeenProcessed()
+{
+
+    std::cerr << "Data Has Been Processed" << std::endl;
 }
 
 
@@ -113,7 +124,7 @@ void filterNetworkAccessModule::consolodateStacks()
                 //handle the text cases
             case QXmlStreamReader::Characters:
                 //process characters
-                std::cout << "Characters..." << std::endl;
+               // std::cout << "Characters..." << std::endl;
 
                 //this assumes that the first element is NOT a character element
                 if(tempTextStack.isEmpty())
@@ -126,7 +137,7 @@ void filterNetworkAccessModule::consolodateStacks()
                 {
 
                     //take off the previous
-                    std::cout << "Poping off blank text from previous tag" << std::endl;
+                 //   std::cout << "Poping off blank text from previous tag" << std::endl;
                     tempTextStack.pop();
                     tempTextStack.push(tempText);
                 }
@@ -135,7 +146,7 @@ void filterNetworkAccessModule::consolodateStacks()
 
                 //keep everything that we want
             default:
-                std::cout << "Everything else..." << std::endl;
+               // std::cout << "Everything else..." << std::endl;
                 if(tempQn != this->TopLevel)
                 {
                     //put everything (except the top level)
@@ -156,15 +167,7 @@ void filterNetworkAccessModule::consolodateStacks()
 
         //remember the stack is upside down at this point
 
-        //DEBUG: print out...
-        for(int x = 0; x < this->parseTextStack.size(); x++)
-        {
-            std::cout << "Element: " << this->parseQnStack[x].toAscii().data()
-                      << " : " << this->parseTextStack[x].toAscii().data()
-                      <<  std::endl;
-        }
-
-
+        std::cout << "Parsing complete to stacks" << std::endl;
     }
 }
 
@@ -181,7 +184,7 @@ void filterNetworkAccessModule::extractObjects()
             QString tempText = this->parseTextStack.back();
             this->parseTextStack.pop_back();
 
-            std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
+//            std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
 
             //create a new object for the stack
             QMap<QString, QString> *temp = new QMap<QString, QString>;
@@ -207,20 +210,20 @@ void filterNetworkAccessModule::extractObjects()
             }while(!this->parseQnStack.isEmpty() && this->parseQnStack.back() != this->ObjectLevel);
 
             //add object to list
+            std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
+            std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
             this->finalObjects->push_back(temp);
-            std::cout << "==================================" << std::endl;
+//            std::cout << "==================================" << std::endl;
 
         }
+        std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
+
     }
     else
     {
-    std::cerr << "ERROR: ObjectLevel does not seem to be correct" << std::endl;
-    this->networkAccessStatus = 999;
-
+        std::cerr << ":EXTRACTION LOOP EXITS WITHOUT EXECUTING:" << std::endl;
     }
 
-    //debug: lists
-    std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
 }
 
 
@@ -233,6 +236,14 @@ QNetworkReply *filterNetworkAccessModule::Get()
 
     connect(reply, SIGNAL(finished()), this, SLOT(networkReply()));
 
+    {
+        QEventLoop loop;
+        loop.connect(this, SIGNAL(dataProcessed()), SLOT(quit()));
+        std::cout << "...in event loop..." << std::endl;
+        loop.exec();
+
+        std::cout << "EVENT LOOP HAS EXITED" << std::endl;
+    }
     return this->reply;
 }
 
