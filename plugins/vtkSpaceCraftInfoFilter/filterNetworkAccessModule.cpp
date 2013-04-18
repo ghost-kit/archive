@@ -173,47 +173,49 @@ void filterNetworkAccessModule::consolodateStacks()
 
 void filterNetworkAccessModule::extractObjects()
 {
-    if(!this->parseQnStack.isEmpty() && this->parseQnStack.back() == this->ObjectLevel)
+    if(!this->parseQnStack.isEmpty() && this->parseQnStack.front() == this->ObjectLevel)
     {
         while(!this->parseQnStack.isEmpty())
         {
-            QXmlStreamReader::TokenType tempType = this->parseTypeStack.back();
-            this->parseTypeStack.pop_back();
-            QString tempQn = this->parseQnStack.back();
-            this->parseQnStack.pop_back();
-            QString tempText = this->parseTextStack.back();
-            this->parseTextStack.pop_back();
+            std::cout << "Processing..." << std::endl;
 
-//            std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
+            QXmlStreamReader::TokenType tempType = this->parseTypeStack.front();
+            this->parseTypeStack.pop_front();
+            QString tempQn = this->parseQnStack.front();
+            this->parseQnStack.pop_front();
+            QString tempText = this->parseTextStack.front();
+            this->parseTextStack.pop_front();
+
+            std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
 
             //create a new object for the stack
             QMap<QString, QString> *temp = new QMap<QString, QString>;
             do
             {
                 //get the next item from the stack
-                tempType = this->parseTypeStack.back();
-                this->parseTypeStack.pop_back();
+                tempType = this->parseTypeStack.front();
+                this->parseTypeStack.pop_front();
 
-                tempQn = this->parseQnStack.back();
-                this->parseQnStack.pop_back();
+                tempQn = this->parseQnStack.front();
+                this->parseQnStack.pop_front();
 
-                tempText = this->parseTextStack.back();
-                this->parseTextStack.pop_back();
+                tempText = this->parseTextStack.front();
+                this->parseTextStack.pop_front();
 
                 //DEBUG
                 std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
 
                 //create object
-                temp->insert(tempQn, tempText);
+                temp->operator [](tempQn) = tempText;
+                //temp->insert(tempQn, tempText);
 
 
-            }while(!this->parseQnStack.isEmpty() && this->parseQnStack.back() != this->ObjectLevel);
+            }while(!this->parseQnStack.isEmpty() && this->parseQnStack.front() != this->ObjectLevel);
 
             //add object to list
             std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
             std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
             this->finalObjects->push_back(temp);
-//            std::cout << "==================================" << std::endl;
 
         }
         std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
@@ -221,6 +223,8 @@ void filterNetworkAccessModule::extractObjects()
     }
     else
     {
+        std::cerr << "Empty Status: " << this->parseQnStack.size() << std::endl;
+        std::cerr << "Back Item: " << this->parseQnStack.back().toAscii().data() << std::endl;
         std::cerr << ":EXTRACTION LOOP EXITS WITHOUT EXECUTING:" << std::endl;
     }
 

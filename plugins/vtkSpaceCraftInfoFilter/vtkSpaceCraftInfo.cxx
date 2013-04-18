@@ -120,34 +120,33 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
                  2);
 
 
-    //get the space craft list
-    if(this->getSCList())
+    if(this->GetNumberOfSCinfoArrays() == 0)
     {
-        //process the space craft list
-        std::cout << "processing Space Craft information" << std::endl;
+        //get the space craft list
+        this->getSCList();
+
+        QList< QMap <QString, QString>* > *RetrievedObjects = this->SCListManager->getFinalOjects();
+
+        std::cout << "Size of List: " << RetrievedObjects->size() << std::endl;
+
+        for(int x = 0; x < RetrievedObjects->size(); x++)
+        {
+            QMap<QString,QString> *currentMap = RetrievedObjects->operator [](x);
+
+            QList<QString> keys = currentMap->keys();
+
+            QString name = currentMap->operator []("ShortDescription");
+
+            std::cout << "Name: " << name.toAscii().data() << std::endl;
+
+            this->SpaceCraftArraySelections->AddArray(name.toAscii().data());
+
+        }
+        this->SetNumberOfSCinfoArrays(RetrievedObjects->size());
     }
 
-
-    //place default information for panel here
-
-
-//    std::cout << "adding test arrays to array list" << std::endl;
-//    //temporary activation of arrays
-//    if(this->GetNumberOfSCinfoArrays() == 0)
-//    {
-//        this->SpaceCraftArraySelections->AddArray("Stereo A");
-//        this->SpaceCraftArraySelections->AddArray("Stereo B");
-//        this->SpaceCraftArraySelections->AddArray("Earth");
-//        this->SpaceCraftArraySelections->AddArray("Mercury");
-//        this->SpaceCraftArraySelections->AddArray("Mars");
-//        this->SpaceCraftArraySelections->AddArray("Wind");
-//        this->SpaceCraftArraySelections->AddArray("ACE");
-
-//        this->SetNumberOfSCinfoArrays(7);
-//    }
-
-
-  return 1;
+    this->DisableAllSCArrays();
+    return 1;
 }
 
 
@@ -168,7 +167,7 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
     //call to get info from CDAWeb
     bool result = this->processCDAWeb(output);
 
-  return 1;
+    return 1;
 }
 
 
@@ -176,14 +175,14 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
 //------ Port Information ------//
 int vtkSpaceCraftInfo::FillInputPortInformation(int port, vtkInformation *info)
 {
-  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-  return 1;
+    info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
+    return 1;
 }
 
 int vtkSpaceCraftInfo::FillOutputPortInformation(int port, vtkInformation *info)
 {
-  info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
-  return 1;
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
+    return 1;
 }
 
 
@@ -299,7 +298,7 @@ void vtkSpaceCraftInfo::EnableAllSCArrays()
 //----- other stuff needed ------//
 void vtkSpaceCraftInfo::PrintSelf(ostream& os, vtkIndent indent)
 {
-  this->Superclass::PrintSelf(os, indent);
+    this->Superclass::PrintSelf(os, indent);
     os << indent << "NumberOfTimeSteps: " << this->NumberOfTimeSteps << std::endl;
 }
 
