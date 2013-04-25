@@ -45,7 +45,9 @@ endif (HDF5_FOUND)
 set( IO_INCLUDES ${HDF4_INCLUDE_DIR} ${HDF5_INCLUDE_DIRS} )
 include_directories(${IO_INCLUDES})
 set( IO_LIBRARIES ${HDF4_LIBRARIES} ${HDF5_LIBRARIES} ${PHDF5_LIBRARIES} )
-add_library(io STATIC Io.hpp Io.C
+add_library(io STATIC 
+            ErrorQueue.h ErrorQueue.C
+            Io.hpp Io.C
             IoTemplates.hpp Util.hpp
             Hdf.hpp Hdf.C Hdf4.hpp Hdf4.C
             Hdf5.hpp Hdf5.C
@@ -60,9 +62,9 @@ if(CXXTEST_FOUND)
   set(CXXTEST_USE_PYTHON TRUE)
   include_directories(${CXXTEST_INCLUDE_DIR})
   enable_testing()
-  CXXTEST_ADD_TEST(testErrorStack testErrorStack.C "${CMAKE_CURRENT_SOURCE_DIR}/testErrorStack.cxxTest")
-  ADD_LIBRARY(test_ErrorStack ErrorStack.h ErrorStack.C)
-  TARGET_LINK_LIBRARIES(testErrorStack test_ErrorStack)
+  CXXTEST_ADD_TEST(testErrorQueue testErrorQueue.C "${CMAKE_CURRENT_SOURCE_DIR}/testErrorQueue.cxxTest")
+  ADD_LIBRARY(test_ErrorQueue ErrorQueue.h ErrorQueue.C)
+  TARGET_LINK_LIBRARIES(testErrorQueue test_ErrorQueue)
   CXXTEST_ADD_TEST(testNoppNompi testNoppNompi.C "${CMAKE_CURRENT_SOURCE_DIR}/testNoppNompi.cxxTest")
   target_link_libraries(testNoppNompi io ${IO_LIBRARIES} )
 else ()
