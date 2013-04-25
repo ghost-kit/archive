@@ -65,13 +65,11 @@ bool Hdf4::openWrite(const string &filename)
 /*----------------------------------------------------------------------------*/
 
 #ifdef HAS_HDF4
-void Hdf4::errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status)
+void Hdf4::errorCheck(const int &status, const char *file, const int &line, const char *func)
 {
   if (status < 0) {
-    cerr << "*** Error in " << file << "(L " << lineNumber << "): inside function " << func << "(...)" << endl
-         << "\tLine:          \t" << line << endl
-         << "\tHDF4 expected  \t < 0" << endl
-         << "\tHDF4 error was:\t" << status << endl;
+    cerr << "*** Error in " << file << "(L " << line << "): " << func << "(...)" << endl;
+    cerr << "HDF4 error code: " << status << endl;
     HEprint(stdout,0);
 #ifdef BUILD_WITH_APP
     Optimization_Manager::Exit_Virtual_Machine();

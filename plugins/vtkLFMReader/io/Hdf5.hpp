@@ -15,7 +15,7 @@
 static const hid_t DATA_TYPE = H5T_NATIVE_FLOAT;
 #endif
 
-#define ERRORCHECK(STATUS) errorCheck(__FILE__, __LINE__, __FUNCTION__, #STATUS, STATUS)
+#define ERRORCHECK(STATUS) errorCheck(STATUS, __FILE__, __LINE__, __FUNCTION__)
 #define PUSHERROR(E) pushError(E, __FILE__, __LINE__, __FUNCTION__)
 
 class Hdf5 : public Io {
@@ -114,14 +114,14 @@ class Hdf5 : public Io {
     return identify_unknown_t;
   }
 
-  void errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status);
+  void errorCheck(const int &status, const char *file, const int &line, const char *func);
 
   hid_t createGroup(const string &groupName);
 
   virtual bool open(const string &filename, const hid_t &accessMode );
   hid_t fileId, classId, majorErrorId, minorErrorId;
 
-  void pushError(const string &e, const char const *file, const int &lineNumber, const char const *func);
+  void pushError(const string &e, const char *file, const int &line, const char *func);
 
 #else
   int fileId;
