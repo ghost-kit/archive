@@ -137,7 +137,7 @@ public:
   /// Methods to write variables
   //@{
   virtual
-  void writeVariable( const string& variableName,
+  bool writeVariable( const string& variableName,
 		      const string& group,
 		      const array_info_t& info,
 		      const void* data ) = 0;
@@ -192,7 +192,7 @@ public:
 			 const int multiVarDims=0);
 
   template<class PppArray> 
-  void writeVariable(const PppArray& data,
+  bool writeVariable(const PppArray& data,
 		     const string& variableName,
 		     const string& group="",
 		     const int multiVarDims=0);
@@ -217,7 +217,7 @@ public:
 			  const int multiVarDims=4);
 
   template<class PppArray>
-  void readVariable(PppArray& data,
+  bool readVariable(PppArray& data,
 		    const string& variableName,
 		    const string& group="",
 		    const int multiVarDims=0);

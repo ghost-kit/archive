@@ -14,7 +14,7 @@ class PHdf5 : public Hdf5 {
 		     const array_info_t& info,
 		     void* data );
   
-  void writeVariable( const string& variableName, 
+  bool writeVariable( const string& variableName, 
 		      const string& group,
 		      const array_info_t& info,
 		      const void* data );

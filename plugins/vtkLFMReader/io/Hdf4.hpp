@@ -37,7 +37,7 @@ class Hdf4 : public Io {
 		      const identify_data_type& dataType,
 		      const string& group);
   
-  void writeVariable( const string& variableName, 
+  bool writeVariable( const string& variableName, 
 		      const string& group,
 		      const array_info_t& info,
 		      const void* data );

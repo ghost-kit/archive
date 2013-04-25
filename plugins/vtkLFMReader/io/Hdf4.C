@@ -87,25 +87,45 @@ bool Hdf4::readVariable( const string& variableName,
 			 void* data )
 {
 #ifdef HAS_HDF4
+  bool hasError = false;
+
   int32 i, indexStart[MAX_VAR_DIMS], dims[MAX_ARRAY_DIMENSION];
 
   //cout << "Reading " << variableName << " in group " << group << endl;
 
   for(i=0;i<MAX_VAR_DIMS;i++) indexStart[i] = 0;
 
-  if (!verifyShape(variableName,group,info)) return false;
+  if (!verifyShape(variableName,group,info)){    
+    errorQueue.pushError("could not verify array shape");
+    return false;
+  }
 
   if (rank < superSize){    
     string id = (group==""?variableName:group+"/"+variableName);
     int varId = SDnametoindex(sdId,id.c_str());
-    ERRORCHECK(varId);
+    if( ERRORCHECK(varId) )
+      hasError = true;
     int sdsId = SDselect(sdId,varId);
-    ERRORCHECK(sdsId);
-    ERRORCHECK(SDreaddata(sdsId,indexStart,NULL,int32_convert(info.localDims,info.nDims,dims),data));
-    ERRORCHECK(SDendaccess(sdsId));
+    if( ERRORCHECK(sdsId) )
+      hasError = true;
+    if( ERRORCHECK(SDreaddata(sdsId,indexStart,NULL,int32_convert(info.localDims,info.nDims,dims),data)) )
+      hasError = true;
+    if( ERRORCHECK(SDendaccess(sdsId)) )
+      hasError = true;
   }
-  return true;
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);
+
 #else
+  errorQueue.pushError("HAS_HDF4 is undefined");
   return false;
 #endif
 }
@@ -127,7 +147,8 @@ bool Hdf4::readAttribute( const string& attributeName,
     if( ERRORCHECK(groupId) )
       hasError = true;
     int32 attrIndx = SDfindattr(groupId,attributeName.c_str());
-    if (attrIndx==-1) return -1;
+    if (attrIndx==-1)
+      hasError = true;
     int32 type;
     if (ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&dataLength)))
       hasError = true;
@@ -157,25 +178,45 @@ bool Hdf4::readAttribute( const string& attributeName,
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf4::writeVariable( const string& variableName, 
+bool Hdf4::writeVariable( const string& variableName, 
 			  const string& group,
 			  const array_info_t& info,
 			  const void* data )
 {
 #ifdef HAS_HDF4
+  bool hasError = false;
+
   int32 i,indexStart[MAX_VAR_DIMS], dims[MAX_ARRAY_DIMENSION];
-  for(i=0;i<MAX_VAR_DIMS;i++) indexStart[i] = 0;
+  for(i=0;i<MAX_VAR_DIMS;i++) 
+    indexStart[i] = 0;
 
   if (rank < superSize){
     string id = (group==""?variableName:group+"/"+variableName);
     int32 varId = SDcreate(sdId, id.c_str(), identifyH4Type(info.dataType,variableName), 
 			   info.nDims, int32_convert(info.localDims,info.nDims,dims));
-    ERRORCHECK(varId);
-    ERRORCHECK(SDwritedata(varId, indexStart, NULL, 
-			   int32_convert(info.localDims,info.nDims,dims), (void*)data));
-    ERRORCHECK(SDendaccess(varId));
+    if( ERRORCHECK(varId) )
+      hasError = true;
+    if( ERRORCHECK(SDwritedata(varId, indexStart, NULL, 
+			       int32_convert(info.localDims,info.nDims,dims), (void*)data)) )
+      hasError = true;
+    if( ERRORCHECK(SDendaccess(varId)) )
+      hasError = true;
     putArrayInfo(id,info);
   }
+
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);  
+#else
+  errorQueue.pushError("HAS_HDF4 is undefined");
+  return false;
 #endif
 }
 
@@ -208,9 +249,10 @@ bool Hdf4::writeAttribute( const string& attributeName,
     //errorQueue.print(cerr);
   }
   return (not hasError);
-#endif
+#else
   errorQueue.pushError("HAS_HDF4 is undefined");
-  return true;
+  return false;
+#endif
 }
 
 

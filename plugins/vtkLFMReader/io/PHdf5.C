@@ -51,19 +51,27 @@ bool PHdf5::readVariable( const string& variableName,
 			  void* data ) 
 {
 #ifdef HAS_PHDF5
+  bool hasError = false;
+
   hsize_t ones[MAX_ARRAY_DIMENSION], dims[MAX_ARRAY_DIMENSION], offset[MAX_ARRAY_DIMENSION];
   for (int i=0; i<MAX_ARRAY_DIMENSION; i++) ones[i] = 1;
 
-  if (!verifyShape(variableName,group,info)) return false;
+  if (!verifyShape(variableName,group,info)) {
+    errorQueue.pushError("could not verify array shape");    
+    return false;
+  }
 
   if (rank < superSize) {
     hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
-    ERRORCHECK(groupId);
+    if( ERRORCHECK(groupId) )
+      hasError = true;
     hid_t dataId = H5Dopen(groupId, variableName.c_str(), H5P_DEFAULT);  
-    ERRORCHECK(dataId);
+    if( ERRORCHECK(dataId) )
+      hasError = true;
 
     hid_t spaceId = H5Dget_space(dataId);
-    ERRORCHECK(spaceId);
+    if( ERRORCHECK(spaceId) )
+      hasError = true;
 
     H5Sselect_hyperslab(spaceId, H5S_SELECT_SET, hsize_convert(info.offset,info.nDims,offset), 
 			ones, ones, hsize_convert(info.localDims,info.nDims,dims));
@@ -78,31 +86,47 @@ bool PHdf5::readVariable( const string& variableName,
     } else
       plistId = H5P_DEFAULT;
 
-    ERRORCHECK( H5Dread(dataId, identifyH5Type(info.dataType,variableName), memSpace, spaceId, plistId, data) );
+    if( ERRORCHECK( H5Dread(dataId, identifyH5Type(info.dataType,variableName), memSpace, spaceId, plistId, data) ) )
+      hasError = true;
     
     H5Sclose(memSpace);
     H5Sclose(spaceId);
     H5Dclose(dataId);
-    if (group!="") ERRORCHECK(H5Gclose(groupId));
+    if (group!="") {
+      if( ERRORCHECK(H5Gclose(groupId)) )
+	hasError = true;
+    }
 
     if (collectiveRead)
       H5Pclose(plistId);
     
   }
-  return true;
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);
+
 #else
+  errorQueue.pushError("HAS_PHDF5 is undefined");
   return false;
 #endif
 }
   
 /*----------------------------------------------------------------------------*/
 
-void PHdf5::writeVariable( const string& variableName, 
+bool PHdf5::writeVariable( const string& variableName, 
 			   const string& group,
 			   const array_info_t& info,
 			   const void* data ) 
 {
 #ifdef HAS_PHDF5
+  bool hasError = false;
   hsize_t ones[MAX_ARRAY_DIMENSION], localDims[MAX_ARRAY_DIMENSION], 
     offset[MAX_ARRAY_DIMENSION], globalDims[MAX_ARRAY_DIMENSION];
   for (int i=0; i<MAX_ARRAY_DIMENSION; i++) ones[i] = 1;
@@ -119,7 +143,8 @@ void PHdf5::writeVariable( const string& variableName,
 
     hid_t dataSet = H5Dcreate(createGroup(group), variableName.c_str(), identifyH5Type(info.dataType,variableName),
 			      fileSpace, H5P_DEFAULT, dataId, H5P_DEFAULT);
-    ERRORCHECK(dataSet);
+    if( ERRORCHECK(dataSet) )
+      hasError = true;
 
     H5Sselect_hyperslab(fileSpace, H5S_SELECT_SET, offset, ones, ones, localDims);
     
@@ -134,7 +159,8 @@ void PHdf5::writeVariable( const string& variableName,
     } else
       plistId = H5P_DEFAULT;
     
-    ERRORCHECK( H5Dwrite(dataSet, identifyH5Type(info.dataType,variableName), memSpace, fileSpace, plistId, data) );
+    if( ERRORCHECK( H5Dwrite(dataSet, identifyH5Type(info.dataType,variableName), memSpace, fileSpace, plistId, data) ) )
+      hasError = true;
     
     if (collectiveWrite)
       H5Pclose(plistId);
@@ -145,7 +171,21 @@ void PHdf5::writeVariable( const string& variableName,
     H5Sclose(fileSpace);
     putArrayInfo((group==""?variableName:group+"/"+variableName),info);
   }
-#endif  
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);
+
+#else
+  errorQueue.pushError("HAS_HDF5 is undefined");
+  return false;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

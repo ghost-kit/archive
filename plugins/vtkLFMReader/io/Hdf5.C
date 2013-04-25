@@ -96,18 +96,41 @@ bool Hdf5::readVariable( const string& variableName,
 			 void* data )
 {   
 #ifdef HAS_HDF5
-  if (!verifyShape(variableName,group,info)) return false;
+  bool hasError = false;
+  if (!verifyShape(variableName,group,info)){
+    errorQueue.pushError("could not verify array shape");    
+    return false;
+  }
   if (rank < superSize) {
     hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
-    ERRORCHECK(groupId);
+    if( ERRORCHECK(groupId) )
+      hasError = true;
     hid_t datasetId = H5Dopen(groupId, variableName.c_str(), H5P_DEFAULT);
-    ERRORCHECK(datasetId);
-    ERRORCHECK(H5Dread(datasetId, identifyH5Type(info.dataType,variableName), H5S_ALL, H5S_ALL, H5P_DEFAULT, data));
-    ERRORCHECK(H5Dclose(datasetId));
-    if (group!="") ERRORCHECK(H5Oclose(groupId));
+    if( ERRORCHECK(datasetId) )
+      hasError = true;
+    if( ERRORCHECK(H5Dread(datasetId, identifyH5Type(info.dataType,variableName), H5S_ALL, H5S_ALL, H5P_DEFAULT, data)) )
+      hasError = true;
+    if( ERRORCHECK(H5Dclose(datasetId)) )
+      hasError = true;
+    if (group!="") {
+      if( ERRORCHECK(H5Oclose(groupId)) )
+	hasError = true;
+    }
   }
-  return true;
+
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);
+
 #else
+  errorQueue.pushError("HAS_HDF5 is undefined");
   return false;
 #endif
 }
@@ -187,27 +210,49 @@ bool Hdf5::readAttribute( const string& attributeName,
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf5::writeVariable( const string& variableName, 
+bool Hdf5::writeVariable( const string& variableName, 
 			  const string& group,
 			  const array_info_t& info,
 			  const void* data )
 {
 #ifdef HAS_HDF5
+  bool hasError = false;
+
   if (rank < superSize){
     hsize_t localDims[MAX_ARRAY_DIMENSION];
     hid_t dataspaceId = H5Screate_simple(hsize_t(info.nDims), 
 					 hsize_convert(info.localDims,info.nDims,localDims), NULL);
-    ERRORCHECK(dataspaceId);
+    if( ERRORCHECK(dataspaceId) )
+      hasError = true;
     hid_t datasetId = H5Dcreate(createGroup(group), variableName.c_str(), 
 				identifyH5Type(info.dataType,variableName), dataspaceId, 
 				H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    ERRORCHECK(datasetId);
-    ERRORCHECK(H5Dwrite(datasetId, identifyH5Type(info.dataType,variableName), 
-			H5S_ALL, H5S_ALL, H5P_DEFAULT, data));
-    ERRORCHECK(H5Dclose(datasetId));
-    ERRORCHECK(H5Sclose(dataspaceId));
+    if( ERRORCHECK(datasetId) )
+      hasError = true;
+    if( ERRORCHECK(H5Dwrite(datasetId, identifyH5Type(info.dataType,variableName), 
+			    H5S_ALL, H5S_ALL, H5P_DEFAULT, data)))
+      hasError = true;
+    if( ERRORCHECK(H5Dclose(datasetId)) )
+      hasError = true;
+    if( ERRORCHECK(H5Sclose(dataspaceId)) )
+      hasError = true;
     putArrayInfo((group==""?variableName:group+"/"+variableName),info);
   }
+  
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);
+
+#else
+  errorQueue.pushError("HAS_HDF5 is undefined");
+  return false;
 #endif
 }
 
@@ -258,7 +303,7 @@ bool Hdf5::writeAttribute( const string& variableName,
   return (not hasError);
 #else
   errorQueue.pushError("HAS_HDF5 is undefined");
-  return true;
+  return false;
 #endif
 }
 

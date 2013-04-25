@@ -45,10 +45,12 @@ void Io::writeShape(const PppArray& data,
 /*----------------------------------------------------------------------------*/
 
 template<class PppArray>
-void Io::writeVariable(const PppArray& data, 
+bool Io::writeVariable(const PppArray& data, 
 		       const string& variableName, 
 		       const string& group, 
 		       const int multiVarDims) {
+  bool hasError = false;
+
   array_info_t info;
   PppArray tmpArray = data;
   info.dataType = identify(tmpArray.getDataPointer()[0]);
@@ -60,13 +62,29 @@ void Io::writeVariable(const PppArray& data,
   for (int i=0; i<info.nDims; i++) offset *= info.localDims[i];
   
   for (int i=0; i<info.nVars; i++) {
-    writeVariable(variableName+(i==0?"":"."+toString(i)),group,info,
-		  tmpArray.getLocalArray().getDataPointer()+(i*offset));
+    if(not writeVariable(variableName+(i==0?"":"."+toString(i)),group,info,
+			 tmpArray.getLocalArray().getDataPointer()+(i*offset)) ){
+      hasError = true;
+    }
   }
 
-  if (multiVarDims)
-    writeAttribute("nVars", info.nVars, 1(group==""?variableName:group+"/"+variableName));
+  if (multiVarDims){
+    if( not writeAttribute("nVars", info.nVars, 1(group==""?variableName:group+"/"+variableName)) ){
+      hasError = true;
+      errorQueue.pushError("Error writing attribute nVars=" + string(info.nVars));
+    }
+  }
 
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tgroup=" << group << endl
+       << "\tmultiVarDims=" << multiVarDims << endl;
+    errorQueue.pushError(ss);
+  }
+
+  return not hasError;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -76,8 +94,23 @@ void Io::writeVarUnits(const PppArray& data,
 		       const string& variableName, 
 		       const string& units, 
 		       const string& group) {
-  writeVariable(data,variableName,group);
-  writeAttribute("units",units, units.length(), (group==""?variableName:group+"/"+variableName));
+  bool hasError = false;
+  
+  if(not writeVariable(data,variableName,group) )
+    hasError = true;
+  if(not writeAttribute("units",units, units.length(), (group==""?variableName:group+"/"+variableName)) )
+    hasError = true;
+
+    if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tunits=" << units << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -87,7 +120,7 @@ void Io::writeMultiVar(const PppArray& data,
 		       const string& variableName, 
 		       const string& group,
 		       const int multiVarDims) {
-  writeVariable(data,variableName,group,multiVarDims);
+  return writeVariable(data,variableName,group,multiVarDims);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -98,8 +131,12 @@ void Io::writeMultiVarUnits(const PppArray& data,
 			    const string& units, 
 			    const string& group,
 			    const int multiVarDims) {
-  writeVariable(data,variableName,group,multiVarDims);
-  writeAttribute("units",units, units.length(), (group==""?variableName:group+"/"+variableName));
+  bool hasError = false;
+
+  if(not writeVariable(data,variableName,group,multiVarDims) )
+    hasError = true;
+  if(not writeAttribute("units",units, units.length(), (group==""?variableName:group+"/"+variableName)) )
+    hasError = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -167,10 +204,12 @@ PppArray& Io::readShape(PppArray& data,
 
 
 template<class PppArray>
-void Io::readVariable(PppArray& data, 
+bool Io::readVariable(PppArray& data, 
 		      const string& variableName, 
 		      const string& group, 
 		      const int multiVarDims) {
+
+  bool hasError = false;
 
   array_info_t info;
   PppArray tmpArray = data;
@@ -182,26 +221,37 @@ void Io::readVariable(PppArray& data,
   int nVars = 1;
   if (multiVarDims) {
     int rank;
-    readAttribute0("nVars",nVars,rank, group);
+    if(not readAttribute0("nVars",nVars,rank, group) )
+      hasError = true;
   }
   
   size_t offset = 1;
-  for (int i=0; i<info.nDims; i++) offset *= info.localDims[i];
+  for (int i=0; i<info.nDims; i++) 
+    offset *= info.localDims[i];
 
   MPI_Bcast(&nVars,1,MPI_INT,0,MPI_COMM_WORLD);
 
   if (rank==0 && nVars > info.nVars) {
-    cerr << rank << ": more multi-vars in file than memory available for variable " 
-	 << variableName << " : " << nVars << " > " << info.nVars << endl;
+    hasError = true;
+    stringstream ss;
+    ss << rank << ": more multi-vars in file than memory available for variable " 
+       << variableName << " : " << nVars << " > " << info.nVars << endl;
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
     MPI_Abort(MPI_COMM_WORLD,-1);
   }
 
   for (int i=0; i<nVars; i++) {
-    if (!readVariable(variableName+(i==0?"":"."+toString(i)),group,info,
-		      tmpArray.getLocalArray().getDataPointer()+(i*offset))) {      
+    if (not readVariable(variableName+(i==0?"":"."+toString(i)),group,info,
+			 tmpArray.getLocalArray().getDataPointer()+(i*offset))) {      
+      hasError = true;
       Communication_Manager::Sync();
       usleep(10000*rank);
-      cerr << rank << ": shape for " << variableName << " does not match?!" << endl;
+      stringstream ss;
+      ss << rank << ": shape for " << variableName << " does not match?!" << endl;
+      errorQueue.pushError(ss);
+      //errorQueue.print(cerr);
+      
       MPI_Abort(MPI_COMM_WORLD,-1);
     }
   }
@@ -210,6 +260,8 @@ void Io::readVariable(PppArray& data,
 	 data.getLocalSize()*sizeof(*(data.getLocalArray().getDataPointer())));
   tmpArray.partition(data.getPartition());
   data = tmpArray;
+
+  return (not hasError);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -219,9 +271,25 @@ void Io::readVarUnits(PppArray& data,
 		      const string& variableName, 
 		      string& units, 
 		      const string& group) {
-  readVariable(data,variableName,group);
+  bool hasError = false;
+  if(not readVariable(data,variableName,group) )
+    hasError = true;
   int nUnits;
-  readAttribute("units",units, nUnits, group);
+  if(not readAttribute("units",units, nUnits, group) )
+    hasError = true;
+  
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariableName=" << variableName << endl
+       << "\tunits=" << units << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+
+  return hasError;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -231,7 +299,7 @@ void Io::readMultiVar(PppArray& data,
 		      const string& variableName, 
 		      const string& group,
 		      const int multiVarDims) {
-  readVariable(data,variableName,group,multiVarDims);
+  return readVariable(data,variableName,group,multiVarDims);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -242,9 +310,13 @@ void Io::readMultiVarUnits(PppArray& data,
 			   string& units, 
 			   const string& group,
 			   const int multiVarDims) {
-  readVariable(data,variableName,group,multiVarDims);
+  bool hasError = false;
+  
+  if( not readVariable(data,variableName,group,multiVarDims) )
+    hasError = true; 
   int nUnits;
-  readAttribute("units",units, nUnits, group);
+  if( not readAttribute("units",units, nUnits, group) )
+    hasError = true;
 }
 
 #endif//BUILD_WITH_APP
