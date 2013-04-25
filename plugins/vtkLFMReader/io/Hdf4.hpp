@@ -115,7 +115,8 @@ class Hdf4 : public Io {
 
   int32 createGroup(const string& groupName);
 
-  void errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status);
+  /// Returns true if an error was found.
+  bool errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status);
   
   bool open(const string& filename, const int32& accessMode);
 
