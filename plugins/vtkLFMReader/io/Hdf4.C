@@ -65,20 +65,17 @@ bool Hdf4::openWrite(const string &filename)
 /*----------------------------------------------------------------------------*/
 
 #ifdef HAS_HDF4
-void Hdf4::errorCheck(const int &status, const char *file, const int &line, const char *func)
+bool Hdf4::errorCheck(const int &status, const char *file, const int &line, const char *func)
 {
   if (status < 0) {
-    cerr << "*** Error in " << file << "(L " << line << "): " << func << "(...)" << endl;
-    cerr << "HDF4 error code: " << status << endl;
-    HEprint(stdout,0);
-#ifdef BUILD_WITH_APP
-    Optimization_Manager::Exit_Virtual_Machine();
-#endif//BUILD_WITH_APP
-#ifdef BUILD_WITH_MPI
-    MPI_Abort(MPI_COMM_WORLD,-1);
-#endif
-    exit(-1);
+    stringstream errorString;
+    errorString << "*** Error in" << file << "(L " << line << "): " << func << "(...)" << endl;
+    errorString << "HDF4 error code: " << status << endl;
+    HEprint(stderr,0);
+    errorQueue.pushError(errorString);
+    return true;
   }
+  return false;
 }
 #endif
 
@@ -115,31 +112,47 @@ bool Hdf4::readVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-int Hdf4::readAttribute( const string& variable,
-			 const string& group,
-			 const identify_data_type& dataType,
-			 void* data,
-			 const int& len ) 
+bool Hdf4::readAttribute( const string& variable,
+			  void* data,
+			  int& dataLength, 
+			  const identify_data_type& dataType,
+			  const string& group) 
 {
 #ifdef HAS_HDF4
+  bool hasError = false;
+
   char readName[MAX_NC_NAME];
   if (rank < superSize) {
-
-    //cout << "Reading " << variable << " in group " << group << endl;
     int32 groupId = openGroup(group);
-    ERRORCHECK(groupId);
-
+    if( ERRORCHECK(groupId) )
+      hasError = true;
     int32 attrIndx = SDfindattr(groupId,variable.c_str());
     if (attrIndx==-1) return -1;
-    int32 type, count;
-    ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&count));
-    ERRORCHECK(( identifyH4Type(dataType,variable) == type ? 1 : -1 ));
-    ERRORCHECK(( count<=len ? 1 : -1 ));
-    ERRORCHECK(SDreadattr(groupId,attrIndx,data));
-    return count;
+    int32 type;
+    if (ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&dataLength)))
+      hasError = true;
+    if (ERRORCHECK(( identifyH4Type(dataType,variable) == type ? 1 : -1 )))
+      hasError = true;
+    if (ERRORCHECK(SDreadattr(groupId,attrIndx,data)))
+      hasError = true;
+
+    if (hasError){
+      stringstream ss;
+      ss << __FUNCTION__ << " arguments:" << endl
+	 << "\tvariable=" << variable << endl
+	 << "\tdataLength=" << dataLength << endl
+	 << "\tdata_type=" << dataType2String(dataType) << endl
+	 << "\tgroup=" << group << endl;
+      
+      errorQueue.pushError(ss);
+      //errorQueue.print(cerr);
+    }
+
+    return (not hasError);
   }
 #endif
-  return 0;
+  errorQueue.pushError("HAS_HDF4 is undefined");
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -190,8 +203,8 @@ void Hdf4::getBcastArrayInfo( const string& group,
 #ifdef HAS_HDF4
 #ifdef BUILD_WITH_MPI
   if (rank==0) {
-    info.nDims = Io::readAttribute(info.globalDims[0],"globalDims",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.base[0],"base",group,MAX_ARRAY_DIMENSION);
+    Io::readAttribute("globalDims", info.globalDims[0], info.nDims, group);
+    Io::readAttribute("base", info.base[0], group);
   }
 
   MPI_Bcast(&info.nDims, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -212,10 +225,10 @@ void Hdf4::getLocalArrayInfo( const string& group,
 #ifdef HAS_HDF4
   memset(&info,0,sizeof(info));
   if (rank<superSize) {
-    info.nDims = Io::readAttribute(info.globalDims[0],"globalDims",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.offset[0],"offset",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.base[0],"base",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.nVars,"nVars",group);
+    Io::readAttribute("globalDims", info.globalDims[0], info.nDims, group);
+    Io::readAttribute("offset", info.offset[0], group);
+    Io::readAttribute("base", info.base[0], group);
+    Io::readAttribute("nVars", info.nVars, group);
     int32 nPoints=0, dims[MAX_VAR_DIMS], dataType;
     int32 varId = SDnametoindex( sdId, group.c_str() );
     ERRORCHECK(varId);
@@ -375,7 +388,7 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
 	superSize = 1;
 	sdId = SDstart(filename.c_str(), accessMode);
 	ERRORCHECK(sdId);
-	Io::readAttribute(superSize,"superSize");
+	Io::readAttribute("superSize", superSize);
       }
 #ifdef BUILD_WITH_MPI
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);

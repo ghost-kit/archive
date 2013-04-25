@@ -41,6 +41,35 @@ enum identify_data_type {
   identify_double_t  = 800,
 };
 
+static string dataType2String(const identify_data_type& dataType)
+{
+  switch(dataType){
+  case identify_unknown_t:
+    return "unknown";
+  case identify_byte_t:
+    return "byte";
+  case identify_char_t:
+    return "char";
+  case identify_string_t:
+    return "string";
+  case identify_short_t:
+    return "short";
+  case identify_int_t:
+    return "int";
+  case identify_long_t:
+    return "long";
+  case identify_float_t:
+    return "float";
+  case identify_double_t:
+    return "double";
+  default:
+    stringstream ss;
+    ss << "uknown data type code = << " << dataType
+       << ".  Did not even match identify_unknown_t!";
+    return ss.str();    
+  }
+}
+
 template<class T> identify_data_type identify(const T& v) {
   const type_info& v_type = typeid(T);
 

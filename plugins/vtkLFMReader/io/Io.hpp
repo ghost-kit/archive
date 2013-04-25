@@ -17,6 +17,7 @@
 
 using namespace std;
 
+#include "ErrorQueue.h"
 #include "Util.hpp"
 
 /**
@@ -69,26 +70,36 @@ public:
 			  const string& dir=".", 
 			  const int& superDomainSize=-1);
 
-  /// Methods to read attributes
+  /** \brief Methods to read attributes
+   * Sets data & dataLength (number of elements read in).
+   *  
+   * \warning { Assumes data is already allocated to the correct
+   * length.  You might want to double check that dataLength didn't
+   * exceed the size which data was allocated! }
+   *
+   * \returns true if succeeded without error.
+   */
   //@{
   template<class T>
-  int readAttribute(T& data,
-		    const string& variable,
-		    const string& group="",
-		    const int& len=1);
-
+  bool readAttribute(const string& variable,
+		     T& data,
+		     int& dataLength,
+		     const string& group="");
   template<class T>
-  int readAttribute0(T& data,
-		     const string& variable,
-		     const string& group="",
-		     const int& len=1);
-
+  bool readAttribute(const string& variable,
+		     T& data,
+		     const string& group="");
+  template<class T>
+  bool readAttribute0(const string& variable,
+		      T& data,
+		      int& dataLength,
+		     const string& group="");
   virtual
-  int readAttribute( const string& variable,
-		     const string& group,
+  bool readAttribute(const string& variable,
+		     void *data,
+		     int& dataLength,
 		     const identify_data_type& dataType,
-		     void* data,
-		     const int& len=1 ) = 0;
+		     const string& group="") = 0;
   //@}
 
   /// Methods to write attributes
@@ -244,6 +255,15 @@ public:
 
 protected:
 
+  
+  /**
+   * \brief {Use the errorQueue to glean information about why an Io
+   * operation failed.}
+   *
+   * \see ErrorQueue.h for usage.
+   */
+  ErrorQueue errorQueue;
+  
   /// Extension for the selected I/O format.
   string extension;
   

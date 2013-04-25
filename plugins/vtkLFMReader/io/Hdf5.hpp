@@ -15,7 +15,9 @@
 static const hid_t DATA_TYPE = H5T_NATIVE_FLOAT;
 #endif
 
+/// Compare with bool Hdf5::errorCheck(...)
 #define ERRORCHECK(STATUS) errorCheck(STATUS, __FILE__, __LINE__, __FUNCTION__)
+/// Compare with void Hdf5::pushError(...)
 #define PUSHERROR(E) pushError(E, __FILE__, __LINE__, __FUNCTION__)
 
 class Hdf5 : public Io {
@@ -35,11 +37,11 @@ class Hdf5 : public Io {
 		     const array_info_t& info,
 		     void* data );
 
-  int readAttribute( const string& variable,
-		     const string& group,
-		     const identify_data_type& dataType,
-		     void* data,
-		     const int& len=1 );
+  bool readAttribute( const string& variable,
+		      void* data,
+		      int& dataLength, 
+		      const identify_data_type& dataType,
+		      const string& group);
   
   void writeVariable( const string& variable, 
 		      const string& group,
@@ -114,7 +116,19 @@ class Hdf5 : public Io {
     return identify_unknown_t;
   }
 
-  void errorCheck(const int &status, const char *file, const int &line, const char *func);
+  /**
+   * \brief Check for Hdf5 errors.  If a problem is found, push error message(s) to errorStack.
+   *
+   * \note Use ERRORCHECK preprocessor macro to help set Hdf5::errorCheck arguments!
+   * 
+   * \param status hdf5 error status flag (should be < 0 denotes error)
+   * \param file Name of source file containing the error
+   * \param line Line number where error occured
+   * \param func Name of function which error occured within.
+   *
+   * \return true if an error was found.
+   */
+  bool errorCheck(const int &status, const char *file, const int &line, const char *func);
 
   hid_t createGroup(const string &groupName);
 

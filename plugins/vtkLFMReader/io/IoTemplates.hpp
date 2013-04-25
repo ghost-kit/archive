@@ -180,8 +180,10 @@ void Io::readVariable(PppArray& data,
   fillInfo(tmpArray,info,multiVarDims);  
 
   int nVars = 1;
-  if (multiVarDims) 
-    readAttribute0(nVars,"nVars",(group==""?variable:group+"/"+variable));
+  if (multiVarDims) {
+    int rank;
+    readAttribute0("nVars",nVars,rank, group);
+  }
   
   size_t offset = 1;
   for (int i=0; i<info.nDims; i++) offset *= info.localDims[i];
@@ -218,7 +220,8 @@ void Io::readVarUnits(PppArray& data,
 		      string& units, 
 		      const string& group) {
   readVariable(data,variable,group);
-  readAttribute(units,"units",(group==""?variable:group+"/"+variable));
+  int nUnits;
+  readAttribute("units",units, nUnits, group);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -240,7 +243,8 @@ void Io::readMultiVarUnits(PppArray& data,
 			   const string& group,
 			   const int multiVarDims) {
   readVariable(data,variable,group,multiVarDims);
-  readAttribute(units,"units",(group==""?variable:group+"/"+variable));
+  int nUnits;
+  readAttribute("units",units, nUnits, group);
 }
 
 #endif//BUILD_WITH_APP
@@ -279,36 +283,45 @@ void Io::writeAttribute<string>(const string& data,
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-int Io::readAttribute(T& data, 
-		      const string& variable, 
-		      const string& group, 
-		      const int& len) {
-  return readAttribute(variable,group,identify(data),&data,len);
+bool Io::readAttribute(const string& variable, 
+		       T& data, 
+		       int& dataLength,
+		       const string& group) {
+  return readAttribute(variable,&data,dataLength,identify(data),group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-int Io::readAttribute0(T& data, 
-		       const string& variable, 
-		       const string& group, 
-		       const int& len) {
-  
-  return (rank==0?readAttribute(data,variable,group,len):0);
+bool Io::readAttribute(const string& variable, 
+		       T& data, 
+		       const string& group) {
+  int dataLength;
+  return readAttribute(variable,data,dataLength,group);
+}
+
+/*----------------------------------------------------------------------------*/
+
+template<class T>
+bool Io::readAttribute0(const string& variable, 
+			T& data, 		       
+			int& dataLength,
+			const string& group){  
+  return (rank==0?readAttribute(variable,data,dataLength,group):0);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<> inline
-int Io::readAttribute<string>(string& data, 
-			      const string& variable, 
-			      const string& group, 
-			      const int& len) {
+bool Io::readAttribute<string>(const string& variable,
+			       string& data, 
+			       int& dataLength,
+			       const string& group) {
   static const int MAX_STR_LEN = 2048;
   static char str[MAX_STR_LEN] = { 0 };
-  int readLen = readAttribute(variable,group,identify(data),str,MAX_STR_LEN);
-  if (readLen>0) data = str;
-  return readLen;
+  readAttribute(variable, str, dataLength, identify(data), group);
+  if (dataLength>0) data = str;
+  return true;
 }
 
 #endif//IO_TEMPLATES_HPP__

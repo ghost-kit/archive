@@ -63,11 +63,20 @@ bool Hdf5::openWrite(const string& filename)
 /*----------------------------------------------------------------------------*/
 #ifdef HAS_HDF5
 
-void Hdf5::errorCheck(const int& status, const char* file, const int& line, const char* func)
+bool Hdf5::errorCheck(const int& status, const char* file, const int& line, const char* func)
 {
   if (status < 0) {
+    stringstream errorString;
+    errorString << "*** Error in" << file << "(L " << line << "): " << func << "(...)" << endl;
+    errorString << "HDF5 error code: " << status << endl;
+    errorQueue.pushError(errorString);
+
+    //todo: deprecate pushError?
     pushError("unknown error",file,line,func);
+    
+    return true;
   }
+  return false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -76,10 +85,6 @@ void Hdf5::pushError(const string &e, const char *file, const int &line, const c
 {
   H5Epush(H5E_DEFAULT,file,func,line,classId,majorErrorId,minorErrorId,e.c_str());
   H5Eprint(H5E_DEFAULT, stderr);
-#ifdef BUILD_WITH_MPI
-  MPI_Abort(MPI_COMM_WORLD,-1);
-#endif // BUILD_WITH_MPI
-  exit(-1);
 }
 
 #endif
@@ -109,24 +114,29 @@ bool Hdf5::readVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-int Hdf5::readAttribute( const string& variable,
-			 const string& group,
-			 const identify_data_type& dataType,
-			 void* data,
-			 const int& len ) 
+bool Hdf5::readAttribute( const string& variable,
+			  void* data,
+			  int& dataLength,
+			  const identify_data_type& dataType,
+			  const string& group)
 {
 #ifdef HAS_HDF5
-  hsize_t nPoints = 0;
+  bool hasError = false;
+
   hid_t h5type;
   if (rank < superSize){
     if (group=="" || H5Lexists(fileId,group.c_str(),H5P_DEFAULT)) {
       hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
-      ERRORCHECK(groupId);
+      if( ERRORCHECK(groupId) )
+	hasError = true;
       if (H5Aexists(groupId,variable.c_str())) {
 	hid_t attributeId = H5Aopen(groupId,variable.c_str(),H5P_DEFAULT);      
-	ERRORCHECK(attributeId);
+	if( ERRORCHECK(attributeId) )
+	  hasError = true;
 	hid_t spaceId = H5Aget_space(attributeId);
-	ERRORCHECK(spaceId);
+	if( ERRORCHECK(spaceId) )
+	  hasError = true;
+	hsize_t nPoints = 0;	 
 	if (dataType == identify_string_t) {
 	  h5type = H5Aget_type(attributeId);
 	  nPoints = H5Tget_size(h5type);
@@ -134,24 +144,43 @@ int Hdf5::readAttribute( const string& variable,
 	  h5type = identifyH5Type(dataType,variable);
 	  nPoints = H5Sget_select_npoints(spaceId);
 	}
-	if (len>=nPoints) {
-	  ERRORCHECK(H5Aread(attributeId,h5type,data));
-	} else {
-	  PUSHERROR("Unable to read attribute " + variable + " with provided length.");
-	}
-	ERRORCHECK(H5Aclose(attributeId));
-	ERRORCHECK(H5Sclose(spaceId));      
+	dataLength = int(nPoints);
+	if( ERRORCHECK(H5Aread(attributeId,h5type,data)) )
+	  hasError = true;
+	if( ERRORCHECK(H5Aclose(attributeId)) )
+	  hasError = true;
+	if( ERRORCHECK(H5Sclose(spaceId)) )
+	  hasError = true;
       } else  {
-	return -1;
+	hasError = true;
+	errorQueue.pushError("Attribute " + variable + " does not exist");
       }
-      if (group!="") ERRORCHECK(H5Oclose(groupId));
+      if (group!="") {
+	if( ERRORCHECK(H5Oclose(groupId)) )
+	  hasError = true;
+      }
     } else {
-      PUSHERROR("Group " + group + "does not exist...");
+      hasError = true;
+      errorQueue.pushError("Group " + group + " does not exist...");
     }
   }
-  return nPoints;
+
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariable=" << variable << endl
+       << "\tdataLength=" << dataLength << endl
+       << "\tdata_type=" << dataType2String(dataType) << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+
+  return (not hasError);
 #else
-  return 0;
+  errorQueue.pushError("HAS_HDF5 is undefined");
+  return false;
 #endif
 }
 
@@ -217,8 +246,8 @@ void Hdf5::getBcastArrayInfo( const string& group,
 #ifdef HAS_HDF5
 #ifdef BUILD_WITH_MPI
   if (rank==0) {
-    info.nDims = Io::readAttribute(info.globalDims[0],"globalDims",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.base[0],"base",group,MAX_ARRAY_DIMENSION);
+    Io::readAttribute("globalDims",info.globalDims[0], info.nDims, group);
+    Io::readAttribute("base",info.base[0],group);
   }
   
   MPI_Bcast(&info.nDims, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -238,10 +267,10 @@ void Hdf5::getLocalArrayInfo( const string& group,
 #ifdef HAS_HDF5
   memset(&info,0,sizeof(info));
   if (rank<superSize) {
-    info.nDims = Io::readAttribute(info.globalDims[0],"globalDims",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.offset[0],"offset",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.base[0],"base",group,MAX_ARRAY_DIMENSION);
-    Io::readAttribute(info.nVars,"nVars",group);
+    Io::readAttribute("globalDims",info.globalDims[0], info.nDims, group);
+    Io::readAttribute("offset",info.offset[0],group);
+    Io::readAttribute("base",info.base[0],group);
+    Io::readAttribute("nVars",info.nVars, group);
     hsize_t nPoints=0, dims[MAX_ARRAY_DIMENSION], maxDims[MAX_ARRAY_DIMENSION];
     hid_t dataId = H5Dopen(fileId,group.c_str(),H5P_DEFAULT);
     ERRORCHECK(dataId);
@@ -387,7 +416,7 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
       if (rank == 0) {      
 	superSize=1;
 	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
-	Io::readAttribute(superSize,"superSize");
+	Io::readAttribute("superSize", superSize);
       }
 #ifdef BUILD_WITH_MPI
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);

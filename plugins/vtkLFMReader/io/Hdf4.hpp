@@ -11,6 +11,7 @@
 #include <map>
 #include <csignal>
 
+/// Compare with bool Hdf4::errorCheck(...)
 #define ERRORCHECK(STATUS) errorCheck(STATUS, __FILE__, __LINE__, __FUNCTION__)
 
 class Hdf4 : public Io {
@@ -30,11 +31,11 @@ class Hdf4 : public Io {
 		     const array_info_t& info,
 		     void* data );
 
-  int readAttribute( const string& variable,
-		     const string& group,
-		     const identify_data_type& dataType,
-		     void* data,
-		     const int& len=1 );
+  bool readAttribute( const string& variable,
+		      void* data,
+		      int& dataLength,
+		      const identify_data_type& dataType,
+		      const string& group);
   
   void writeVariable( const string& variable, 
 		      const string& group,
@@ -115,7 +116,19 @@ class Hdf4 : public Io {
 
   int32 createGroup(const string& groupName);
 
-  void errorCheck(const int& status, const char* file, const int& line, const char* func);  
+  /**
+   * \brief Check for Hdf4 errors.  If a problem is found, push error message(s) to errorStack.
+   *
+   * \note Use ERRORCHECK preprocessor macro to help set Hdf4::errorCheck arguments!
+   * 
+   * \param status hdf4 error status flag (should be < 0 denotes error)
+   * \param file Name of source file containing the error
+   * \param line Line number where error occured
+   * \param func Name of function which error occured within.
+   *
+   * \return true if an error was found.
+   */
+  bool errorCheck(const int& status, const char* file, const int& line, const char* func);  
   
   bool open(const string& filename, const int32& accessMode);
 

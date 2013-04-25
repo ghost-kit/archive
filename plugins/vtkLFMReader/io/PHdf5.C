@@ -155,9 +155,8 @@ void PHdf5::getBcastArrayInfo( const string& group,
 {
 #ifdef HAS_PHDF5
   if (rank == 0) {
-    info.nDims = readAttribute("globalDims",group,identify(info.globalDims[0]),
-			       info.globalDims,MAX_ARRAY_DIMENSION);
-    readAttribute("base",group,identify(info.base[0]),info.base,MAX_ARRAY_DIMENSION);
+    readAttribute("globalDims", info.globalDims, info.nDims, identify(info.globalDims[0]), group);
+    readAttribute("base",info.base);
   }
 
   MPI_Bcast(&info.nDims, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -243,7 +242,7 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
       if (rank == 0) {      
 	superSize = 1;
 	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
-	Io::readAttribute(superSize,"superSize");
+	Io::readAttribute("superSize", superSize);
       }
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
     } else {

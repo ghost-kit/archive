@@ -98,17 +98,17 @@ class TestNoppNompi : public CxxTest::TestSuite
     TS_ASSERT( io->openRead(filename) );
 
     string swQuote;
-    io->readAttribute(swQuote, "Star Wars");
+    io->readAttribute("Star Wars", swQuote);
     TS_ASSERT_EQUALS( swQuote,
 		      "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects."
 		      );
 
     double dPi;
-    io->readAttribute(dPi, "dPi");
+    io->readAttribute("dPi", dPi);
     TS_ASSERT_DELTA( dPi, 3.1415926535897931, 1e-16);
 
     float fPi;
-    io->readAttribute(fPi, "fPi");
+    io->readAttribute("fPi", fPi);
     TS_ASSERT_DELTA( fPi, 3.1415926, 1e-6 );
 
     double data8byte[10];
@@ -149,6 +149,9 @@ class TestNoppNompi : public CxxTest::TestSuite
       TS_ASSERT_DELTA( data4byte[i], float(i) + float(i)/100.0, 1e-5 );
     }
 
+    // test some failure modes now
+    int wrongDataType=999;
+    TS_ASSERT(io->readAttribute("dPi", wrongDataType)==false);
 
     io->close();
 

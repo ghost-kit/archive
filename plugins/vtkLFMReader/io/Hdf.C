@@ -56,7 +56,7 @@ void Hdf::getBcastArrayInfo( const string& group,
 
     while (info.nDims<MAX_ARRAY_DIMENSION && count!=-1) {
       name[1] = 'i'+info.nDims;
-      count = Io::readAttribute(dims[info.nDims++],name,group);
+      Io::readAttribute(name, dims[info.nDims++], count, group);
     }
     info.nDims-=1;
     for (int i=0; i<info.nDims; i++) {
