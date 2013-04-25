@@ -19,47 +19,33 @@ using namespace std;
 
 #include "Util.hpp"
 
-#ifndef MAX_ARRAY_DIMENSION
-#define MAX_ARRAY_DIMENSION 6
-#endif
-
-struct array_info_t {
-  int nDims, nVars, nAttr, bytes,
-    globalDims[MAX_ARRAY_DIMENSION], 
-    localDims[MAX_ARRAY_DIMENSION], 
-    offset[MAX_ARRAY_DIMENSION], 
-    base[MAX_ARRAY_DIMENSION];
-  identify_data_type dataType;
-};
-
-static void printArrayInfo( array_info_t& info ) {
-  cout << "   Dims: "  << info.nDims 
-       << "   nVars: " << info.nVars 
-       << "   nAttr: " << info.nAttr 
-       << "   bytes: " << info.bytes 
-       << "   type: "  << info.dataType << endl;
-  
-  for (int i=0; i<info.nDims; i++) {
-    cout << i << ")  " 
-	 << info.globalDims[i] << " : " 
-	 << info.localDims[i] << " : "
-	 << info.offset[i] << " : "
-	 << info.base[i] << endl;
-  }
-  
-}
-
+/**
+ * Abstract base class for model Input and Output of model data & metadata.
+ */
 class Io {
 
 public:
 
-  Io(int superDomainSize = -1);
+  /**
+   * Data may be written in super domains for improved parallel performance.
+   *
+   * \param superDomainSize { the number of superdomains to split a
+   *   file into.  <=1 will write a single file.  >1 will split the data
+   *   into two or more subdomains. }
+   *
+   * \warning { Super Domains have not been extensively profiled.  It's
+   *   unclear how big of a benefit this will provide.}
+   */
+  Io(const int& superDomainSize = -1);
 
   virtual
   ~Io() {};
  
+  /**
+   * \return true if output format is available
+   */ 
   virtual
-  bool enabled() = 0;
+  bool isEnabled() = 0;
 
   virtual
   bool openRead(const string& filename) = 0;
@@ -67,19 +53,24 @@ public:
   virtual
   bool openWrite(const string& filename) = 0;
 
-  static Io* extSelector(const string& ext, 
+  /** \brief Instantiate apprprioate I/O implementation based on the extension
+   * \return new Io object.
+   * \warning This allocates new memory.  Don't forget to delete!
+   */
+  static Io* extensionSelector(const string& extension, 
 			 const int& superDomainSize=-1);
 
+  /** \brief Not sure what this does!
+   * \todo Remove this?
+   * \return new Io object.
+   * \warning This allocates new memory.  Don't forget to delete!
+   */
   static Io* fileComplete(const string& fileName, 
 			  const string& dir=".", 
 			  const int& superDomainSize=-1);
 
-  template<class T>
-  void writeAttribute(const T& data,
-		      const string& variable,
-		      const string& group="",
-		      const int& len=1);
-
+  /// Methods to read attributes
+  //@{
   template<class T>
   int readAttribute(T& data,
 		    const string& variable,
@@ -87,35 +78,10 @@ public:
 		    const int& len=1);
 
   template<class T>
-  void writeAttribute0(const T& data,
-		       const string& variable,
-		       const string& group="",
-		       const int& len=1);
-  
-  template<class T>
   int readAttribute0(T& data,
 		     const string& variable,
 		     const string& group="",
 		     const int& len=1);
-
-  virtual
-  void writeVariable( const string& variable,
-		      const string& group,
-		      const array_info_t& info,
-		      const void* data ) = 0;
-
-  virtual
-  void writeAttribute( const string& variable,
-		       const string& group,
-		       const identify_data_type& dataType,
-		       const void* data,
-		       const int& len=1 ) = 0;
-
-  virtual
-  bool readVariable( const string& variable,
-		     const string& group,
-		     const array_info_t& info,
-		     void* data ) = 0;
 
   virtual
   int readAttribute( const string& variable,
@@ -123,7 +89,52 @@ public:
 		     const identify_data_type& dataType,
 		     void* data,
 		     const int& len=1 ) = 0;
+  //@}
 
+  /// Methods to write attributes
+  //@{
+  template<class T>
+  void writeAttribute(const T& data,
+		      const string& variable,
+		      const string& group="",
+		      const int& len=1);
+  template<class T>
+  void writeAttribute0(const T& data,
+		       const string& variable,
+		       const string& group="",
+		       const int& len=1);
+
+  virtual
+  void writeAttribute( const string& variable,
+		       const string& group,
+		       const identify_data_type& dataType,
+		       const void* data,
+		       const int& len=1 ) = 0;
+  //@}
+  
+  /// Methods to read variables
+  //@{
+  virtual
+  bool readVariable( const string& variable,
+		     const string& group,
+		     const array_info_t& info,
+		     void* data ) = 0;
+  //@}
+
+  /// Methods to write variables
+  //@{
+  virtual
+  void writeVariable( const string& variable,
+		      const string& group,
+		      const array_info_t& info,
+		      const void* data ) = 0;
+  //@}
+
+
+  /** \brief Methods that are specific to the LFM.
+   *  \todo Refactor and remove these!
+   */
+  //@{
   virtual
   void getBcastArrayInfo( const string& group,
 			  array_info_t& info ) = 0;
@@ -135,7 +146,9 @@ public:
   virtual
   void putArrayInfo( const string& group,
 		     const array_info_t& info ) = 0;
+  //@}
 
+  /// Assert that "info" matches the group/variable stored in file.
   virtual
   bool verifyShape( const string& variable,
 		    const string& group,
@@ -147,13 +160,19 @@ public:
   virtual
   void close() = 0;
 
-  string extName() 
-  { return ext; }
+  /// \return file extension for the selected I/O format.
+  string getExtension() 
+  { return extension; }
 
+  /** 
+   * \todo { Choose a better name than "SuperSize".  Would you like those fries super sized? }
+   */
   int getSuperSize() 
   { return superSize; }
 
 #ifdef BUILD_WITH_APP
+  /// Methods to read/write A++ or P++ arrays.
+  //@{
   template<class PppArray> 
   array_info_t& fillInfo(const PppArray& data, 
 			 array_info_t& info, 
@@ -217,19 +236,25 @@ public:
   PppArray& readShape(PppArray& data,
 		      const string& group="",
 		      const bool& conformityCheck=true);
+
+  Partitioning_Type /*partitionAll,*/ partitionSuper;
+
+  //@}
 #endif//BUILD_WITH_APP
 
 protected:
 
-  string ext;
+  /// Extension for the selected I/O format.
+  string extension;
   
   int nProcs, rank, superSize;
   
-  bool c_order;
-
-#ifdef BUILD_WITH_APP  
-  Partitioning_Type /*partitionAll,*/ partitionSuper;
-#endif//BUILD_WITH_APP
+  /**
+   * How are arrays ordered?
+   * true: C style row-major ordering
+   * false: Fortran style column-major ordering.
+   */
+  bool isArrayCOrdered;
 };
 
 #include "IoTemplates.hpp"

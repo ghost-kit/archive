@@ -19,10 +19,10 @@ array_info_t& Io::fillInfo(const PppArray& data,
   
   for (int i=0; i<MAX_ARRAY_DIMENSION; i++){
     if (i<info.nDims && rank<superSize) {
-      info.globalDims[(c_order?info.nDims-i-1:i)] = data.getLength(i);
-      info.localDims[(c_order?info.nDims-i-1:i)] = data.getLocalLength(i);
-      info.offset[(c_order?info.nDims-i-1:i)] = data.getLocalBase(i) - data.getBase(i);
-      info.base[(c_order?info.nDims-i-1:i)] = data.getBase(i);
+      info.globalDims[(isArrayCOrdered?info.nDims-i-1:i)] = data.getLength(i);
+      info.localDims[(isArrayCOrdered?info.nDims-i-1:i)] = data.getLocalLength(i);
+      info.offset[(isArrayCOrdered?info.nDims-i-1:i)] = data.getLocalBase(i) - data.getBase(i);
+      info.base[(isArrayCOrdered?info.nDims-i-1:i)] = data.getBase(i);
     } else {
       info.globalDims[i] = info.localDims[i] = info.offset[i] = info.base[i] = 0;
     }

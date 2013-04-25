@@ -6,7 +6,7 @@
 
 /*----------------------------------------------------------------------------*/
 
-Io::Io(int superDomainSize) : superSize( superDomainSize ), c_order(true) {
+Io::Io(const int& superDomainSize) : superSize( superDomainSize ), isArrayCOrdered(true) {
 
 #ifdef BUILD_WITH_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -29,15 +29,15 @@ Io::Io(int superDomainSize) : superSize( superDomainSize ), c_order(true) {
 
 /*----------------------------------------------------------------------------*/
 
-Io* Io::extSelector(const string& ext, const int& superDomainSize) {
+Io* Io::extensionSelector(const string& extension, const int& superDomainSize) {
 
-  if (ext == "hdf" || ext == "dmp") 
+  if (extension == "hdf" || extension == "dmp") 
     return new Hdf(superDomainSize);
-  else if (ext == "hdf4") 
+  else if (extension == "hdf4") 
     return new Hdf4(superDomainSize);
-  else if (ext == "hdf5") 
+  else if (extension == "hdf5") 
     return new Hdf5(superDomainSize);
-  else if (ext == "phdf5") 
+  else if (extension == "phdf5") 
     return new PHdf5(superDomainSize);
   else
     return NULL;

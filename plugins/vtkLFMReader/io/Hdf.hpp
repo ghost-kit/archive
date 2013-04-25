@@ -8,7 +8,7 @@ class Hdf : public Hdf4 {
  public:
 
   Hdf(int superDomainSize);
-  Hdf(int superDomainSize,string some_ext);
+  Hdf(int superDomainSize, const string& extension);
 
   bool openRead(const string& filename);
   bool openWrite(const string& filename);

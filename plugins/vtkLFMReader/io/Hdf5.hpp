@@ -25,7 +25,7 @@ class Hdf5 : public Io {
   Hdf5(int superDomainSize);
   ~Hdf5();
 
-  bool enabled();
+  bool isEnabled();
 
   bool openRead(const string &filename);
   bool openWrite(const string &filename);

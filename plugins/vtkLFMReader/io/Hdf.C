@@ -4,14 +4,14 @@
 
 Hdf::Hdf(int superDomainSize) : Hdf4(1)
 {
-  ext = "hdf";
+  extension = "hdf";
 }
 
 /*----------------------------------------------------------------------------*/
 
-Hdf::Hdf(int superDomainSize, string some_ext) : Hdf4(1)
+Hdf::Hdf(int superDomainSize, const string& extension) : Hdf4(1)
 {
-  ext = some_ext;
+  this->extension = extension;
 }
 
 /*----------------------------------------------------------------------------*/

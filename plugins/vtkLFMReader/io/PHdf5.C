@@ -10,7 +10,7 @@ PHdf5::PHdf5(int superDomainSize) :
   Hdf5(1)
 #endif  
 {
-  ext = "phdf5";
+  extension = "phdf5";
 
 #ifdef NOH5MPIO
   if (rank==0) 

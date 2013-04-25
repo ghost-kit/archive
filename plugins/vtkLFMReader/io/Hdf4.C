@@ -13,7 +13,7 @@
 
 Hdf4::Hdf4(int superDomainSize) : Io(superDomainSize), sdId(-999)
 {
-  ext = "hdf4";
+  extension = "hdf4";
 }
 
 /*----------------------------------------------------------------------------*/
@@ -27,7 +27,7 @@ Hdf4::~Hdf4()
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf4::enabled()
+bool Hdf4::isEnabled()
 {
 #ifdef HAS_HDF4
   return true;

@@ -20,7 +20,7 @@ class Hdf4 : public Io {
   Hdf4(int superDomainSize);
   ~Hdf4();
 
-  bool enabled();
+  bool isEnabled();
 
   bool openRead(const string& filename);
   bool openWrite(const string& filename);

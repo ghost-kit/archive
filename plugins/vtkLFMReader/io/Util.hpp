@@ -7,6 +7,12 @@
 #include <typeinfo>
 #include <stdint.h>
 
+#ifndef MAX_ARRAY_DIMENSION
+#define MAX_ARRAY_DIMENSION 6
+#endif
+
+/*----------------------------------------------------------------------------*/
+
 #define ERROR(INFO) {							\
     string file( __FILE__ );						\
     string func( __func__ );						\
@@ -20,6 +26,8 @@
     cerr << " | " << INFO << "\n" << flush;				\
     exit(-1);								\
   }
+
+/*----------------------------------------------------------------------------*/
 
 enum identify_data_type {
   identify_unknown_t = 0,
@@ -71,6 +79,35 @@ static int identifySize(const identify_data_type& t) {
   }
 }
 
+/*----------------------------------------------------------------------------*/
+
+struct array_info_t {
+  int nDims, nVars, nAttr, bytes,
+    globalDims[MAX_ARRAY_DIMENSION], 
+    localDims[MAX_ARRAY_DIMENSION], 
+    offset[MAX_ARRAY_DIMENSION], 
+    base[MAX_ARRAY_DIMENSION];
+  identify_data_type dataType;
+};
+
+static void printArrayInfo( array_info_t& info ) {
+  std::cout << "   Dims: "  << info.nDims 
+	    << "   nVars: " << info.nVars 
+	    << "   nAttr: " << info.nAttr 
+	    << "   bytes: " << info.bytes 
+	    << "   type: "  << info.dataType << endl;
+  
+  for (int i=0; i<info.nDims; i++) {
+    std::cout << i << ")  " 
+	      << info.globalDims[i] << " : " 
+	      << info.localDims[i] << " : "
+	      << info.offset[i] << " : "
+	      << info.base[i] << endl;
+  }  
+}
+
+/*----------------------------------------------------------------------------*/
+
 template <class T>
 inline std::string toString (const T& t, const int width=0, const char fill=' ', const int precision=5 ) {
   std::stringstream ss;
@@ -78,10 +115,14 @@ inline std::string toString (const T& t, const int width=0, const char fill=' ',
   return ss.str();
 }
 
+/*----------------------------------------------------------------------------*/
+
 template <class T>
 inline std::string toStringSci (const T& t) {
   return toString(t,16,' ',7);
 }
+
+/*----------------------------------------------------------------------------*/
 
 #ifdef BUILD_WITH_APP
 template<class PppArray> void displayInfo( const PppArray& data ){
@@ -137,5 +178,7 @@ template<class PppArray> void displayInfo( const PppArray& data ){
   cout.flush();
 }
 #endif//BUILD_WITH_APP
+
+/*----------------------------------------------------------------------------*/
 
 #endif //UTIL_HPP__

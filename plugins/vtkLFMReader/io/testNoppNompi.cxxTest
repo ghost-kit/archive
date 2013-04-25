@@ -23,7 +23,7 @@ class TestNoppNompi : public CxxTest::TestSuite
 
   void writeFile(const string &extension)
   {
-    Io *io = Io::extSelector(extension);
+    Io *io = Io::extensionSelector(extension);
     if (io == NULL) {
       stringstream errorMessage;
       errorMessage << "ERROR:  Undefined I/O type ("<< extension << ").";
@@ -32,7 +32,7 @@ class TestNoppNompi : public CxxTest::TestSuite
       return;
     }
 
-    TS_ASSERT( io->enabled() );
+    TS_ASSERT( io->isEnabled() );
 
     string filename = baseFilename + string(".") + extension;
     TS_ASSERT( io->openWrite(filename) );
@@ -83,7 +83,7 @@ class TestNoppNompi : public CxxTest::TestSuite
 
   void readFile( const string &extension )
   {
-    Io *io = Io::extSelector(extension);
+    Io *io = Io::extensionSelector(extension);
     if (io == NULL) {
       stringstream errorMessage;
       errorMessage << "ERROR:  Undefined I/O type ("<< extension << ").";
@@ -92,7 +92,7 @@ class TestNoppNompi : public CxxTest::TestSuite
       return;
     }
 
-    TS_ASSERT( io->enabled() );
+    TS_ASSERT( io->isEnabled() );
 
     string filename = baseFilename + string(".") + extension;
     TS_ASSERT( io->openRead(filename) );

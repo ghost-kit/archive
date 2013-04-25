@@ -4,7 +4,7 @@
 
 Hdf5::Hdf5(int superDomainSize) : Io(superDomainSize), fileId(-999)
 {
-  ext = "hdf5";
+  extension = "hdf5";
   //hid_t error_stack;
   //H5Eset_auto(error_stack, NULL, NULL);
 #ifdef HAS_HDF5
@@ -25,7 +25,7 @@ Hdf5::~Hdf5()
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf5::enabled()
+bool Hdf5::isEnabled()
 {
 #ifdef HAS_HDF5
   return true;
