@@ -63,18 +63,22 @@ bool Hdf5::openWrite(const string& filename)
 /*----------------------------------------------------------------------------*/
 #ifdef HAS_HDF5
 
-void Hdf5::errorCheck(const int& status, const char* file, const int& line, const char* func)
+void Hdf5::errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status)
 {
   if (status < 0) {
-    pushError("unknown error",file,line,func);
+    string errorMessage;
+    errorMessage.append("Unknown error with \"");
+    errorMessage.append(string(line));
+    errorMessage.append("\"");
+    pushError(errorMessage,file,lineNumber,func);
   }
 }
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf5::pushError(const string &e, const char *file, const int &line, const char *func)
+void Hdf5::pushError(const string &e, const char const *file, const int &lineNumber, const char const *func)
 {
-  H5Epush(H5E_DEFAULT,file,func,line,classId,majorErrorId,minorErrorId,e.c_str());
+  H5Epush(H5E_DEFAULT,file,func,lineNumber,classId,majorErrorId,minorErrorId,e.c_str());
   H5Eprint(H5E_DEFAULT, stderr);
 #ifdef BUILD_WITH_MPI
   MPI_Abort(MPI_COMM_WORLD,-1);

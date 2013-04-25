@@ -11,7 +11,7 @@
 #include <map>
 #include <csignal>
 
-#define ERRORCHECK(STATUS) errorCheck(STATUS, __FILE__, __LINE__, __FUNCTION__)
+#define ERRORCHECK(STATUS) errorCheck(__FILE__, __LINE__, __FUNCTION__, #STATUS, STATUS)
 
 class Hdf4 : public Io {
 
@@ -115,7 +115,7 @@ class Hdf4 : public Io {
 
   int32 createGroup(const string& groupName);
 
-  void errorCheck(const int& status, const char* file, const int& line, const char* func);  
+  void errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status);
   
   bool open(const string& filename, const int32& accessMode);
 
