@@ -90,19 +90,19 @@ void Hdf5::pushError(const string &e, const char *file, const int &line, const c
 #endif
 /*----------------------------------------------------------------------------*/
 
-bool Hdf5::readVariable( const string& variable, 
+bool Hdf5::readVariable( const string& variableName, 
 			 const string& group,
 			 const array_info_t& info,
 			 void* data )
 {   
 #ifdef HAS_HDF5
-  if (!verifyShape(variable,group,info)) return false;
+  if (!verifyShape(variableName,group,info)) return false;
   if (rank < superSize) {
     hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
     ERRORCHECK(groupId);
-    hid_t datasetId = H5Dopen(groupId, variable.c_str(), H5P_DEFAULT);
+    hid_t datasetId = H5Dopen(groupId, variableName.c_str(), H5P_DEFAULT);
     ERRORCHECK(datasetId);
-    ERRORCHECK(H5Dread(datasetId, identifyH5Type(info.dataType,variable), H5S_ALL, H5S_ALL, H5P_DEFAULT, data));
+    ERRORCHECK(H5Dread(datasetId, identifyH5Type(info.dataType,variableName), H5S_ALL, H5S_ALL, H5P_DEFAULT, data));
     ERRORCHECK(H5Dclose(datasetId));
     if (group!="") ERRORCHECK(H5Oclose(groupId));
   }
@@ -114,7 +114,7 @@ bool Hdf5::readVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf5::readAttribute( const string& variable,
+bool Hdf5::readAttribute( const string& attributeName,
 			  void* data,
 			  int& dataLength,
 			  const identify_data_type& dataType,
@@ -129,8 +129,8 @@ bool Hdf5::readAttribute( const string& variable,
       hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
       if( ERRORCHECK(groupId) )
 	hasError = true;
-      if (H5Aexists(groupId,variable.c_str())) {
-	hid_t attributeId = H5Aopen(groupId,variable.c_str(),H5P_DEFAULT);      
+      if (H5Aexists(groupId,attributeName.c_str())) {
+	hid_t attributeId = H5Aopen(groupId,attributeName.c_str(),H5P_DEFAULT);      
 	if( ERRORCHECK(attributeId) )
 	  hasError = true;
 	hid_t spaceId = H5Aget_space(attributeId);
@@ -141,7 +141,7 @@ bool Hdf5::readAttribute( const string& variable,
 	  h5type = H5Aget_type(attributeId);
 	  nPoints = H5Tget_size(h5type);
 	} else {
-	  h5type = identifyH5Type(dataType,variable);
+	  h5type = identifyH5Type(dataType,attributeName);
 	  nPoints = H5Sget_select_npoints(spaceId);
 	}
 	dataLength = int(nPoints);
@@ -153,7 +153,7 @@ bool Hdf5::readAttribute( const string& variable,
 	  hasError = true;
       } else  {
 	hasError = true;
-	errorQueue.pushError("Attribute " + variable + " does not exist");
+	errorQueue.pushError("Attribute " + attributeName + " does not exist");
       }
       if (group!="") {
 	if( ERRORCHECK(H5Oclose(groupId)) )
@@ -168,7 +168,7 @@ bool Hdf5::readAttribute( const string& variable,
   if (hasError){
     stringstream ss;
     ss << __FUNCTION__ << " arguments:" << endl
-       << "\tvariable=" << variable << endl
+       << "\tattributeName=" << attributeName << endl
        << "\tdataLength=" << dataLength << endl
        << "\tdata_type=" << dataType2String(dataType) << endl
        << "\tgroup=" << group << endl;
@@ -187,7 +187,7 @@ bool Hdf5::readAttribute( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf5::writeVariable( const string& variable, 
+void Hdf5::writeVariable( const string& variableName, 
 			  const string& group,
 			  const array_info_t& info,
 			  const void* data )
@@ -198,22 +198,22 @@ void Hdf5::writeVariable( const string& variable,
     hid_t dataspaceId = H5Screate_simple(hsize_t(info.nDims), 
 					 hsize_convert(info.localDims,info.nDims,localDims), NULL);
     ERRORCHECK(dataspaceId);
-    hid_t datasetId = H5Dcreate(createGroup(group), variable.c_str(), 
-				identifyH5Type(info.dataType,variable), dataspaceId, 
+    hid_t datasetId = H5Dcreate(createGroup(group), variableName.c_str(), 
+				identifyH5Type(info.dataType,variableName), dataspaceId, 
 				H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
     ERRORCHECK(datasetId);
-    ERRORCHECK(H5Dwrite(datasetId, identifyH5Type(info.dataType,variable), 
+    ERRORCHECK(H5Dwrite(datasetId, identifyH5Type(info.dataType,variableName), 
 			H5S_ALL, H5S_ALL, H5P_DEFAULT, data));
     ERRORCHECK(H5Dclose(datasetId));
     ERRORCHECK(H5Sclose(dataspaceId));
-    putArrayInfo((group==""?variable:group+"/"+variable),info);
+    putArrayInfo((group==""?variableName:group+"/"+variableName),info);
   }
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf5::writeAttribute( const string& variable,
+bool Hdf5::writeAttribute( const string& variableName,
 			   const void* data,
 			   const int& dataLength ,
 			   const identify_data_type& dataType,
@@ -224,7 +224,7 @@ bool Hdf5::writeAttribute( const string& variable,
 
   if (rank < superSize){
     hsize_t hsize_len = hsize_t((dataLength>0?dataLength:1));
-    hid_t h5type = identifyH5Type(dataType,variable);
+    hid_t h5type = identifyH5Type(dataType,variableName);
     if (dataType == identify_string_t) {
       h5type = H5Tcopy(h5type);
       H5Tset_size(h5type,hsize_len);
@@ -233,7 +233,7 @@ bool Hdf5::writeAttribute( const string& variable,
     hid_t dataspaceId = H5Screate_simple(hsize_t(1), &hsize_len, NULL);
     if( ERRORCHECK(dataspaceId) )
       hasError = true;
-    hid_t attributeId = H5Acreate(createGroup(group), variable.c_str(), h5type, dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
+    hid_t attributeId = H5Acreate(createGroup(group), variableName.c_str(), h5type, dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
     if( ERRORCHECK(attributeId) )
       hasError = true;
     if( ERRORCHECK(H5Awrite(attributeId, h5type, data)) )
@@ -246,7 +246,7 @@ bool Hdf5::writeAttribute( const string& variable,
   if (hasError){
     stringstream ss;
     ss << __FUNCTION__ << " arguments:" << endl
-       << "\tvariable=" << variable << endl
+       << "\tvariableName=" << variableName << endl
        << "\tdataLength=" << dataLength << endl
        << "\tdata_type=" << dataType2String(dataType) << endl
        << "\tgroup=" << group << endl;
@@ -338,7 +338,7 @@ void Hdf5::putArrayInfo( const string& group,
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf5::verifyShape( const string& variable,
+bool Hdf5::verifyShape( const string& variableName,
 			const string& group,
 			const array_info_t& info ) {
 #ifdef HAS_HDF5
@@ -350,7 +350,7 @@ bool Hdf5::verifyShape( const string& variable,
     if (group=="" || H5Lexists(fileId,group.c_str(),H5P_DEFAULT)) {
       hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
       ERRORCHECK(groupId);
-      hid_t dataId = H5Dopen(groupId,variable.c_str(),H5P_DEFAULT);
+      hid_t dataId = H5Dopen(groupId,variableName.c_str(),H5P_DEFAULT);
       ERRORCHECK(dataId);
       hid_t spaceId = H5Dget_space(dataId);
       ERRORCHECK(spaceId);
@@ -368,7 +368,7 @@ bool Hdf5::verifyShape( const string& variable,
   }
 
   if (error) {
-    cout << "Var: " << variable << " group: " << group << " rank: " << rank 
+    cout << "Var: " << variableName << " group: " << group << " rank: " << rank 
 	 << " npoints: " << nPoints << " error: " << error << endl;
     if (rank<superSize) {    
       cout << " Dims for rank " << rank << endl;

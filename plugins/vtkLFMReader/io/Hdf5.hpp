@@ -32,23 +32,23 @@ class Hdf5 : public Io {
   bool openRead(const string &filename);
   bool openWrite(const string &filename);
 
-  bool readVariable( const string& variable, 
+  bool readVariable( const string& variableName, 
 		     const string& group,
 		     const array_info_t& info,
 		     void* data );
 
-  bool readAttribute( const string& variable,
+  bool readAttribute( const string& attributeName,
 		      void* data,
 		      int& dataLength, 
 		      const identify_data_type& dataType,
 		      const string& group);
   
-  void writeVariable( const string& variable, 
+  void writeVariable( const string& variableName, 
 		      const string& group,
 		      const array_info_t& info,
 		      const void* data );
 
-  bool writeAttribute( const string& variable,
+  bool writeAttribute( const string& attributeName,
 		       const void* data,
 		       const int& dataLength ,
 		       const identify_data_type& dataType,
@@ -64,7 +64,7 @@ class Hdf5 : public Io {
 		     const array_info_t& info );
 
 
-  bool verifyShape( const string& variable,
+  bool verifyShape( const string& variableName,
 		    const string& group,
 		    const array_info_t& info );
   

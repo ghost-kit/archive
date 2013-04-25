@@ -9,12 +9,12 @@ class PHdf5 : public Hdf5 {
 
   PHdf5(int superDomainSize);
 
-  bool readVariable( const string& variable, 
+  bool readVariable( const string& variableName, 
 		     const string& group,
 		     const array_info_t& info,
 		     void* data );
   
-  void writeVariable( const string& variable, 
+  void writeVariable( const string& variableName, 
 		      const string& group,
 		      const array_info_t& info,
 		      const void* data );
@@ -25,7 +25,7 @@ class PHdf5 : public Hdf5 {
   void putArrayInfo( const string& group,
 		     const array_info_t& info );
 
-  bool verifyShape( const string& variable,
+  bool verifyShape( const string& variableName,
 		    const string& group,
 		    const array_info_t& info );
 

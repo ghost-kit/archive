@@ -81,42 +81,44 @@ public:
    */
   //@{
   template<class T>
-  bool readAttribute(const string& variable,
+  bool readAttribute(const string& attributeName,
 		     T& data,
 		     int& dataLength,
 		     const string& group="");
   template<class T>
-  bool readAttribute(const string& variable,
+  bool readAttribute(const string& attributeName,
 		     T& data,
 		     const string& group="");
   template<class T>
-  bool readAttribute0(const string& variable,
+  bool readAttribute0(const string& attributeName,
 		      T& data,
 		      int& dataLength,
 		      const string& group="");
   virtual
-  bool readAttribute(const string& variable,
+  bool readAttribute(const string& attributeName,
 		     void *data,
 		     int& dataLength,
 		     const identify_data_type& dataType,
 		     const string& group="") = 0;
   //@}
 
-  /// Methods to write attributes
+  /** \brief Methods to write attributes
+   * \returns true if succeeded without error.
+   */
   //@{
   template<class T>
-  bool writeAttribute(const string& variable,
+  bool writeAttribute(const string& attributeName,
 		      const T& data,
 		      const int& dataLength,
 		      const string& group="");
   template<class T>
-  bool writeAttribute0(const string& variable,
+  bool writeAttribute0(const string& attributeName,
 		       const T& data,
 		       const int& dataLength,
 		       const string& group="");
 
   virtual
-  bool writeAttribute( const string& variable,
+  bool writeAttribute( const string& attributeName,
 		       const void* data,
 		       const int& dataLength,
 		       const identify_data_type& dataType,
@@ -126,7 +128,7 @@ public:
   /// Methods to read variables
   //@{
   virtual
-  bool readVariable( const string& variable,
+  bool readVariable( const string& variableName,
 		     const string& group,
 		     const array_info_t& info,
 		     void* data ) = 0;
@@ -135,7 +137,7 @@ public:
   /// Methods to write variables
   //@{
   virtual
-  void writeVariable( const string& variable,
+  void writeVariable( const string& variableName,
 		      const string& group,
 		      const array_info_t& info,
 		      const void* data ) = 0;
@@ -161,7 +163,7 @@ public:
 
   /// Assert that "info" matches the group/variable stored in file.
   virtual
-  bool verifyShape( const string& variable,
+  bool verifyShape( const string& variableName,
 		    const string& group,
 		    const array_info_t& info ) = 0;
 
@@ -191,50 +193,50 @@ public:
 
   template<class PppArray> 
   void writeVariable(const PppArray& data,
-		     const string& variable,
+		     const string& variableName,
 		     const string& group="",
 		     const int multiVarDims=0);
 
   template<class PppArray>
   void writeVarUnits(const PppArray& data,
-		     const string& variable,		     
+		     const string& variableName,		     
 		     const string &units="not set",
 		     const string& group="");
 
   template<class PppArray>
   void writeMultiVar(const PppArray& data,
-		     const string& variable,
+		     const string& variableName,
 		     const string& group="",
 		     const int multiVarDims=4);
 
   template<class PppArray>
   void writeMultiVarUnits(const PppArray& data,
-			  const string& variable,
+			  const string& variableName,
 			  const string &units="not set",
 			  const string& group="",
 			  const int multiVarDims=4);
 
   template<class PppArray>
   void readVariable(PppArray& data,
-		    const string& variable,
+		    const string& variableName,
 		    const string& group="",
 		    const int multiVarDims=0);
 
   template<class PppArray>
   void readVarUnits(PppArray& data,
-		    const string& variable,
+		    const string& variableName,
 		    string& units,
 		    const string& group="");
 
   template<class PppArray>
   void readMultiVar(PppArray& data,
-		    const string& variable,
+		    const string& variableName,
 		    const string& group="",
 		    const int multiVarDims=4);
 
   template<class PppArray>
   void readMultiVarUnits(PppArray& data,
-			 const string& variable,
+			 const string& variableName,
 			 string& units,
 			 const string& group="",
 			 const int multiVarDims=4);

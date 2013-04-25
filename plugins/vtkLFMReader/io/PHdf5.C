@@ -45,7 +45,7 @@ void PHdf5::setupComm()
 
 /*----------------------------------------------------------------------------*/
 
-bool PHdf5::readVariable( const string& variable, 
+bool PHdf5::readVariable( const string& variableName, 
 			  const string& group,
 			  const array_info_t& info,
 			  void* data ) 
@@ -54,12 +54,12 @@ bool PHdf5::readVariable( const string& variable,
   hsize_t ones[MAX_ARRAY_DIMENSION], dims[MAX_ARRAY_DIMENSION], offset[MAX_ARRAY_DIMENSION];
   for (int i=0; i<MAX_ARRAY_DIMENSION; i++) ones[i] = 1;
 
-  if (!verifyShape(variable,group,info)) return false;
+  if (!verifyShape(variableName,group,info)) return false;
 
   if (rank < superSize) {
     hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
     ERRORCHECK(groupId);
-    hid_t dataId = H5Dopen(groupId, variable.c_str(), H5P_DEFAULT);  
+    hid_t dataId = H5Dopen(groupId, variableName.c_str(), H5P_DEFAULT);  
     ERRORCHECK(dataId);
 
     hid_t spaceId = H5Dget_space(dataId);
@@ -78,7 +78,7 @@ bool PHdf5::readVariable( const string& variable,
     } else
       plistId = H5P_DEFAULT;
 
-    ERRORCHECK( H5Dread(dataId, identifyH5Type(info.dataType,variable), memSpace, spaceId, plistId, data) );
+    ERRORCHECK( H5Dread(dataId, identifyH5Type(info.dataType,variableName), memSpace, spaceId, plistId, data) );
     
     H5Sclose(memSpace);
     H5Sclose(spaceId);
@@ -97,7 +97,7 @@ bool PHdf5::readVariable( const string& variable,
   
 /*----------------------------------------------------------------------------*/
 
-void PHdf5::writeVariable( const string& variable, 
+void PHdf5::writeVariable( const string& variableName, 
 			   const string& group,
 			   const array_info_t& info,
 			   const void* data ) 
@@ -117,7 +117,7 @@ void PHdf5::writeVariable( const string& variable,
     hid_t dataId = H5Pcreate(H5P_DATASET_CREATE);
     //H5Pset_chunk(dataId, info.nDims, localDims);
 
-    hid_t dataSet = H5Dcreate(createGroup(group), variable.c_str(), identifyH5Type(info.dataType,variable),
+    hid_t dataSet = H5Dcreate(createGroup(group), variableName.c_str(), identifyH5Type(info.dataType,variableName),
 			      fileSpace, H5P_DEFAULT, dataId, H5P_DEFAULT);
     ERRORCHECK(dataSet);
 
@@ -134,7 +134,7 @@ void PHdf5::writeVariable( const string& variable,
     } else
       plistId = H5P_DEFAULT;
     
-    ERRORCHECK( H5Dwrite(dataSet, identifyH5Type(info.dataType,variable), memSpace, fileSpace, plistId, data) );
+    ERRORCHECK( H5Dwrite(dataSet, identifyH5Type(info.dataType,variableName), memSpace, fileSpace, plistId, data) );
     
     if (collectiveWrite)
       H5Pclose(plistId);
@@ -143,7 +143,7 @@ void PHdf5::writeVariable( const string& variable,
     H5Dclose(dataSet);
     H5Pclose(dataId);
     H5Sclose(fileSpace);
-    putArrayInfo((group==""?variable:group+"/"+variable),info);
+    putArrayInfo((group==""?variableName:group+"/"+variableName),info);
   }
 #endif  
 }
@@ -181,7 +181,7 @@ void PHdf5::putArrayInfo( const string& group,
 
 /*----------------------------------------------------------------------------*/
 
-bool PHdf5::verifyShape( const string& variable,
+bool PHdf5::verifyShape( const string& variableName,
 			 const string& group,
 			 const array_info_t& info ) 
 {
@@ -194,7 +194,7 @@ bool PHdf5::verifyShape( const string& variable,
     if (group=="" || H5Lexists(fileId,group.c_str(),H5P_DEFAULT)) {
       hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
       ERRORCHECK(groupId);
-      hid_t dataId = H5Dopen(groupId,variable.c_str(),H5P_DEFAULT);
+      hid_t dataId = H5Dopen(groupId,variableName.c_str(),H5P_DEFAULT);
       ERRORCHECK(dataId);
       hid_t spaceId = H5Dget_space(dataId);
       ERRORCHECK(spaceId);
@@ -212,7 +212,7 @@ bool PHdf5::verifyShape( const string& variable,
   }
 
   if (error) {
-    cout << "Var: " << variable << " group: " << group << " rank: " << rank 
+    cout << "Var: " << variableName << " group: " << group << " rank: " << rank 
 	 << " npoints: " << nPoints << " error: " << error << endl;
     if (rank<superSize) {    
       cout << " Dims for rank " << rank << endl;

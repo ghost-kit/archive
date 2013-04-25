@@ -46,7 +46,7 @@ void Io::writeShape(const PppArray& data,
 
 template<class PppArray>
 void Io::writeVariable(const PppArray& data, 
-		       const string& variable, 
+		       const string& variableName, 
 		       const string& group, 
 		       const int multiVarDims) {
   array_info_t info;
@@ -60,12 +60,12 @@ void Io::writeVariable(const PppArray& data,
   for (int i=0; i<info.nDims; i++) offset *= info.localDims[i];
   
   for (int i=0; i<info.nVars; i++) {
-    writeVariable(variable+(i==0?"":"."+toString(i)),group,info,
+    writeVariable(variableName+(i==0?"":"."+toString(i)),group,info,
 		  tmpArray.getLocalArray().getDataPointer()+(i*offset));
   }
 
   if (multiVarDims)
-    writeAttribute("nVars", info.nVars, 1(group==""?variable:group+"/"+variable));
+    writeAttribute("nVars", info.nVars, 1(group==""?variableName:group+"/"+variableName));
 
 }
 
@@ -73,33 +73,33 @@ void Io::writeVariable(const PppArray& data,
 
 template<class PppArray>
 void Io::writeVarUnits(const PppArray& data, 
-		       const string& variable, 
+		       const string& variableName, 
 		       const string& units, 
 		       const string& group) {
-  writeVariable(data,variable,group);
-  writeAttribute("units",units, units.length(), (group==""?variable:group+"/"+variable));
+  writeVariable(data,variableName,group);
+  writeAttribute("units",units, units.length(), (group==""?variableName:group+"/"+variableName));
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class PppArray>
 void Io::writeMultiVar(const PppArray& data, 
-		       const string& variable, 
+		       const string& variableName, 
 		       const string& group,
 		       const int multiVarDims) {
-  writeVariable(data,variable,group,multiVarDims);
+  writeVariable(data,variableName,group,multiVarDims);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class PppArray>
 void Io::writeMultiVarUnits(const PppArray& data, 
-			    const string& variable, 
+			    const string& variableName, 
 			    const string& units, 
 			    const string& group,
 			    const int multiVarDims) {
-  writeVariable(data,variable,group,multiVarDims);
-  writeAttribute("units",units, units.length(), (group==""?variable:group+"/"+variable));
+  writeVariable(data,variableName,group,multiVarDims);
+  writeAttribute("units",units, units.length(), (group==""?variableName:group+"/"+variableName));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -168,7 +168,7 @@ PppArray& Io::readShape(PppArray& data,
 
 template<class PppArray>
 void Io::readVariable(PppArray& data, 
-		      const string& variable, 
+		      const string& variableName, 
 		      const string& group, 
 		      const int multiVarDims) {
 
@@ -192,16 +192,16 @@ void Io::readVariable(PppArray& data,
 
   if (rank==0 && nVars > info.nVars) {
     cerr << rank << ": more multi-vars in file than memory available for variable " 
-	 << variable << " : " << nVars << " > " << info.nVars << endl;
+	 << variableName << " : " << nVars << " > " << info.nVars << endl;
     MPI_Abort(MPI_COMM_WORLD,-1);
   }
 
   for (int i=0; i<nVars; i++) {
-    if (!readVariable(variable+(i==0?"":"."+toString(i)),group,info,
+    if (!readVariable(variableName+(i==0?"":"."+toString(i)),group,info,
 		      tmpArray.getLocalArray().getDataPointer()+(i*offset))) {      
       Communication_Manager::Sync();
       usleep(10000*rank);
-      cerr << rank << ": shape for " << variable << " does not match?!" << endl;
+      cerr << rank << ": shape for " << variableName << " does not match?!" << endl;
       MPI_Abort(MPI_COMM_WORLD,-1);
     }
   }
@@ -216,10 +216,10 @@ void Io::readVariable(PppArray& data,
 
 template<class PppArray>
 void Io::readVarUnits(PppArray& data, 
-		      const string& variable, 
+		      const string& variableName, 
 		      string& units, 
 		      const string& group) {
-  readVariable(data,variable,group);
+  readVariable(data,variableName,group);
   int nUnits;
   readAttribute("units",units, nUnits, group);
 }
@@ -228,21 +228,21 @@ void Io::readVarUnits(PppArray& data,
 
 template<class PppArray>
 void Io::readMultiVar(PppArray& data, 
-		      const string& variable, 
+		      const string& variableName, 
 		      const string& group,
 		      const int multiVarDims) {
-  readVariable(data,variable,group,multiVarDims);
+  readVariable(data,variableName,group,multiVarDims);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class PppArray>
 void Io::readMultiVarUnits(PppArray& data, 
-			   const string& variable, 
+			   const string& variableName, 
 			   string& units, 
 			   const string& group,
 			   const int multiVarDims) {
-  readVariable(data,variable,group,multiVarDims);
+  readVariable(data,variableName,group,multiVarDims);
   int nUnits;
   readAttribute("units",units, nUnits, group);
 }
@@ -252,73 +252,73 @@ void Io::readMultiVarUnits(PppArray& data,
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::writeAttribute(const string& variable, 
+bool Io::writeAttribute(const string& attributeName, 
 			const T& data, 
 			const int& dataLength,
 			const string& group) {
-  return writeAttribute(variable,&data,dataLength,identify(data),group);
+  return writeAttribute(attributeName,&data,dataLength,identify(data),group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::writeAttribute0(const string& variable,
+bool Io::writeAttribute0(const string& attributeName,
 			 const T& data,
 			 const int& dataLength,
 			 const string& group) {
-  return (rank==0?writeAttribute(variable,data,dataLength,group):(void)0);
+  return (rank==0?writeAttribute(attributeName,data,dataLength,group):(void)0);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<> inline
-bool Io::writeAttribute<string>(const string& variable, 
+bool Io::writeAttribute<string>(const string& attributeName, 
 				const string& data,
 				const int& dataLength,
 				const string& group) {
-  return writeAttribute(variable,data.c_str(), data.length(), identify(data), group);
+  return writeAttribute(attributeName,data.c_str(), data.length(), identify(data), group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::readAttribute(const string& variable, 
+bool Io::readAttribute(const string& attributeName, 
 		       T& data, 
 		       int& dataLength,
 		       const string& group) {
-  return readAttribute(variable,&data,dataLength,identify(data),group);
+  return readAttribute(attributeName,&data,dataLength,identify(data),group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::readAttribute(const string& variable, 
+bool Io::readAttribute(const string& attributeName, 
 		       T& data, 
 		       const string& group) {
   int dataLength;
-  return readAttribute(variable,data,dataLength,group);
+  return readAttribute(attributeName,data,dataLength,group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::readAttribute0(const string& variable, 
+bool Io::readAttribute0(const string& attributeName, 
 			T& data, 		       
 			int& dataLength,
 			const string& group){  
-  return (rank==0?readAttribute(variable,data,dataLength,group):0);
+  return (rank==0?readAttribute(attributeName,data,dataLength,group):0);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<> inline
-bool Io::readAttribute<string>(const string& variable,
+bool Io::readAttribute<string>(const string& attributeName,
 			       string& data, 
 			       int& dataLength,
 			       const string& group) {
   static const int MAX_STR_LEN = 2048;
   static char str[MAX_STR_LEN] = { 0 };
-  readAttribute(variable, str, dataLength, identify(data), group);
+  readAttribute(attributeName, str, dataLength, identify(data), group);
   if (dataLength>0) data = str;
   return true;
 }

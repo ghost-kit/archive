@@ -81,7 +81,7 @@ bool Hdf4::errorCheck(const int &status, const char *file, const int &line, cons
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf4::readVariable( const string& variable, 
+bool Hdf4::readVariable( const string& variableName, 
 			 const string& group,
 			 const array_info_t& info,
 			 void* data )
@@ -89,14 +89,14 @@ bool Hdf4::readVariable( const string& variable,
 #ifdef HAS_HDF4
   int32 i, indexStart[MAX_VAR_DIMS], dims[MAX_ARRAY_DIMENSION];
 
-  //cout << "Reading " << variable << " in group " << group << endl;
+  //cout << "Reading " << variableName << " in group " << group << endl;
 
   for(i=0;i<MAX_VAR_DIMS;i++) indexStart[i] = 0;
 
-  if (!verifyShape(variable,group,info)) return false;
+  if (!verifyShape(variableName,group,info)) return false;
 
   if (rank < superSize){    
-    string id = (group==""?variable:group+"/"+variable);
+    string id = (group==""?variableName:group+"/"+variableName);
     int varId = SDnametoindex(sdId,id.c_str());
     ERRORCHECK(varId);
     int sdsId = SDselect(sdId,varId);
@@ -112,7 +112,7 @@ bool Hdf4::readVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf4::readAttribute( const string& variable,
+bool Hdf4::readAttribute( const string& attributeName,
 			  void* data,
 			  int& dataLength, 
 			  const identify_data_type& dataType,
@@ -126,12 +126,12 @@ bool Hdf4::readAttribute( const string& variable,
     int32 groupId = openGroup(group);
     if( ERRORCHECK(groupId) )
       hasError = true;
-    int32 attrIndx = SDfindattr(groupId,variable.c_str());
+    int32 attrIndx = SDfindattr(groupId,attributeName.c_str());
     if (attrIndx==-1) return -1;
     int32 type;
     if (ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&dataLength)))
       hasError = true;
-    if (ERRORCHECK(( identifyH4Type(dataType,variable) == type ? 1 : -1 )))
+    if (ERRORCHECK(( identifyH4Type(dataType,attributeName) == type ? 1 : -1 )))
       hasError = true;
     if (ERRORCHECK(SDreadattr(groupId,attrIndx,data)))
       hasError = true;
@@ -139,7 +139,7 @@ bool Hdf4::readAttribute( const string& variable,
     if (hasError){
       stringstream ss;
       ss << __FUNCTION__ << " arguments:" << endl
-	 << "\tvariable=" << variable << endl
+	 << "\tattributeName=" << attributeName << endl
 	 << "\tdataLength=" << dataLength << endl
 	 << "\tdata_type=" << dataType2String(dataType) << endl
 	 << "\tgroup=" << group << endl;
@@ -157,7 +157,7 @@ bool Hdf4::readAttribute( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf4::writeVariable( const string& variable, 
+void Hdf4::writeVariable( const string& variableName, 
 			  const string& group,
 			  const array_info_t& info,
 			  const void* data )
@@ -167,8 +167,8 @@ void Hdf4::writeVariable( const string& variable,
   for(i=0;i<MAX_VAR_DIMS;i++) indexStart[i] = 0;
 
   if (rank < superSize){
-    string id = (group==""?variable:group+"/"+variable);
-    int32 varId = SDcreate(sdId, id.c_str(), identifyH4Type(info.dataType,variable), 
+    string id = (group==""?variableName:group+"/"+variableName);
+    int32 varId = SDcreate(sdId, id.c_str(), identifyH4Type(info.dataType,variableName), 
 			   info.nDims, int32_convert(info.localDims,info.nDims,dims));
     ERRORCHECK(varId);
     ERRORCHECK(SDwritedata(varId, indexStart, NULL, 
@@ -181,7 +181,7 @@ void Hdf4::writeVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf4::writeAttribute( const string& variable,
+bool Hdf4::writeAttribute( const string& attributeName,
 			   const void* data,
 			   const int& dataLength,
 			   const identify_data_type& dataType,
@@ -192,14 +192,14 @@ bool Hdf4::writeAttribute( const string& variable,
 
   if (rank < superSize && dataLength>0) {
     int32 groupId = createGroup(group);
-    if( ERRORCHECK(SDsetattr(groupId,variable.c_str(),identifyH4Type(dataType,variable),dataLength,data)) )
+    if( ERRORCHECK(SDsetattr(groupId,attributeName.c_str(),identifyH4Type(dataType,attributeName),dataLength,data)) )
       hasError = true;
   }
 
   if (hasError){
     stringstream ss;
     ss << __FUNCTION__ << " arguments:" << endl
-       << "\tvariable=" << variable << endl
+       << "\tattributeName=" << attributeName << endl
        << "\tdataLength=" << dataLength << endl
        << "\tdata_type=" << dataType2String(dataType) << endl
        << "\tgroup=" << group << endl;
@@ -286,17 +286,17 @@ void Hdf4::putArrayInfo( const string& group,
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf4::verifyShape( const string& variable,
+bool Hdf4::verifyShape( const string& variableName,
 			const string& group,
 			const array_info_t& info ) {
 #ifdef HAS_HDF4
   int nPoints=0, dims[MAX_VAR_DIMS], dataType, nAttrs, error=0;
 
   if (rank < superSize){
-    string id = (group==""?variable:group+"/"+variable);
+    string id = (group==""?variableName:group+"/"+variableName);
     int32 varId = SDnametoindex( sdId, id.c_str() );
     if (varId<0)
-      cout << "Variable " << variable << " not found." << endl;
+      cout << "Variable " << variableName << " not found." << endl;
     ERRORCHECK(varId);
     int32 sdsId = SDselect( sdId, varId );
     ERRORCHECK(sdsId);
@@ -311,7 +311,7 @@ bool Hdf4::verifyShape( const string& variable,
   }
 
   if (error) {
-    cout << "Var: " << variable << " group: " << group << " rank: " << rank 
+    cout << "Var: " << variableName << " group: " << group << " rank: " << rank 
 	 << " npoints: " << nPoints << " error: " << error << endl;
     if (rank<superSize) {    
       cout << " Dims for rank " << rank << endl;
