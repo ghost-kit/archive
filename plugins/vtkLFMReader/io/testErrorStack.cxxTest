@@ -1,0 +1,61 @@
+//-*- mode: c++ -*-
+#ifndef __NOPPNOMPI_TEST_H__
+#define __NOPPNOMPI_TEST_H__
+
+#include "ErrorStack.h"
+
+#include <string>
+
+using namespace std;
+
+class TestErrorStack : public CxxTest::TestSuite
+{
+
+public:
+
+  void testPushString(void)
+  {
+    ErrorStack e;
+    e.pushError("This is a string");
+    TS_ASSERT_EQUALS( e.getMessages(), "This is a string\n" );
+  }
+
+  void testPushStringStream(void)
+  {
+    ErrorStack e;
+    e.pushError( ostringstream().flush() << "This is from a stringstream");
+    TS_ASSERT_EQUALS( e.getMessages(), "This is from a stringstream\n" );
+  }
+
+  void testGetMessagesAsString( void )
+  {
+    ErrorStack e;
+    e.pushError("Error line 1");
+    e.pushError("Error line 2");
+
+    string messages = e.getMessages();
+    
+    TS_ASSERT_EQUALS( messages, "Error line 2\nError line 1\n" );
+  }
+
+  void testPrintTo_cout( void )
+  {
+    ErrorStack e;
+    e.pushError("Message 1 to cout");
+    e.pushError("Message 2 to cout");
+
+    //e.print(cout);
+  }
+
+  void testPrintTo_cerr( void )
+  {
+    ErrorStack e;
+    e.pushError("Message 1 to cerr");
+    e.pushError("Message 2 to cerr");
+
+    //e.print(cerr);
+  }
+
+};
+
+#endif
