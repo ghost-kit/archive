@@ -48,11 +48,11 @@ class Hdf5 : public Io {
 		      const array_info_t& info,
 		      const void* data );
 
-  void writeAttribute( const string& variable,
-		       const string& group,
-		       const identify_data_type& dataType,
+  bool writeAttribute( const string& variable,
 		       const void* data,
-		       const int& len=1 );
+		       const int& dataLength ,
+		       const identify_data_type& dataType,
+		       const string& group);
 
   void getBcastArrayInfo( const string& group,
 			  array_info_t& info );

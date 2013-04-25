@@ -65,7 +65,7 @@ void Io::writeVariable(const PppArray& data,
   }
 
   if (multiVarDims)
-    writeAttribute(info.nVars,"nVars",(group==""?variable:group+"/"+variable));
+    writeAttribute("nVars", info.nVars, 1(group==""?variable:group+"/"+variable));
 
 }
 
@@ -77,7 +77,7 @@ void Io::writeVarUnits(const PppArray& data,
 		       const string& units, 
 		       const string& group) {
   writeVariable(data,variable,group);
-  writeAttribute(units,"units",(group==""?variable:group+"/"+variable));
+  writeAttribute("units",units, units.length(), (group==""?variable:group+"/"+variable));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -99,7 +99,7 @@ void Io::writeMultiVarUnits(const PppArray& data,
 			    const string& group,
 			    const int multiVarDims) {
   writeVariable(data,variable,group,multiVarDims);
-  writeAttribute(units,"units",(group==""?variable:group+"/"+variable));
+  writeAttribute("units",units, units.length(), (group==""?variable:group+"/"+variable));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -252,32 +252,31 @@ void Io::readMultiVarUnits(PppArray& data,
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-void Io::writeAttribute(const T& data, 
-			const string& variable, 
-			const string& group, 
-			const int& len) {
-  return writeAttribute(variable,group,identify(data),&data,len);
+bool Io::writeAttribute(const string& variable, 
+			const T& data, 
+			const int& dataLength,
+			const string& group) {
+  return writeAttribute(variable,&data,dataLength,identify(data),group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-void Io::writeAttribute0(const T& data, 
-			 const string& variable, 
-			 const string& group, 
-			 const int& len) {
-  return (rank==0?writeAttribute(data,variable,group,len):(void)0);
+bool Io::writeAttribute0(const string& variable,
+			 const T& data,
+			 const int& dataLength,
+			 const string& group) {
+  return (rank==0?writeAttribute(variable,data,dataLength,group):(void)0);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<> inline
-void Io::writeAttribute<string>(const string& data, 
-				const string& variable, 
-				const string& group, 
-				const int& len) {
-  return writeAttribute(variable,group,identify(data),data.c_str(),
-			(len==1?data.length():len));
+bool Io::writeAttribute<string>(const string& variable, 
+				const string& data,
+				const int& dataLength,
+				const string& group) {
+  return writeAttribute(variable,data.c_str(), data.length(), identify(data), group);
 }
 
 /*----------------------------------------------------------------------------*/

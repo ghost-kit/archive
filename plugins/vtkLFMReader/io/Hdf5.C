@@ -213,15 +213,17 @@ void Hdf5::writeVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf5::writeAttribute( const string& variable,
-			   const string& group,
-			   const identify_data_type& dataType,
+bool Hdf5::writeAttribute( const string& variable,
 			   const void* data,
-			   const int& len ) 
+			   const int& dataLength ,
+			   const identify_data_type& dataType,
+			   const string& group)
 {
 #ifdef HAS_HDF5
+  bool hasError = false;
+
   if (rank < superSize){
-    hsize_t hsize_len = hsize_t((len>0?len:1));
+    hsize_t hsize_len = hsize_t((dataLength>0?dataLength:1));
     hid_t h5type = identifyH5Type(dataType,variable);
     if (dataType == identify_string_t) {
       h5type = H5Tcopy(h5type);
@@ -229,13 +231,34 @@ void Hdf5::writeAttribute( const string& variable,
       hsize_len = 1;
     }
     hid_t dataspaceId = H5Screate_simple(hsize_t(1), &hsize_len, NULL);
-    ERRORCHECK(dataspaceId);
+    if( ERRORCHECK(dataspaceId) )
+      hasError = true;
     hid_t attributeId = H5Acreate(createGroup(group), variable.c_str(), h5type, dataspaceId, H5P_DEFAULT, H5P_DEFAULT);
-    ERRORCHECK(attributeId);
-    ERRORCHECK(H5Awrite(attributeId, h5type, data));
-    ERRORCHECK(H5Aclose(attributeId));
-    ERRORCHECK(H5Sclose(dataspaceId));
+    if( ERRORCHECK(attributeId) )
+      hasError = true;
+    if( ERRORCHECK(H5Awrite(attributeId, h5type, data)) )
+      hasError = true;
+    if( ERRORCHECK(H5Aclose(attributeId)) )
+      hasError = true;
+    if( ERRORCHECK(H5Sclose(dataspaceId)) )
+      hasError = true;
   }
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariable=" << variable << endl
+       << "\tdataLength=" << dataLength << endl
+       << "\tdata_type=" << dataType2String(dataType) << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+
+  return (not hasError);
+#else
+  errorQueue.pushError("HAS_HDF5 is undefined");
+  return true;
 #endif
 }
 
@@ -306,10 +329,10 @@ void Hdf5::putArrayInfo( const string& group,
 			 const array_info_t& info ) {
 #ifdef HAS_HDF5
   //if (rank==0)
-  Io::writeAttribute(info.base[0],"base",group,info.nDims);
-  Io::writeAttribute(info.globalDims[0],"globalDims",group,info.nDims);
-  Io::writeAttribute(info.offset[0],"offset",group,info.nDims);
-  //Io::writeAttribute(info.localDims[0],"localDims",group,info.nDims);
+  Io::writeAttribute("base",info.base[0],info.nDims,group);
+  Io::writeAttribute("globalDims",info.globalDims[0],info.nDims,group);
+  Io::writeAttribute("offset",info.offset[0],info.nDims,group);
+  //Io::writeAttribute("localDims",info.localDims[0],info.nDims,group);
 #endif
 }
 
@@ -434,8 +457,8 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
       if (fileId == -1) fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
     } else if (accessMode == H5F_ACC_TRUNC) {
       if (fileId == -1) fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, H5P_DEFAULT);
-      Io::writeAttribute(superSize,"superSize");
-      Io::writeAttribute(rank,"rank");
+      Io::writeAttribute("superSize",superSize,1);
+      Io::writeAttribute("rank",rank,1);
     } else {
       cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
 	   << "Did not understand file access mode" << endl;

@@ -38,11 +38,11 @@ class TestNoppNompi : public CxxTest::TestSuite
     TS_ASSERT( io->openWrite(filename) );
 
     string swQuote = "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects.";
-    io->writeAttribute(swQuote, "Star Wars");
+    TS_ASSERT( io->writeAttribute("Star Wars",swQuote, swQuote.length()) );
 
-    io->writeAttribute((double) 3.14159265358979311599796346854418516159057617187500000000000000000, "dPi");
+    TS_ASSERT( io->writeAttribute("dPi", (double) 3.14159265358979311599796346854418516159057617187500000000000000000, 1) );
 
-    io->writeAttribute((float) 3.1415926, "fPi");
+    TS_ASSERT( io->writeAttribute("fPi", (float) 3.1415926, 1) );
 
     double data8byte[10] = { 3.1415926535897931, 3, 1, 4, 1, 5, 9, 2, 6, 5 };    
     array_info_t data8byteInfo;

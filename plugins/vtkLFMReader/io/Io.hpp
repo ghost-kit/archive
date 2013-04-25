@@ -93,7 +93,7 @@ public:
   bool readAttribute0(const string& variable,
 		      T& data,
 		      int& dataLength,
-		     const string& group="");
+		      const string& group="");
   virtual
   bool readAttribute(const string& variable,
 		     void *data,
@@ -105,22 +105,22 @@ public:
   /// Methods to write attributes
   //@{
   template<class T>
-  void writeAttribute(const T& data,
-		      const string& variable,
-		      const string& group="",
-		      const int& len=1);
+  bool writeAttribute(const string& variable,
+		      const T& data,
+		      const int& dataLength,
+		      const string& group="");
   template<class T>
-  void writeAttribute0(const T& data,
-		       const string& variable,
-		       const string& group="",
-		       const int& len=1);
+  bool writeAttribute0(const string& variable,
+		       const T& data,
+		       const int& dataLength,
+		       const string& group="");
 
   virtual
-  void writeAttribute( const string& variable,
-		       const string& group,
-		       const identify_data_type& dataType,
+  bool writeAttribute( const string& variable,
 		       const void* data,
-		       const int& len=1 ) = 0;
+		       const int& dataLength,
+		       const identify_data_type& dataType,
+		       const string& group) = 0;
   //@}
   
   /// Methods to read variables

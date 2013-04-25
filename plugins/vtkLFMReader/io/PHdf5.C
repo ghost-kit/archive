@@ -174,8 +174,8 @@ void PHdf5::putArrayInfo( const string& group,
 			  const array_info_t& info ) 
 {
 #ifdef HAS_PHDF5
-  writeAttribute("globalDims",group,identify(info.globalDims[0]),info.globalDims,info.nDims);
-  writeAttribute("base",group,identify(info.base[0]),info.base,info.nDims);
+  writeAttribute("globalDims",info.globalDims,info.nDims,identify(info.globalDims[0]),group);
+  writeAttribute("base",info.base,info.nDims,identify(info.base[0]),group);
 #endif
 }
 
@@ -271,8 +271,8 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
       fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, plistId);
       ERRORCHECK( fileId );
       H5Pclose(plistId);
-      Io::writeAttribute(superSize,"superSize");
-      Io::writeAttribute(rank,"rank");
+      Io::writeAttribute("superSize",superSize,1);
+      Io::writeAttribute("rank",rank,1);
     } else {
       cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
 	   << "Did not understand file access mode" << endl;

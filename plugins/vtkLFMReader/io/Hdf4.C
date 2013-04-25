@@ -181,18 +181,36 @@ void Hdf4::writeVariable( const string& variable,
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf4::writeAttribute( const string& variable,
-			   const string& group,
-			   const identify_data_type& dataType,
+bool Hdf4::writeAttribute( const string& variable,
 			   const void* data,
-			   const int& len ) 
+			   const int& dataLength,
+			   const identify_data_type& dataType,
+			   const string& group)
 {
 #ifdef HAS_HDF4
-  if (rank < superSize && len>0) {
+  bool hasError = false;
+
+  if (rank < superSize && dataLength>0) {
     int32 groupId = createGroup(group);
-    ERRORCHECK(SDsetattr(groupId,variable.c_str(),identifyH4Type(dataType,variable),len,data));
+    if( ERRORCHECK(SDsetattr(groupId,variable.c_str(),identifyH4Type(dataType,variable),dataLength,data)) )
+      hasError = true;
   }
+
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << " arguments:" << endl
+       << "\tvariable=" << variable << endl
+       << "\tdataLength=" << dataLength << endl
+       << "\tdata_type=" << dataType2String(dataType) << endl
+       << "\tgroup=" << group << endl;
+    
+    errorQueue.pushError(ss);
+    //errorQueue.print(cerr);
+  }
+  return (not hasError);
 #endif
+  errorQueue.pushError("HAS_HDF4 is undefined");
+  return true;
 }
 
 
@@ -259,10 +277,10 @@ void Hdf4::putArrayInfo( const string& group,
 			 const array_info_t& info ) {
 #ifdef HAS_HDF4
   //if (rank==0)
-  Io::writeAttribute(info.base[0],"base",group,info.nDims);
-  Io::writeAttribute(info.globalDims[0],"globalDims",group,info.nDims);
-  Io::writeAttribute(info.offset[0],"offset",group,info.nDims);
-  //Io::writeAttribute(info.localDims[0],"localDims",group,info.nDims);
+  Io::writeAttribute("base", info.base[0], info.nDims, group);
+  Io::writeAttribute("globalDims", info.globalDims[0], info.nDims, group);
+  Io::writeAttribute("offset", info.offset[0],info.nDims, group);
+  //Io::writeAttribute("localDims",info.localDims[0],info.nDims,group);
 #endif
 }
 
@@ -408,8 +426,8 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
       }
     } else if (accessMode == DFACC_CREATE) {
       sdId = SDstart(filename.c_str(), accessMode);
-      Io::writeAttribute(superSize,"superSize");
-      Io::writeAttribute(rank,"rank");
+      Io::writeAttribute("superSize",superSize, 1);
+      Io::writeAttribute("rank",rank, 1);
     } else {
       cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
 	   << "Did not understand file access mode" << endl;

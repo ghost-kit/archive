@@ -87,7 +87,7 @@ void Hdf::putArrayInfo( const string& group,
   if (rank < superSize) {
     for (int i=0; i<info.nDims; i++) {
       name[1] = 'i'+i;
-      Io::writeAttribute(info.globalDims[info.nDims-1-i],name,group);
+      Io::writeAttribute(name, info.globalDims[info.nDims-1-i],1,group);
     }
   }
 #endif
