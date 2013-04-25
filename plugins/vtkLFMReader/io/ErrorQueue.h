@@ -1,22 +1,22 @@
-#ifndef __ERROR_STACK_H__
+#ifndef __ERROR_QUEUE_H__
 
 #include <string>
-#include <stack>
+#include <queue>
 #include <iostream>
 #include <sstream>
 
-class ErrorStack{
+class ErrorQueue{
 public:
   void pushError(const std::string &message);
-  void pushError(std::ostream& stream);
+  void pushError(std::stringstream& stream);
 
   std::string getMessages();
   void print(std::ostream &outs);
 
 private:
 
-  std::stack<std::string> errorMessages;
+  std::queue<std::string> errorMessages;
 
 };
 
-#endif //__ERROR_STACK_H__
+#endif //__ERROR_QUEUE_H__

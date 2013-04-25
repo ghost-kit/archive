@@ -1,23 +1,22 @@
-#include "ErrorStack.h"
+#include "ErrorQueue.h"
 
 using namespace std;
 
-void ErrorStack::pushError(const string &message)
+void ErrorQueue::pushError(const string &message)
 {
   errorMessages.push(message);
 }
 
-void ErrorStack::pushError(std::ostream& stream)
+void ErrorQueue::pushError(stringstream& stream)
 {
-  std::string message = dynamic_cast<std::ostringstream&>(stream).str(); 
-  errorMessages.push(message);
+  errorMessages.push(stream.str());
 }
 
-string ErrorStack::getMessages()
+string ErrorQueue::getMessages()
 {
   string messages;
   while (not errorMessages.empty()){
-    messages += errorMessages.top();
+    messages += errorMessages.front();
     messages += "\n";
     errorMessages.pop();
   }
@@ -25,7 +24,7 @@ string ErrorStack::getMessages()
   return messages;
 }
 
-void ErrorStack::print(std::ostream &outs)
+void ErrorQueue::print(std::ostream &outs)
 {
   outs << getMessages();
 }

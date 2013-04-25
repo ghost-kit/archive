@@ -2,45 +2,55 @@
 #ifndef __NOPPNOMPI_TEST_H__
 #define __NOPPNOMPI_TEST_H__
 
-#include "ErrorStack.h"
+#include "ErrorQueue.h"
 
 #include <string>
 
 using namespace std;
 
-class TestErrorStack : public CxxTest::TestSuite
+class TestErrorQueue : public CxxTest::TestSuite
 {
 
 public:
 
   void testPushString(void)
   {
-    ErrorStack e;
+    ErrorQueue e;
     e.pushError("This is a string");
     TS_ASSERT_EQUALS( e.getMessages(), "This is a string\n" );
   }
 
-  void testPushStringStream(void)
+  void testPush_stringstream(void)
   {
-    ErrorStack e;
-    e.pushError( ostringstream().flush() << "This is from a stringstream");
-    TS_ASSERT_EQUALS( e.getMessages(), "This is from a stringstream\n" );
+    stringstream message;
+    message << "This is from a stringstream"<< endl
+	    << "So is this!" << endl;
+    ErrorQueue e;
+    e.pushError( message );
+    TS_ASSERT_EQUALS( e.getMessages(), "This is from a stringstream\nSo is this!\n\n" );
   }
+
+//  void testPush_ostringstream(void)
+//  {
+//    ErrorQueue e;
+//    e.pushError( ostringstream().flush() << "This is from a stringstream");
+//    TS_ASSERT_EQUALS( e.getMessages(), "This is from a stringstream\n" );
+//  }
 
   void testGetMessagesAsString( void )
   {
-    ErrorStack e;
+    ErrorQueue e;
     e.pushError("Error line 1");
     e.pushError("Error line 2");
 
     string messages = e.getMessages();
     
-    TS_ASSERT_EQUALS( messages, "Error line 2\nError line 1\n" );
+    TS_ASSERT_EQUALS( messages, "Error line 1\nError line 2\n" );
   }
 
   void testPrintTo_cout( void )
   {
-    ErrorStack e;
+    ErrorQueue e;
     e.pushError("Message 1 to cout");
     e.pushError("Message 2 to cout");
 
@@ -49,7 +59,7 @@ public:
 
   void testPrintTo_cerr( void )
   {
-    ErrorStack e;
+    ErrorQueue e;
     e.pushError("Message 1 to cerr");
     e.pushError("Message 2 to cerr");
 
