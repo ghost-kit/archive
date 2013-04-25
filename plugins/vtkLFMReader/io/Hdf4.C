@@ -44,7 +44,7 @@ bool Hdf4::openRead(const string &filename)
   return open(filename, DFACC_RDONLY);
 #else
   if (rank==0)
-    cerr << "*** Error: HDF4 disabled, unable to open " << filename << " for reading." << endl;
+    cerr << "HDF4 disabled, unable to open " << filename << " for reading." << endl;
   return false;
 #endif
 }
@@ -57,7 +57,7 @@ bool Hdf4::openWrite(const string &filename)
   return open(filename, DFACC_CREATE);
 #else
   if (rank==0)
-    cerr << "*** Error: HDF4 disabled, unable to open " << filename << " for writing." << endl;
+    cerr << "HDF4 disabled, unable to open " << filename << " for writing." << endl;
   return false;
 #endif
 }
@@ -65,7 +65,7 @@ bool Hdf4::openWrite(const string &filename)
 /*----------------------------------------------------------------------------*/
 
 #ifdef HAS_HDF4
-bool Hdf4::errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status)
+void Hdf4::errorCheck(const char const *file, const int &lineNumber, const char const *func, const char const *line, const int &status)
 {
   if (status < 0) {
     cerr << "*** Error in " << file << "(L " << lineNumber << "): inside function " << func << "(...)" << endl
@@ -73,11 +73,14 @@ bool Hdf4::errorCheck(const char const *file, const int &lineNumber, const char 
          << "\tHDF4 expected  \t < 0" << endl
          << "\tHDF4 error was:\t" << status << endl;
     HEprint(stdout,0);
-
-    return true;
+#ifdef BUILD_WITH_APP
+    Optimization_Manager::Exit_Virtual_Machine();
+#endif//BUILD_WITH_APP
+#ifdef BUILD_WITH_MPI
+    MPI_Abort(MPI_COMM_WORLD,-1);
+#endif
+    exit(-1);
   }
-
-  return false;
 }
 #endif
 
@@ -91,38 +94,20 @@ bool Hdf4::readVariable( const string& variable,
 #ifdef HAS_HDF4
   int32 i, indexStart[MAX_VAR_DIMS], dims[MAX_ARRAY_DIMENSION];
 
+  //cout << "Reading " << variable << " in group " << group << endl;
+
   for(i=0;i<MAX_VAR_DIMS;i++) indexStart[i] = 0;
 
-  if (!verifyShape(variable,group,info)){
-    return false;
-  }
+  if (!verifyShape(variable,group,info)) return false;
 
   if (rank < superSize){    
     string id = (group==""?variable:group+"/"+variable);
     int varId = SDnametoindex(sdId,id.c_str());
-    if (ERRORCHECK(varId)){
-      cerr << "\tstring variable=" << variable << endl
-           << "\tstring group=" << group << endl;
-      return false;
-    }
+    ERRORCHECK(varId);
     int sdsId = SDselect(sdId,varId);
-    if (ERRORCHECK(sdsId)){
-      cerr << "\tstring variable=" << variable << endl
-           << "int32 varId=" << varId<< endl;
-      return false;
-    }
-
-    if( ERRORCHECK(SDreaddata(sdsId,indexStart,NULL,int32_convert(info.localDims,info.nDims,dims),data)) ){
-      cerr << "\tstring variable=" << variable << endl
-           << "\tstring group=" << group << endl;
-      return false;
-    }
-
-    if (ERRORCHECK(SDendaccess(sdsId))){
-      cerr << "\tstring variable=" << variable << endl
-           << "\tstring group=" << group << endl;
-      return false;
-    }
+    ERRORCHECK(sdsId);
+    ERRORCHECK(SDreaddata(sdsId,indexStart,NULL,int32_convert(info.localDims,info.nDims,dims),data));
+    ERRORCHECK(SDendaccess(sdsId));
   }
   return true;
 #else
@@ -142,42 +127,17 @@ int Hdf4::readAttribute( const string& variable,
   char readName[MAX_NC_NAME];
   if (rank < superSize) {
 
+    //cout << "Reading " << variable << " in group " << group << endl;
     int32 groupId = openGroup(group);
-    if (ERRORCHECK(groupId)){
-      cerr << "\tstring group=" << group << endl
-           << "\tint32 groupId=" << groupId << endl;
-      return -1;
-    }
+    ERRORCHECK(groupId);
 
     int32 attrIndx = SDfindattr(groupId,variable.c_str());
-    if (attrIndx==-1){
-      cerr << "*** Error in " << __FILE__ << " (L " <<  __LINE__ 
-	   << ") inside function" << __FUNCTION__ << "(...): " << endl
-	   << "\tCould not find attribute \"" << variable
-	   << "\" in group \"" << group << "\"" << endl;
-      return -1;
-    }
+    if (attrIndx==-1) return -1;
     int32 type, count;
-    if (ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&count))){
-      cerr << "\tstring variable=" << variable << endl
-           << "\tint32 attrIndx=" << attrIndx << endl;
-      return -1;
-    }
-    if (ERRORCHECK(( identifyH4Type(dataType,variable) == type ? 1 : -1 ))){
-      cerr << "\tidentify_data_type dataType=" << dataType<< endl
-           << "\tstring variable=" << variable << endl
-           << "\tint32 type=" << type<< endl;
-      return -1;
-    }
-    if (ERRORCHECK(( count<=len ? 1 : -1 ))){
-      cerr << "\tint32 count=" << count << endl
-           << "\tint32 len=" << len<< endl;
-      return -1;
-    }
-    if (ERRORCHECK(SDreadattr(groupId,attrIndx,data))){
-      cerr << "\tstring variable=" << variable << endl;
-      return -1;
-    }
+    ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&count));
+    ERRORCHECK(( identifyH4Type(dataType,variable) == type ? 1 : -1 ));
+    ERRORCHECK(( count<=len ? 1 : -1 ));
+    ERRORCHECK(SDreadattr(groupId,attrIndx,data));
     return count;
   }
 #endif
@@ -199,19 +159,10 @@ void Hdf4::writeVariable( const string& variable,
     string id = (group==""?variable:group+"/"+variable);
     int32 varId = SDcreate(sdId, id.c_str(), identifyH4Type(info.dataType,variable), 
 			   info.nDims, int32_convert(info.localDims,info.nDims,dims));
-    if( ERRORCHECK(varId) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-    }
-
-    if( ERRORCHECK(SDwritedata(varId, indexStart, NULL, int32_convert(info.localDims,info.nDims,dims), (void*)data))){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-    }
-    if( ERRORCHECK(SDendaccess(varId)) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-    }
+    ERRORCHECK(varId);
+    ERRORCHECK(SDwritedata(varId, indexStart, NULL, 
+			   int32_convert(info.localDims,info.nDims,dims), (void*)data));
+    ERRORCHECK(SDendaccess(varId));
     putArrayInfo(id,info);
   }
 #endif
@@ -228,10 +179,7 @@ void Hdf4::writeAttribute( const string& variable,
 #ifdef HAS_HDF4
   if (rank < superSize && len>0) {
     int32 groupId = createGroup(group);
-    if( ERRORCHECK(SDsetattr(groupId,variable.c_str(),identifyH4Type(dataType,variable),len,data)) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-    }
+    ERRORCHECK(SDsetattr(groupId,variable.c_str(),identifyH4Type(dataType,variable),len,data));
   }
 #endif
 }
@@ -280,7 +228,7 @@ void Hdf4::getLocalArrayInfo( const string& group,
     info.dataType = H4identifyType(dataType,group);
     if (info.nDims>0 && nPoints!=info.nDims) {
       cerr << rank << "] Dimensions do not match!" << nPoints << " : " << info.nDims << endl;
-      return;
+      exit(-1);
     }
     info.bytes = 1;
     for (int i=0; i<nPoints; i++) {
@@ -318,27 +266,13 @@ bool Hdf4::verifyShape( const string& variable,
   if (rank < superSize){
     string id = (group==""?variable:group+"/"+variable);
     int32 varId = SDnametoindex( sdId, id.c_str() );
-    if( ERRORCHECK(varId) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-      return false;
-    }
+    if (varId<0)
+      cout << "Variable " << variable << " not found." << endl;
+    ERRORCHECK(varId);
     int32 sdsId = SDselect( sdId, varId );
-    if( ERRORCHECK(sdsId) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-      return false;
-    }
-    if( ERRORCHECK(SDgetinfo( sdsId, NULL, &nPoints, dims, &dataType, &nAttrs )) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-      return false;
-    }
-    if( ERRORCHECK(SDendaccess(sdsId)) ){
-      cerr << "\tvariable=" << variable << endl
-	   << "\tgroup=" << group << endl;
-      return false;
-    }
+    ERRORCHECK(sdsId);
+    ERRORCHECK(SDgetinfo( sdsId, NULL, &nPoints, dims, &dataType, &nAttrs ));
+    ERRORCHECK(SDendaccess(sdsId));
     
     if (nPoints == info.nDims) {
       for (int i=0; i<nPoints && !error; i++) {
@@ -348,16 +282,12 @@ bool Hdf4::verifyShape( const string& variable,
   }
 
   if (error) {
-    cerr << "*** Error in " << __FILE__ << " (L " <<  __LINE__ 
-	 << ") inside function" << __FUNCTION__ << "(...): " << endl
-	 << "Var: " << variable << " group: " << group << " rank: " << rank 
+    cout << "Var: " << variable << " group: " << group << " rank: " << rank 
 	 << " npoints: " << nPoints << " error: " << error << endl;
     if (rank<superSize) {    
-      cerr << "*** Error in " << __FILE__ << " (L " <<  __LINE__ 
-	   << ") inside function" << __FUNCTION__ << "(...): " << endl
-	   << " Dims for rank " << rank << endl;
+      cout << " Dims for rank " << rank << endl;
       for (int i=0; i<nPoints; i++) {
-	cerr << "\tDim " << i << ": expect " << dims[i] << " have " << info.localDims[i] << endl;
+	cout << "Dim " << i << ": expect " << dims[i] << " have " << info.localDims[i] << endl;
       }    
     }
   }
@@ -389,7 +319,6 @@ const list<string> Hdf4::getVarNames()
       ERRORCHECK(SDendaccess(sdsId));
       r.push_back(string(name));
       delete[] name;
-      name = NULL;
     }
   }
 #endif
@@ -447,11 +376,7 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
       if (rank == 0) {      
 	superSize = 1;
 	sdId = SDstart(filename.c_str(), accessMode);
-	if (ERRORCHECK(sdId)){
-	  cerr << "*** Error: Cannot open " << filename << " with mode " 
-	       << (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
-	  return false;
-	}
+	ERRORCHECK(sdId);
 	Io::readAttribute(superSize,"superSize");
       }
 #ifdef BUILD_WITH_MPI
@@ -475,14 +400,10 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
       Io::writeAttribute(superSize,"superSize");
       Io::writeAttribute(rank,"rank");
     } else {
-      cerr << "*** Error: " << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
+      cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
 	   << "Did not understand file access mode" << endl;
     }
-    if( ERRORCHECK(sdId)){
-      cerr << "*** Error: Cannot open " << filename << " with mode " 
-	   << (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
-      return false;
-    }
+    ERRORCHECK(sdId);
   }
   return true;
 }

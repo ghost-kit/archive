@@ -22,7 +22,7 @@ bool Hdf::openRead(const string& filename)
   return open(filename, DFACC_RDONLY);
 #else
   if (rank==0)
-    cerr << "*** Error: HDF4 disabled, unable to open " << filename << " for reading." << endl;
+    cerr << "HDF4 disabled, unable to open " << filename << " for reading." << endl;
   return false;
 #endif
 }
@@ -35,7 +35,7 @@ bool Hdf::openWrite(const string& filename)
   return open(filename, DFACC_CREATE);
 #else
   if (rank==0)
-    cerr << "*** Error: HDF4 disabled, unable to open " << filename << " for writing." << endl;
+    cerr << "HDF4 disabled, unable to open " << filename << " for writing." << endl;
   return false;
 #endif
 }
@@ -101,12 +101,12 @@ bool Hdf::open(const string& filename, const int32& accessMode)
   sdId = -1;
   if (rank < superSize) {
     sdId = SDstart(filename.c_str(), accessMode);
-    if( ERRORCHECK(sdId) ){
-      cerr << "*** Error: Cannot open " << filename << " with mode " 
-	   << (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
-
-      return false;
-    }
+    if (sdId<0)
+      {
+        cout << "Cannot open " << filename << " with mode " <<
+	  (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
+      }
+    ERRORCHECK(sdId);
   }
   return true;
 }
