@@ -46,6 +46,12 @@ public:
   int GetNumberOfSCinfoArrays();
   const char* GetSCinfoArrayName(int index);
 
+  //individual SC Sub Array info Manipulators
+  void SetSCSubArrayStatus(const char *name, int status);
+  int GetSCsubinfoArrayStatus(const char *name);
+  int GetNumberOfSCsubinfoArrays();
+  const char* GetSCsubinfoArrayName(int index);
+
   //Callbacks
   void SelectionCallback(vtkObject* object, unsigned long vtkNotUsed(eventid), void* clientdata, void* vtkNotUsed(calldata));
 
@@ -101,12 +107,20 @@ protected:
   int NumberOfSCInfoArrays;
   void SetNumberOfSCinfoArrays(int set) {this->NumberOfSCInfoArrays = set;}
 
+  vtkDataArraySelection* SpaceCraftSubArraySelections;
+  vtkDataArraySelection* SpaceCraftDataArraySelections;
+
   //CDAWEB
   filterNetworkAccessModule *SCListManager;
   QString baseURL;
-  QString getObservatoryURLext;
+  QString dataViewSpacePhys;
+  QString getObservatorys;
+  QString getObservatoryGroups;
+  QString getInstrumentTypes;
   int networkAccessStatus;
 
+  //Cached Objects
+  QList< QMultiMap <QString, QString>* > *currentGroupObjects;
 
 private:
   vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);

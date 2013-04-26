@@ -36,7 +36,7 @@
         number_of_elements_per_command="2"
         element_types = "2 0"
         information_property="AvailSCinfo"
-        label="Space Craft Information Available"
+        label="Space Physics Information Available"
         default_values = "0">
 
         <ArraySelectionDomain name="array_list">
@@ -45,11 +45,47 @@
           </RequiredProperties>
         </ArraySelectionDomain>
         <Documentation>
-          This is the Cell Array Selectors.
+          This is the Observatory Group Array Selectors.
         </Documentation>
 
       </StringVectorProperty>
 
+
+
+
+
+      <StringVectorProperty
+        name="AvailSCsubinfo"
+        information_only="1">
+        <ArraySelectionInformationHelper attribute_name="SCsubinfo"/>
+
+        <Documentation>
+          This is the Observatory Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="AvailSCsubstatus"
+        command="SetSCSubArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types = "2 0"
+        information_property="AvailSCsubinfo"
+        label="Space Physics Observatories Available"
+        default_values = "0">
+
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="AvailSCsubinfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This is the Observatory Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
 
     </SourceProxy>
   </ProxyGroup>

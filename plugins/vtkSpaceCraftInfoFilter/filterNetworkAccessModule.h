@@ -7,6 +7,7 @@
 #include <QObject>
 #include <QtXml>
 #include <QMap>
+#include <QMultiMap>
 #include <QString>
 #include <QXmlStreamReader>
 #include <QStack>
@@ -34,7 +35,7 @@ public:
         this->ObjectLevel = ObjectLevel;
     }
 
-    QList< QMap <QString, QString>* > *getFinalOjects()
+    QList< QMultiMap <QString, QString>* > *getFinalOjects()
     {
         return this->finalObjects;
     }
@@ -62,7 +63,7 @@ private:
     QStack<QString> parseTextStack;
 
     //final parse breakdown
-    QList< QMap < QString, QString>* > *finalObjects;
+    QList< QMultiMap < QString, QString>* > *finalObjects;
 
     //parsing functions
     void consolodateStacks();
@@ -70,6 +71,7 @@ private:
 
 protected slots:
     void networkReply();
+    void networkError(QNetworkReply::NetworkError error);
     void dataHasBeenProcessed();
 
 signals:

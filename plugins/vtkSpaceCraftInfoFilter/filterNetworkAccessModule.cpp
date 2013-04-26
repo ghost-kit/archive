@@ -10,7 +10,7 @@ filterNetworkAccessModule::filterNetworkAccessModule()
 {
     this->networkAccessStatus = -1;
     this->netManager = new QNetworkAccessManager();
-    this->finalObjects = new QList< QMap < QString, QString>* >;
+    this->finalObjects = new QList< QMultiMap < QString, QString>* >;
 
     connect(this, SIGNAL(dataProcessed()), this, SLOT(dataHasBeenProcessed()));
 }
@@ -40,9 +40,9 @@ void filterNetworkAccessModule::networkReply()
             this->xmlReader.readNext();
 
             //parse XML
-//            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
-//            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
-//            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
+            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
+            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
+            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
             this->parseTypeStack.push_front(this->xmlReader.tokenType());
             this->parseQnStack.push_front(this->xmlReader.qualifiedName().toString());
             this->parseTextStack.push_front(this->xmlReader.text().toString());
@@ -68,6 +68,13 @@ void filterNetworkAccessModule::networkReply()
     emit this->dataProcessed();
 
 }
+
+void filterNetworkAccessModule::networkError(QNetworkReply::NetworkError error)
+{
+    std::cerr << "ERROR: SOME NETWORK ERROR OCCURED" << std::endl;
+
+}
+
 
 void filterNetworkAccessModule::dataHasBeenProcessed()
 {
@@ -189,7 +196,7 @@ void filterNetworkAccessModule::extractObjects()
             std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
 
             //create a new object for the stack
-            QMap<QString, QString> *temp = new QMap<QString, QString>;
+            QMultiMap<QString, QString> *temp = new QMultiMap<QString, QString>;
             do
             {
                 //get the next item from the stack
@@ -206,7 +213,8 @@ void filterNetworkAccessModule::extractObjects()
                 std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
 
                 //create object
-                temp->operator [](tempQn) = tempText;
+                temp->insert(tempQn, tempText);
+                //temp->operator [](tempQn) = tempText;
                 //temp->insert(tempQn, tempText);
 
 
@@ -239,6 +247,7 @@ QNetworkReply *filterNetworkAccessModule::Get()
     this->reply = netManager->get(req);
 
     connect(reply, SIGNAL(finished()), this, SLOT(networkReply()));
+    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(networkError(QNetworkReply::NetworkError)));
 
     {
         QEventLoop loop;

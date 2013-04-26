@@ -38,6 +38,7 @@
 #include "QNetworkAccessManager"
 #include "QNetworkReply"
 #include "QURL"
+#include "QStringList"
 
 #include <vector>
 #include <vtkSmartPointer.h>
@@ -50,10 +51,17 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     this->NumberOfTimeSteps = 0;
     this->NumberOfSCInfoArrays = 0;
     this->SpaceCraftArraySelections = vtkDataArraySelection::New();
+    this->SpaceCraftSubArraySelections = vtkDataArraySelection::New();
+    this->currentGroupObjects = NULL;
 
     //URLs for CDAWeb
     this->baseURL = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1");
-    this->getObservatoryURLext = QString("/dataviews/sp_phys/observatories");
+    this->dataViewSpacePhys = QString("/dataviews/sp_phys/");
+    this->getObservatorys = QString("observatories");
+    this->getObservatoryGroups = QString("observatoryGroups");
+    this->getInstrumentTypes = QString("instrumentTypes");
+
+    //    http://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys/observatoryGroups
 
     //configure the network manager
     this->SCListManager = new filterNetworkAccessModule();
@@ -125,24 +133,36 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
         //get the space craft list
         this->getSCList();
 
-        QList< QMap <QString, QString>* > *RetrievedObjects = this->SCListManager->getFinalOjects();
+        this->currentGroupObjects = this->SCListManager->getFinalOjects();
+        QStringList SortedList;
 
-        std::cout << "Size of List: " << RetrievedObjects->size() << std::endl;
+        std::cout << "Size of List: " << this->currentGroupObjects->size() << std::endl;
 
-        for(int x = 0; x < RetrievedObjects->size(); x++)
+        for(int x = 0; x < this->currentGroupObjects->size(); x++)
         {
-            QMap<QString,QString> *currentMap = RetrievedObjects->operator [](x);
+            QMap<QString,QString> *currentMap = this->currentGroupObjects->operator [](x);
 
             QList<QString> keys = currentMap->keys();
 
-            QString name = currentMap->operator []("ShortDescription");
+            QString name = currentMap->operator []("Name");
 
             std::cout << "Name: " << name.toAscii().data() << std::endl;
+            std::cout << "Number of Keys available: " << keys.size() << std::endl;
+            std::cout << "==============================" << std::endl;
 
-            this->SpaceCraftArraySelections->AddArray(name.toAscii().data());
+            SortedList.push_back(name);
 
         }
-        this->SetNumberOfSCinfoArrays(RetrievedObjects->size());
+
+        SortedList.sort();
+
+        for(int x = 0; x < SortedList.size(); x++)
+        {
+            this->SpaceCraftArraySelections->AddArray(SortedList[x].toAscii().data());
+        }
+
+        this->SetNumberOfSCinfoArrays(SortedList.size());
+
     }
 
     this->DisableAllSCArrays();
@@ -208,7 +228,7 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 bool vtkSpaceCraftInfo::getSCList()
 {
     //get data from network
-    this->SCListManager->Get(this->baseURL+getObservatoryURLext, QString("Observatories"), QString("ObservatoryDescription"));
+    this->SCListManager->Get(this->baseURL+dataViewSpacePhys+getObservatoryGroups, QString("ObservatoryGroups"), QString("ObservatoryGroupDescription"));
 
     if(this->SCListManager->getNetworkAccessStatus() == 0)
         return true;
@@ -258,12 +278,33 @@ void vtkSpaceCraftInfo::SetSCArrayStatus(const char *name, int status)
     if(status)
     {
         this->SpaceCraftArraySelections->EnableArray(name);
+        QMultiMap<QString, QString> *currentMap = NULL;
+
+        //find the correct cache object
+        for(int x = 0; x < this->currentGroupObjects->size(); x++)
+        {
+            currentMap = this->currentGroupObjects->operator [](x);
+            if(currentMap->value("Name") == QString(name))
+            {
+                std::cout << "Found Object" << std::endl;
+                break;
+            }
+        }
+
+        QList<QString> values = currentMap->values();
+        for(int c = 0; c < values.size(); c++)
+        {
+            std::cout << "Adding Objects: " << values[c].toAscii().data() << std::endl;
+            this->SpaceCraftSubArraySelections->AddArray(values[c].toAscii().data());
+        }
     }
     else
     {
         this->SpaceCraftArraySelections->DisableArray(name);
-    }
 
+        //TODO: Clear sub-array (for this item)
+    }
+    SpaceCraftSubArraySelections->Modified();
     this->Modified();
 }
 
@@ -281,6 +322,9 @@ int vtkSpaceCraftInfo::GetSCinfoArrayStatus(const char *name)
 void vtkSpaceCraftInfo::DisableAllSCArrays()
 {
     this->SpaceCraftArraySelections->DisableAllArrays();
+
+    //TODO: clear sub-menus
+
     this->Modified();
 }
 
@@ -290,6 +334,9 @@ void vtkSpaceCraftInfo::DisableAllSCArrays()
 void vtkSpaceCraftInfo::EnableAllSCArrays()
 {
     this->SpaceCraftArraySelections->EnableAllArrays();
+
+    //TODO: LOAD all SubMenus
+
     this->Modified();
 }
 
@@ -310,6 +357,41 @@ int vtkSpaceCraftInfo::GetNumberOfSCinfoArrays()
 const char *vtkSpaceCraftInfo::GetSCinfoArrayName(int index)
 {
     return this->SpaceCraftArraySelections->GetArrayName(index);
+}
+
+
+void vtkSpaceCraftInfo::SetSCSubArrayStatus(const char *name, int status)
+{
+    if(status)
+    {
+        this->SpaceCraftSubArraySelections->EnableArray(name);
+
+        //TODO: setup sub-array (for this item)
+
+    }
+    else
+    {
+        this->SpaceCraftSubArraySelections->DisableArray(name);
+
+        //TODO: Clear sub-array (for this item)
+    }
+
+    this->Modified();
+}
+
+int vtkSpaceCraftInfo::GetSCsubinfoArrayStatus(const char *name)
+{
+    return this->SpaceCraftSubArraySelections->GetArraySetting(name);
+}
+
+int vtkSpaceCraftInfo::GetNumberOfSCsubinfoArrays()
+{
+    return this->SpaceCraftSubArraySelections->GetNumberOfArrays();
+}
+
+const char *vtkSpaceCraftInfo::GetSCsubinfoArrayName(int index)
+{
+    return this->SpaceCraftSubArraySelections->GetArrayName(index);
 }
 
 
