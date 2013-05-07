@@ -477,6 +477,7 @@ hid_t Hdf5::createGroup(const string& group)
 
 bool Hdf5::open(const string& filename, const hid_t& accessMode)
 {
+  bool hasError = false;
   fileId = -1;
 
   if (superSize == -1) {
@@ -484,7 +485,8 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
       if (rank == 0) {      
 	superSize=1;
 	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
-	Io::readAttribute("superSize", superSize);
+	if( not Io::readAttribute("superSize", superSize) )
+	  hasError = true;
       }
 #ifdef BUILD_WITH_MPI
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -493,36 +495,57 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
       superSize = nProcs;
     }
 #ifdef BUILD_WITH_APP
-    if (superSize>0) partitionSuper = Partitioning_Type(superSize);
+    if (superSize>0) 
+      partitionSuper = Partitioning_Type(superSize);
 #endif//BUILD_WITH_APP
   }
 
   if (rank < superSize){
     if (accessMode == H5F_ACC_RDONLY) {
-      if (fileId == -1) fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
+      if (fileId == -1) 
+	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
     } else if (accessMode == H5F_ACC_TRUNC) {
-      if (fileId == -1) fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, H5P_DEFAULT);
-      Io::writeAttribute("superSize",superSize,1);
-      Io::writeAttribute("rank",rank,1);
+      if (fileId == -1) 
+	fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, H5P_DEFAULT);
+      if(not Io::writeAttribute("superSize",superSize,1) )
+	hasError = true;
+      if(not Io::writeAttribute("rank",rank,1) )
+	hasError = true;
     } else {
-      cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
-	   << "Did not understand file access mode" << endl;
+      hasError = true;
     }
-    ERRORCHECK(fileId);
+    if( ERRORCHECK(fileId) ){
+      errorQueue.pushError("Did not understand accessMode");
+      hasError = true;
+    }
   }
-  return true;
+
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << "failed.  Arguments:" << endl
+       << "\tfilename=" << filename << endl
+       << "\taccessMode=" << accessMode << endl;
+    errorQueue.pushError(ss);
+  }
+  return not hasError;
 }
 #endif //HAS_HDF5
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf5::close()
+bool Hdf5::close()
 {
 #ifdef HAS_HDF5
+  bool hasError = false;
   if (rank < superSize){
     if (fileId >= 0){
-      for ( map<string,hid_t>::iterator it=h5groups.begin(); it != h5groups.end(); it++ ) {
-	ERRORCHECK(H5Oclose((*it).second));
+      if( not h5groups.empty() ){
+	for ( map<string,hid_t>::iterator it=h5groups.begin(); it != h5groups.end(); it++ ) {
+	  if( ERRORCHECK(H5Oclose((*it).second)) ){
+	    hasError = true;
+	    errorQueue.pushError("trouble closing group \"" + it->first + "\"!");
+	  }
+	}
       }
       /*      
       if (H5Fget_obj_count(fileId,H5F_OBJ_ALL)!=1) {
@@ -533,9 +556,18 @@ void Hdf5::close()
 	cerr << "  attributes: " << H5Fget_obj_count(fileId,H5F_OBJ_ATTR) << endl;
       }
       */
-      ERRORCHECK(H5Fclose(fileId));
+      if( ERRORCHECK(H5Fclose(fileId)) )
+	hasError = true;
       fileId = -999;
     }
   }
+
+  if (hasError)
+    errorQueue.pushError("Hdf5::close failed!");
+
+  return not hasError;
+#else
+  errorQueue.pushError("HAS_HDF5 is undefined");
+  return false;
 #endif
 }

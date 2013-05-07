@@ -99,15 +99,19 @@ void Hdf::putArrayInfo( const string& group,
 bool Hdf::open(const string& filename, const int32& accessMode)
 {
   sdId = -1;
+
   if (rank < superSize) {
     sdId = SDstart(filename.c_str(), accessMode);
-    if (sdId<0)
-      {
-        cout << "Cannot open " << filename << " with mode " <<
-	  (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
-      }
-    ERRORCHECK(sdId);
+    if( ERRORCHECK(sdId) ){
+      stringstream ss;
+      ss << __FUNCTION__ << "failed.  Arguments:" << endl
+	 <<  "\tfilename=" << filename << endl
+	 << " \taccessMode=" << (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
+      errorQueue.pushError(ss);
+      return false;
+    }    
   }
+  // if we made it this far,everyting is good.
   return true;
 }
 #endif

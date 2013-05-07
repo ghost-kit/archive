@@ -275,6 +275,7 @@ bool PHdf5::verifyShape( const string& variableName,
 #ifdef HAS_PHDF5
 bool PHdf5::open(const string& filename, const hid_t& accessMode)
 {
+  bool hasError = false;
   fileId = -1;
 
   if (superSize == -1) {
@@ -282,7 +283,8 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
       if (rank == 0) {      
 	superSize = 1;
 	fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
-	Io::readAttribute("superSize", superSize);
+	if( not Io::readAttribute("superSize", superSize) )
+	  hasError = true;
       }
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
     } else {
@@ -299,26 +301,43 @@ bool PHdf5::open(const string& filename, const hid_t& accessMode)
     if (accessMode ==  H5F_ACC_RDONLY) {
 
       if (fileId == -1) fileId = H5Fopen(filename.c_str(), accessMode, H5P_DEFAULT);
-      ERRORCHECK( fileId );
-
+      if( ERRORCHECK( fileId ) )
+	hasError = true;
+      
     } else if (accessMode == H5F_ACC_TRUNC){
 
       hid_t plistId = H5Pcreate(H5P_FILE_ACCESS);
-      ERRORCHECK( plistId );
+      if( ERRORCHECK( plistId ) )
+	hasError = true;
 #ifndef NOH5MPIO
-      ERRORCHECK( H5Pset_fapl_mpio(plistId, comm, MPI_INFO_NULL) );
+      if( ERRORCHECK( H5Pset_fapl_mpio(plistId, comm, MPI_INFO_NULL) ) )
+	hasError = true;
 #endif
       fileId = H5Fcreate(filename.c_str(), accessMode, H5P_DEFAULT, plistId);
-      ERRORCHECK( fileId );
+      if( ERRORCHECK( fileId ) )
+	hasError = true;
       H5Pclose(plistId);
-      Io::writeAttribute("superSize",superSize,1);
-      Io::writeAttribute("rank",rank,1);
+      if(not Io::writeAttribute("superSize",superSize,1) )
+	hasError = true;
+      if(not Io::writeAttribute("rank",rank,1) )
+	hasError = true;
     } else {
-      cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
-	   << "Did not understand file access mode" << endl;
+      hasError = true;
+      stringstream ss;
+      ss << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
+	 << "Did not understand file access mode" << endl;
+      errorQueue.pushError(ss);
     }
   }
-  return true;
+
+  if (hasError){
+    stringstream ss;
+    ss << __FUNCTION__ << "failed.  Arguments:" << endl
+       << "\tfilename=" << file << endl
+       << "\taccessMode=" << accessMode << endl;
+    errorQueue.pushError(ss);
+  }
+  return not hasError;
 }
 #endif //HAS_PHDF5
 

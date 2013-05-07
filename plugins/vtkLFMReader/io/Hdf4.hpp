@@ -64,7 +64,7 @@ class Hdf4 : public Io {
   
   const list<string> getVarNames();
 
-  void close();
+  bool close();
 
  protected:
 

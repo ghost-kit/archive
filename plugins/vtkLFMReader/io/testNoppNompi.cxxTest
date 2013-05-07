@@ -73,7 +73,7 @@ class TestNoppNompi : public CxxTest::TestSuite
     data4byteInfo.dataType = identify(data4byte[0]);
     TS_ASSERT( io->writeVariable("data4byte", "testGroup", data4byteInfo, data4byte) );
 
-    io->close();
+    TS_ASSERT( io->close() );
 
     if (io){
       delete io;
@@ -153,7 +153,7 @@ class TestNoppNompi : public CxxTest::TestSuite
     int wrongDataType=999;
     TS_ASSERT(io->readAttribute("dPi", wrongDataType)==false);
 
-    io->close();
+    TS_ASSERT( io->close() );
 
     if (io){
       delete io;

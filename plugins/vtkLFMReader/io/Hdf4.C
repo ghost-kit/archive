@@ -440,6 +440,7 @@ int32 Hdf4::createGroup(const string &group)
 
 bool Hdf4::open(const string &filename, const int32 &accessMode)
 {
+  bool hasError = false;
   sdId = -1;
 
   if (superSize == -1) {
@@ -447,8 +448,10 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
       if (rank == 0) {      
 	superSize = 1;
 	sdId = SDstart(filename.c_str(), accessMode);
-	ERRORCHECK(sdId);
-	Io::readAttribute("superSize", superSize);
+	if( ERRORCHECK(sdId) )
+	  hasError = true;
+	if( not Io::readAttribute("superSize", superSize) )
+	  hasError = true;
       }
 #ifdef BUILD_WITH_MPI
       MPI_Bcast(&superSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -457,7 +460,8 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
       superSize = nProcs;
     }
 #ifdef BUILD_WITH_APP
-    if (superSize>0) partitionSuper = Partitioning_Type(superSize);
+    if (superSize>0) 
+      partitionSuper = Partitioning_Type(superSize);
 #endif//BUILD_WITH_APP
   }
 
@@ -468,33 +472,60 @@ bool Hdf4::open(const string &filename, const int32 &accessMode)
       }
     } else if (accessMode == DFACC_CREATE) {
       sdId = SDstart(filename.c_str(), accessMode);
-      Io::writeAttribute("superSize",superSize, 1);
-      Io::writeAttribute("rank",rank, 1);
+      if( not Io::writeAttribute("superSize",superSize, 1) )
+	hasError = true;
+      if( not Io::writeAttribute("rank",rank, 1) )
+	hasError = true;
     } else {
-      cerr << __FILE__ << " (" << __LINE__ << "): " << __FUNCTION__ 
-	   << "Did not understand file access mode" << endl;
+      hasError = true;
     }
-    ERRORCHECK(sdId);
+    if( ERRORCHECK(sdId) )
+      hasError = true;
+
+    if (hasError){
+      stringstream ss;
+      ss << __FUNCTION__ << "failed.  Arguments:" << endl
+	 <<  "\tfilename=" << filename << endl
+	 << " \taccessMode=" << (accessMode==DFACC_RDONLY ? "read only" : "create") << "!" << endl;
+      errorQueue.pushError(ss);
+    }
   }
-  return true;
+  return not hasError;
 }
 
 #endif
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf4::close(void)
+bool Hdf4::close(void)
 {
 #ifdef HAS_HDF4
+  bool hasError = false;
+
   if (rank < superSize){
     if (sdId >= 0){
-      for ( map<string,int32>::iterator it=h4groups.begin(); it != h4groups.end(); it++ ) {
-        ERRORCHECK(SDendaccess((*it).second));
+      if( not h4groups.empty() ){
+        for ( map<string,int32>::iterator it=h4groups.begin(); it != h4groups.end(); it++ ) {
+	  if( ERRORCHECK(SDendaccess((*it).second)) ){
+	    hasError = true;
+	    errorQueue.pushError("trouble closing group \"" + it->first + "\"!");
+	  }
+        }
       }
-      ERRORCHECK(SDend(sdId));
+
+      if( ERRORCHECK(SDend(sdId)) )
+	hasError = true;
       sdId = -999;
     }
   }
+
+  if (hasError)
+    errorQueue.pushError("Hdf4::close failed!");
+
+  return not hasError;
+#else
+  errorQueue.pushError("HAS_HDF4 is undefined");
+  return false;
 #endif
 }
 

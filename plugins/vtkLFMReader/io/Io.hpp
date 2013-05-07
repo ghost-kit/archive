@@ -171,7 +171,7 @@ public:
   const list<string> getVarNames() = 0;
 
   virtual
-  void close() = 0;
+  bool close() = 0;
 
   /// \return file extension for the selected I/O format.
   string getExtension() 
