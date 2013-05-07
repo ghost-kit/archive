@@ -20,6 +20,14 @@ static const hid_t DATA_TYPE = H5T_NATIVE_FLOAT;
 /// Compare with void Hdf5::pushError(...)
 #define PUSHERROR(E) pushError(E, __FILE__, __LINE__, __FUNCTION__)
 
+/**
+ * \todo { Some Hdf5 operations require closing hid_t objects.  These
+ * are not always obvious.  For example:
+ *  - H5Dget_type(...)  
+ *  - H5Aget_type(...)
+ * Modify code so we close access where required.  See Hdf5
+ * documentation for more info. }
+ */
 class Hdf5 : public Io {
 
  public:
@@ -91,32 +99,40 @@ class Hdf5 : public Io {
 
   hid_t identifyH5Type( const identify_data_type& dataType, const string& v) const {
     switch (dataType) {
-    case identify_byte_t:   return H5T_NATIVE_UCHAR; 
-    case identify_char_t:   return H5T_C_S1;	     
-    case identify_string_t: return H5T_C_S1;	     
-    case identify_short_t:  return H5T_NATIVE_SHORT; 
-    case identify_int_t:    return H5T_NATIVE_INT;   
-    case identify_long_t:   return H5T_NATIVE_LONG;  
-    case identify_float_t:  return H5T_NATIVE_FLOAT; 
+    case identify_byte_t:   return H5T_NATIVE_UCHAR;
+    case identify_char_t:   return H5T_NATIVE_CHAR;
+    case identify_string_t: return H5T_C_S1;
+    case identify_short_t:  return H5T_NATIVE_SHORT;
+    case identify_int_t:    return H5T_NATIVE_INT;
+    case identify_long_t:   return H5T_NATIVE_LONG;
+    case identify_float_t:  return H5T_NATIVE_FLOAT;
     case identify_double_t: return H5T_NATIVE_DOUBLE;
     case identify_unknown_t:
     default:                
-      cerr << "Unknown type for identifyH5Type with variable " << v << endl;      
-      raise(SIGABRT);
+      //cerr << "Unknown type for identifyH5Type with variable " << v << endl;
+      //raise(SIGABRT);
       return -1;
     }
   }
 
+  /**
+   * Find a list of native data types here:
+   *   http://www.hdfgroup.org/HDF5/doc/RM/RM_H5T.html#Datatype-GetNativeType
+   */
   identify_data_type H5identifyType( const hid_t h5type, const string& v ) const {
-    if (H5Tequal(h5type,H5T_NATIVE_UCHAR))  return identify_byte_t;
-    if (H5Tequal(h5type,H5T_C_S1))	    return identify_char_t;
-    if (H5Tequal(h5type,H5T_NATIVE_SHORT))  return identify_short_t;
-    if (H5Tequal(h5type,H5T_NATIVE_INT))    return identify_int_t;
-    if (H5Tequal(h5type,H5T_NATIVE_LONG))   return identify_long_t;
-    if (H5Tequal(h5type,H5T_NATIVE_FLOAT))  return identify_float_t;
-    if (H5Tequal(h5type,H5T_NATIVE_DOUBLE)) return identify_double_t;
-    cerr << "Unknown type for H5identifyType with variable " << v << endl;
-    raise(SIGABRT);
+
+    if (H5Tequal(h5type, H5T_C_S1))   return identify_string_t;
+
+    hid_t native_type = H5Tget_native_type(h5type, H5T_DIR_ASCEND);
+
+    if (H5Tequal(native_type,H5T_NATIVE_UCHAR))  return identify_byte_t;
+    if (H5Tequal(native_type,H5T_NATIVE_SHORT))  return identify_short_t;
+    if (H5Tequal(native_type,H5T_NATIVE_INT))    return identify_int_t;
+    if (H5Tequal(native_type,H5T_NATIVE_LONG))   return identify_long_t;
+    if (H5Tequal(native_type,H5T_NATIVE_FLOAT))  return identify_float_t;
+    if (H5Tequal(native_type,H5T_NATIVE_DOUBLE)) return identify_double_t;
+    //cerr << "Unknown type for H5identifyType with variable " << v << endl;
+    //raise(SIGABRT);
     return identify_unknown_t;
   }
 
