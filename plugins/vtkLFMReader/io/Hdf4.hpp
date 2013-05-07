@@ -62,7 +62,9 @@ class Hdf4 : public Io {
 		    const string& group,
 		    const array_info_t& info );
   
-  const list<string> getVarNames();
+  const list<string> getVariableNames();
+  const list<string> getAttributeNames();
+
 
   bool close();
 

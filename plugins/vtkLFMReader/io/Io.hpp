@@ -36,6 +36,10 @@ public:
    *
    * \warning { Super Domains have not been extensively profiled.  It's
    *   unclear how big of a benefit this will provide.}
+   *
+   * \warning { What are the limits of superDomainSize?  I think
+   * there's an error lurking in here if you set superDomainSize=0!
+   * Tread with caution!"}
    */
   Io(const int& superDomainSize = -1);
 
@@ -70,6 +74,9 @@ public:
 			  const string& dir=".", 
 			  const int& superDomainSize=-1);
 
+  virtual 
+  const list<string> getAttributeNames() = 0;
+  
   /** \brief Methods to read attributes
    * Sets data & dataLength (number of elements read in).
    *  
@@ -124,6 +131,9 @@ public:
 		       const identify_data_type& dataType,
 		       const string& group) = 0;
   //@}
+
+  virtual
+  const list<string> getVariableNames() = 0;
   
   /// Methods to read variables
   //@{
@@ -166,9 +176,6 @@ public:
   bool verifyShape( const string& variableName,
 		    const string& group,
 		    const array_info_t& info ) = 0;
-
-  virtual
-  const list<string> getVarNames() = 0;
 
   virtual
   bool close() = 0;

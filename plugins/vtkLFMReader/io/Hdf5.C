@@ -432,7 +432,10 @@ bool Hdf5::verifyShape( const string& variableName,
 /*----------------------------------------------------------------------------*/
 
 #ifdef HAS_HDF5
-static herr_t visit_objs(hid_t id, const char *name, const H5O_info_t *info, void *op_data)
+/** \brief Used by Hdf5::getVariableNames() to append variable names to list
+ * \param op_data list<string>
+ */
+static herr_t appendVariableNameToList(hid_t id, const char *name, const H5O_info_t *info, void *op_data)
 {
   if (info->type == H5O_TYPE_DATASET)
     reinterpret_cast<list<string> *>(op_data)->push_back(string(name));
@@ -440,13 +443,39 @@ static herr_t visit_objs(hid_t id, const char *name, const H5O_info_t *info, voi
 }
 #endif
 
-const list<string> Hdf5::getVarNames()
+/*----------------------------------------------------------------------------*/
+
+const list<string> Hdf5::getVariableNames()
 {
   list<string> r;
 #ifdef HAS_HDF5
-  H5Ovisit(fileId,H5_INDEX_NAME,H5_ITER_NATIVE,visit_objs,&r);
+  H5Ovisit(fileId,H5_INDEX_NAME,H5_ITER_NATIVE,appendVariableNameToList,&r);
 #endif
   return r;
+}
+
+/*----------------------------------------------------------------------------*/
+
+#ifdef HAS_HDF5
+/** \brief Used by Hdf5::getAttributeNames() to append variable names to list
+ * \param op_data list<string>
+ */
+static herr_t appendAttributeNameToList(hid_t id, const char *name, const H5A_info_t *ainfo, void *op_data)
+{
+  reinterpret_cast<list<string> *>(op_data)->push_back(string(name));
+  return 0;
+}
+#endif
+
+/*----------------------------------------------------------------------------*/
+
+const list<string> Hdf5::getAttributeNames()
+{
+  list<string> attrNames;
+  //herr_t H5Aiterate2( hid_t obj_id, H5_index_t idx_type, H5_iter_order_t order, hsize_t *n, H5A_operator2_t op, void *op_data, )
+  H5Aiterate2( fileId, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, appendAttributeNameToList, &attrNames);
+
+  return attrNames;
 }
 
 /*----------------------------------------------------------------------------*/

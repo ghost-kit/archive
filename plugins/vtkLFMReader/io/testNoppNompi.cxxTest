@@ -97,6 +97,35 @@ class TestNoppNompi : public CxxTest::TestSuite
     string filename = baseFilename + string(".") + extension;
     TS_ASSERT( io->openRead(filename) );
 
+    /****** Test reading attributes ******/
+    list<string> attributeNames = io->getAttributeNames();
+    //for (std::list<string>::iterator it = attributeNames.begin(); it != attributeNames.end(); it++){
+    //  cout << extension << " attr " << *it << endl;
+    //}
+    TS_ASSERT_EQUALS( attributeNames.size(), 3 );
+
+    attributeNames.sort();
+
+    std::list<string>::iterator it;
+
+    // is attribute "dPi" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "dPi");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "dPi" );
+
+    // is attribute "fPi" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "fPi");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "fPi" );
+
+    // is attribute "Star Wars" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "Star Wars");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "Star Wars" );
+
     string swQuote;
     TS_ASSERT(io->readAttribute("Star Wars", swQuote));
     TS_ASSERT_EQUALS( swQuote,
@@ -110,6 +139,25 @@ class TestNoppNompi : public CxxTest::TestSuite
     float fPi;
     TS_ASSERT(io->readAttribute("fPi", fPi));
     TS_ASSERT_DELTA( fPi, 3.1415926, 1e-6 );
+
+    /****** Test reading variables ******/
+    list<string> variableNames = io->getVariableNames();
+    //for (std::list<string>::iterator it = variableNames.begin(); it != variableNames.end(); it++){
+    //  cout << extension << " attr " << *it << endl;
+    //}
+    TS_ASSERT_EQUALS( variableNames.size(), 2 );
+
+    // is variable "testGroup/data4byte" in list?
+    it = find(variableNames.begin(), variableNames.end(), "testGroup/data4byte");
+    TS_ASSERT_DIFFERS( it, variableNames.end() );
+    if (it != variableNames.end() )
+      TS_ASSERT_EQUALS( *it, "testGroup/data4byte" );
+
+    // is variable "testGroup/data8byte" in list?
+    it = find(variableNames.begin(), variableNames.end(), "testGroup/data8byte");
+    TS_ASSERT_DIFFERS( it, variableNames.end() );
+    if (it != variableNames.end() )
+      TS_ASSERT_EQUALS( *it, "testGroup/data8byte" );
 
     double data8byte[10];
     array_info_t data8byteInfo;
@@ -129,7 +177,6 @@ class TestNoppNompi : public CxxTest::TestSuite
     for (int i=0; i < data8byteInfo.localDims[0]; i++){
       TS_ASSERT_DELTA( data8byte[i], expectedData8byte[i], 1e-16 );
     }
-
 
     float data4byte[100];
     array_info_t data4byteInfo;
@@ -159,6 +206,16 @@ class TestNoppNompi : public CxxTest::TestSuite
       delete io;
       io = NULL;
     }
+  }
+
+  void testHdf( void ){
+    Io *io = new Hdf(0);
+    TS_ASSERT( io->openRead(string("/Users/schmitt/paraview/testData/doctoredAnimation/orig/LMs_mhd_1995-03-21T13-00-00Z.hdf")) );
+    TS_ASSERT( io->close() );
+    delete io;
+    io=NULL;
+    cout << "file opened" << endl;
+
   }
 
   void testHdf4( void )

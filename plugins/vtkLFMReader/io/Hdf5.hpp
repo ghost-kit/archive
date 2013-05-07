@@ -69,7 +69,8 @@ class Hdf5 : public Io {
 		    const array_info_t& info );
   
 
-  const list<string> getVarNames();
+  const list<string> getVariableNames();
+  const list<string> getAttributeNames();
 
   bool close();
 

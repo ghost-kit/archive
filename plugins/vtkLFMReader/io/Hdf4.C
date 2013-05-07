@@ -369,10 +369,9 @@ bool Hdf4::verifyShape( const string& variableName,
 #endif
 }
   
-
 /*----------------------------------------------------------------------------*/
 
-const list<string> Hdf4::getVarNames()
+const list<string> Hdf4::getVariableNames()
 {
   list<string> r;
 #ifdef HAS_HDF4
@@ -396,10 +395,39 @@ const list<string> Hdf4::getVarNames()
   return r;
 }
 
-
-#ifdef HAS_HDF4
 /*----------------------------------------------------------------------------*/
 
+const list<string> Hdf4::getAttributeNames()
+{
+  list<string> attrNames;
+  bool hasError = false;
+#ifdef HAS_HDF4
+  int num_data, num_attr;
+  if( ERRORCHECK( SDfileinfo(sdId, &num_data, &num_attr) ))
+    errorQueue.pushError("*** Error: Hdf4::getAttributeNames could not obtain number of attributes in file");
+
+  char attrName[MAX_NC_NAME];
+  int32 hdfTypeId;
+  int32 nAttrValues;
+
+  for(int attrId=0; attrId < num_attr; attrId++){
+    if( ERRORCHECK( SDattrinfo(sdId, attrId, attrName, &hdfTypeId, &nAttrValues) ) ){
+      stringstream ss;
+      ss << "*** Error: Hdf4::getAttributeNames could not find attribute name for attrIndex=";
+      ss << attrId;
+      errorQueue.pushError(ss);
+    }
+    else{
+      attrNames.push_back(string(attrName));
+    }    
+  }
+#endif
+  return attrNames;
+}
+
+/*----------------------------------------------------------------------------*/
+
+#ifdef HAS_HDF4
 int32 Hdf4::openGroup(const string &group)
 {
   int32 groupId = sdId;
