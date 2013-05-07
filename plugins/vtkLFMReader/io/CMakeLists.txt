@@ -18,7 +18,11 @@ endif (USE_MPI)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake/")
 find_package(HDF4 REQUIRED)
 if (HDF4_FOUND)
-  #find_Package defines HDF4_INCLUDE_DIR and HDF4_LIBRARIES
+  find_package(JPEG)
+  find_package(ZLIB)
+  
+  set(HDF4_LIBRARIES ${ZLIB_LIBRARY} ${JPEG_LIBRARY} ${HDF4_LIBRARIES})  
+
   add_definitions(-DHAS_HDF4)
 endif (HDF4_FOUND)
 

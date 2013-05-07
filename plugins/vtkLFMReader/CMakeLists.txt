@@ -1,11 +1,16 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
+# Required variables:
+#  * ParaView_DIR: Path to directory containing ParaViewConfig.cmake
+#  * ParaView_SuperBuild: Mac OS-X only:  SuperBuild is shipped with fixup_plugin.py, which is part of the SuperBuild.
+#  * PREFIX:  Path to relevant libraries (HDF4, JPEG, etc)
+#
 # There are two ways to set required variables for building this plugin:
 #  1.  Pass via command-line arguments (recommended):
 #  
 #      cmake .. -DParaView_DIR=/Users/schmitt/paraview/opt/ParaView-3.98.1_OSX-10.7/paraview/src/paraview-build \
 #               -DParaView_SuperBuild_DIR=/Users/schmitt/paraview/opt/src/ParaViewSuperbuild-3.98.0 \
-#               -DHDF4_DIR=/Users/schmitt/paraview/opt
+#               -PREFIX=/Users/schmitt/paraview/opt
 #  
 #  2.  Hard-code it in this file by uncommenting the following lines:
 
@@ -16,7 +21,13 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 ########################################################################
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+
+if( PREFIX )
+  set( CMAKE_INCLUDE_PATH /usr/include ${PREFIX}/include ${CMAKE_INCLUDE_PATH} )
+  set( CMAKE_LIBRARY_PATH /usr/lib ${PREFIX}/lib ${CMAKE_LIBRARY_PATH} )
+endif( PREFIX )
+
+set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/" )
 
 add_subdirectory(io) 
 GET_DIRECTORY_PROPERTY(IO_INCLUDES DIRECTORY io DEFINITION IO_INCLUDES)
