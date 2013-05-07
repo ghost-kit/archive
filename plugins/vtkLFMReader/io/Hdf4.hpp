@@ -26,6 +26,9 @@ class Hdf4 : public Io {
   bool openRead(const string& filename);
   bool openWrite(const string& filename);
 
+  array_info_t getArrayInfo(const string& variableName, 
+			    const string& group);
+
   bool readVariable( const string& variableName, 
 		     const string& group,
 		     const array_info_t& info,

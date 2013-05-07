@@ -124,7 +124,9 @@ static void printArrayInfo( array_info_t& info ) {
 	    << "   nVars: " << info.nVars 
 	    << "   nAttr: " << info.nAttr 
 	    << "   bytes: " << info.bytes 
-	    << "   type: "  << info.dataType << endl;
+	    << "   type: "  << info.dataType
+	    << " (" << dataType2String(info.dataType) << ")"
+	    << endl;
   
   for (int i=0; i<info.nDims; i++) {
     std::cout << i << ")  " 

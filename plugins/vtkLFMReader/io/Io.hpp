@@ -134,7 +134,26 @@ public:
 
   virtual
   const list<string> getVariableNames() = 0;
+
   
+  /** \brief Read variable information (dimensions, rank, etc) for group/variable
+   * \see Util.hpp for array_info_t definition
+   * \returns{ array_info_t object
+   *   - nDim
+   *   - nVars: defaults to 1 if missing "nVars" attribute 
+   *   - nAttr
+   *   - bytes
+   *   - globalDims: defaults to localDims if missing "globalDims" attribute
+   *   - localDims
+   *   - offset: defaults to [0,0,...,0] if missing "offset" attribute
+   *   - base: defaults to [0,0,...,0] if missing "base" attribute
+   *   - dataType
+   *  }
+   */
+  virtual
+  array_info_t getArrayInfo(const string &variableName, 
+			    const string &group="" ) = 0;
+
   /// Methods to read variables
   //@{
   virtual

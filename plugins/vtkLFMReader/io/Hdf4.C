@@ -81,6 +81,57 @@ bool Hdf4::errorCheck(const int &status, const char *file, const int &line, cons
 
 /*----------------------------------------------------------------------------*/
 
+array_info_t Hdf4::getArrayInfo(const string& variableName,
+				const string& group)
+{
+  bool hasError = false;
+#ifdef HAS_HDF4
+  array_info_t info;
+
+  if (rank < superSize){
+    string id = (group==""?variableName:group+"/"+variableName);
+    int32 varId = SDnametoindex( sdId, id.c_str() );
+    ERRORCHECK(varId);
+    int32 sdsId = SDselect( sdId, varId );
+    ERRORCHECK(sdsId);
+    int32 dataType;
+    ERRORCHECK(SDgetinfo( sdsId, NULL, &info.nDims, info.localDims, &dataType, &info.nAttr ));
+    ERRORCHECK(SDendaccess(sdsId));   
+    
+    if(not Io::readAttribute("nVars", info.nVars, group))
+      info.nVars = 1;
+
+    if(not Io::readAttribute("globalDims", info.globalDims[0], info.nDims, group)){
+      for (int i=0; i < info.nDims; i++)
+	info.globalDims[i] = info.localDims[i];
+    }
+
+    if(not Io::readAttribute("offset", info.offset[0], info.nDims, group)){
+      for (int i=0; i < info.nDims; i++)
+	info.offset[i] = 0;
+    }
+
+    if(not Io::readAttribute("base", info.base[0], info.nDims, group)){
+      for (int i=0; i < info.nDims; i++)
+	info.base[i] = 0;
+    }
+
+    info.bytes = 1;
+    for(int i=0; i < info.nDims; i++){
+      info.bytes *= info.localDims[i];
+    }
+    info.dataType = H4identifyType(dataType, variableName);    
+
+    info.bytes *= identifySize(info.dataType);
+  }
+  return info;
+#else
+  return NULL;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+
 bool Hdf4::readVariable( const string& variableName, 
 			 const string& group,
 			 const array_info_t& info,
@@ -144,18 +195,25 @@ bool Hdf4::readAttribute( const string& attributeName,
   char readName[MAX_NC_NAME];
   if (rank < superSize) {
     int32 groupId = openGroup(group);
-    if( ERRORCHECK(groupId) )
+    if( ERRORCHECK(groupId) ){
       hasError = true;
+    }
     int32 attrIndx = SDfindattr(groupId,attributeName.c_str());
-    if (attrIndx==-1)
-      hasError = true;
+    if (attrIndx==-1){
+      errorQueue.pushError("Could not find attribute \"" + attributeName + "\".");
+      return false;
+    }
     int32 type;
-    if (ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&dataLength)))
+    if (ERRORCHECK(SDattrinfo(groupId,attrIndx,readName,&type,&dataLength))){
       hasError = true;
-    if (ERRORCHECK(( identifyH4Type(dataType,attributeName) == type ? 1 : -1 )))
+    }
+    if (ERRORCHECK(( identifyH4Type(dataType,attributeName) == type ? 1 : -1 ))){
+      errorQueue.pushError("Wrong attribute data type for attribute \"" + attributeName + "\".");
+      return false;
+    }
+    if (ERRORCHECK(SDreadattr(groupId,attrIndx,data))){
       hasError = true;
-    if (ERRORCHECK(SDreadattr(groupId,attrIndx,data)))
-      hasError = true;
+    }
 
     if (hasError){
       stringstream ss;
@@ -436,9 +494,15 @@ int32 Hdf4::openGroup(const string &group)
       groupId = h4groups[group];
     else {
       int32 varId = SDnametoindex(sdId,group.c_str());
-      ERRORCHECK(varId);
+      if( ERRORCHECK(varId) ){
+	errorQueue.pushError("Could not open group \"" + group  + "\"");
+	return groupId;
+      }
       groupId = SDselect(sdId,varId);
-      ERRORCHECK(groupId);
+      if( ERRORCHECK(groupId) ){
+	errorQueue.pushError("Could not select group \"" + group  + "\"");
+	return sdId;
+      }
       h4groups[group] = groupId;
     }
   }
@@ -534,9 +598,12 @@ bool Hdf4::close(void)
     if (sdId >= 0){
       if( not h4groups.empty() ){
         for ( map<string,int32>::iterator it=h4groups.begin(); it != h4groups.end(); it++ ) {
-	  if( ERRORCHECK(SDendaccess((*it).second)) ){
+	  if( ERRORCHECK(SDendaccess(it->second)) ){
 	    hasError = true;
-	    errorQueue.pushError("trouble closing group \"" + it->first + "\"!");
+	    stringstream ss;
+	    ss << "trouble closing group \"" << it->first << "\"!"
+	       << "h4group[" << it->first << "] = " << it->second;
+	    errorQueue.pushError(ss);
 	  }
         }
       }

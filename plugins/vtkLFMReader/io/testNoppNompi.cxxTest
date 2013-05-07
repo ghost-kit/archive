@@ -159,6 +159,19 @@ class TestNoppNompi : public CxxTest::TestSuite
     if (it != variableNames.end() )
       TS_ASSERT_EQUALS( *it, "testGroup/data8byte" );
 
+    /****** data8byte . . . ******/
+    array_info_t info;
+    info = io->getArrayInfo("data8byte", "testGroup");
+    TS_ASSERT_EQUALS(info.nDims, 1);
+    TS_ASSERT_EQUALS(info.nVars, 1);
+    TS_ASSERT_EQUALS(info.nAttr, 1);
+    TS_ASSERT_EQUALS(info.bytes, 80);   
+    TS_ASSERT_EQUALS(info.globalDims[0], 10);
+    TS_ASSERT_EQUALS(info.localDims[0], 10);
+    TS_ASSERT_EQUALS(info.offset[0], 0);
+    TS_ASSERT_EQUALS(info.base[0], 0);
+    TS_ASSERT_EQUALS(info.dataType, identify_double_t);
+
     double data8byte[10];
     array_info_t data8byteInfo;
     data8byteInfo.nDims = 1;
@@ -177,6 +190,18 @@ class TestNoppNompi : public CxxTest::TestSuite
     for (int i=0; i < data8byteInfo.localDims[0]; i++){
       TS_ASSERT_DELTA( data8byte[i], expectedData8byte[i], 1e-16 );
     }
+
+    /****** data4byte . . . ******/
+    info = io->getArrayInfo("data4byte", "testGroup");
+    TS_ASSERT_EQUALS(info.nDims, 1);
+    TS_ASSERT_EQUALS(info.nVars, 1);
+    TS_ASSERT_EQUALS(info.nAttr, 1);
+    TS_ASSERT_EQUALS(info.bytes, 400);   
+    TS_ASSERT_EQUALS(info.globalDims[0], 100);
+    TS_ASSERT_EQUALS(info.localDims[0], 100);
+    TS_ASSERT_EQUALS(info.offset[0], 0);
+    TS_ASSERT_EQUALS(info.base[0], 0);
+    TS_ASSERT_EQUALS(info.dataType, identify_float_t);
 
     float data4byte[100];
     array_info_t data4byteInfo;

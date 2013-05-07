@@ -90,6 +90,83 @@ void Hdf5::pushError(const string &e, const char *file, const int &line, const c
 #endif
 /*----------------------------------------------------------------------------*/
 
+array_info_t Hdf5::getArrayInfo( const string& variableName,
+				 const string& group ) 
+{
+  bool hasError = false;
+#ifdef HAS_HDF5
+  array_info_t info;
+
+  if (rank < superSize){
+    if (group=="" || H5Lexists(fileId,group.c_str(),H5P_DEFAULT)) {
+      hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
+      ERRORCHECK(groupId);
+      hid_t dataId = H5Dopen(groupId,variableName.c_str(),H5P_DEFAULT);
+      ERRORCHECK(dataId);
+      hid_t spaceId = H5Dget_space(dataId);
+      ERRORCHECK(spaceId);
+
+      info.nDims = H5Sget_simple_extent_ndims(spaceId);
+      ERRORCHECK(info.nDims);
+
+      H5O_info_t h5info;
+      H5Oget_info(dataId,&h5info);
+
+      info.nAttr = h5info.num_attrs;
+
+      hsize_t dims[MAX_ARRAY_DIMENSION];
+      hsize_t maxDims[MAX_ARRAY_DIMENSION];
+
+      ERRORCHECK(H5Sget_simple_extent_dims(spaceId,dims,maxDims));
+
+      info.dataType = H5identifyType(H5Dget_type(dataId),group);
+
+      ERRORCHECK(H5Sclose(spaceId));      
+      ERRORCHECK(H5Dclose(dataId));
+      if (group!=""){
+	ERRORCHECK(H5Gclose(groupId));
+      }
+
+      for (int i = 0; i < info.nDims; i++){
+	info.localDims[i] = dims[i];
+      }
+
+      if(not Io::readAttribute("nVars", info.nVars, group))
+	info.nVars = 1;
+      
+      if(not Io::readAttribute("globalDims", info.globalDims[0], info.nDims, group)){
+	for (int i=0; i < info.nDims; i++)
+	  info.globalDims[i] = info.localDims[i];
+      }
+      
+      if(not Io::readAttribute("offset", info.offset[0], info.nDims, group)){
+	for (int i=0; i < info.nDims; i++)
+	  info.offset[i] = 0;
+      }
+      
+      if(not Io::readAttribute("base", info.base[0], info.nDims, group)){
+	for (int i=0; i < info.nDims; i++)
+	  info.base[i] = 0;
+      }
+
+      info.bytes = 1;
+      for(int i=0; i < info.nDims; i++){
+	info.bytes *= info.localDims[i];
+      }
+      info.bytes *= identifySize(info.dataType);
+    }
+  }
+
+  //errorQueue.print(cerr);
+
+  return info;
+#else
+  return NULL;
+#endif
+}
+  
+/*----------------------------------------------------------------------------*/
+
 bool Hdf5::readVariable( const string& variableName, 
 			 const string& group,
 			 const array_info_t& info,
@@ -108,6 +185,8 @@ bool Hdf5::readVariable( const string& variableName,
     hid_t datasetId = H5Dopen(groupId, variableName.c_str(), H5P_DEFAULT);
     if( ERRORCHECK(datasetId) )
       hasError = true;
+    if( info.dataType != H5identifyType(H5Dget_type(datasetId), group) )
+      hasError = true;    
     if( ERRORCHECK(H5Dread(datasetId, identifyH5Type(info.dataType,variableName), H5S_ALL, H5S_ALL, H5P_DEFAULT, data)) )
       hasError = true;
     if( ERRORCHECK(H5Dclose(datasetId)) )
@@ -159,13 +238,20 @@ bool Hdf5::readAttribute( const string& attributeName,
 	hid_t spaceId = H5Aget_space(attributeId);
 	if( ERRORCHECK(spaceId) )
 	  hasError = true;
-	hsize_t nPoints = 0;	 
-	if (dataType == identify_string_t) {
-	  h5type = H5Aget_type(attributeId);
-	  nPoints = H5Tget_size(h5type);
-	} else {
-	  h5type = identifyH5Type(dataType,attributeName);
-	  nPoints = H5Sget_select_npoints(spaceId);
+	h5type = H5Aget_type(attributeId);
+
+	if( ERRORCHECK(h5type) ||
+	    (H5identifyType(h5type, attributeName) != dataType) ) {
+	  errorQueue.pushError("Wrong attribute data type for attribute \"" + attributeName + "\".");
+	  errorQueue.pushError("\tgot " + dataType2String(dataType));
+	  errorQueue.pushError("\texpected " + dataType2String( H5identifyType(h5type, attributeName) ) );
+	  //errorQueue.print(cerr);
+	  return false;
+	}
+	hsize_t nPoints = nPoints = H5Tget_size(h5type);
+	if( ERRORCHECK(nPoints) ){
+	  errorQueue.pushError("Could not get data length for attribute \"" + attributeName + "\".");
+	  return false;	  
 	}
 	dataLength = int(nPoints);
 	if( ERRORCHECK(H5Aread(attributeId,h5type,data)) )
@@ -176,7 +262,7 @@ bool Hdf5::readAttribute( const string& attributeName,
 	  hasError = true;
       } else  {
 	hasError = true;
-	errorQueue.pushError("Attribute " + attributeName + " does not exist");
+	errorQueue.pushError("Could not find attribute \"" + attributeName + "\".");
       }
       if (group!="") {
 	if( ERRORCHECK(H5Oclose(groupId)) )
@@ -184,7 +270,7 @@ bool Hdf5::readAttribute( const string& attributeName,
       }
     } else {
       hasError = true;
-      errorQueue.pushError("Group " + group + " does not exist...");
+      errorQueue.pushError("Could not find group \"" + group + "\" for attribute \"" + attributeName + "\".");
     }
   }
 
@@ -350,6 +436,7 @@ void Hdf5::getLocalArrayInfo( const string& group,
     H5Oget_info(dataId,&h5info);
     info.nAttr = h5info.num_attrs;
     info.dataType = H5identifyType(H5Dget_type(dataId),group);
+
     ERRORCHECK(H5Sclose(spaceId));      
     ERRORCHECK(H5Dclose(dataId));
     if (info.nDims>0 && nPoints!=info.nDims) {
@@ -528,6 +615,7 @@ bool Hdf5::open(const string& filename, const hid_t& accessMode)
       partitionSuper = Partitioning_Type(superSize);
 #endif//BUILD_WITH_APP
   }
+
 
   if (rank < superSize){
     if (accessMode == H5F_ACC_RDONLY) {
