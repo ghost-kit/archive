@@ -504,25 +504,6 @@ void vtkEnlilReader::SelectionCallback(
         void* vtkNotUsed(calldata))
 {
 
-    //    std::cout << "------------------------------------------------" << std::endl;
-    //    std::cout << "Selection Object has been modified." << std::endl;
-
-    //    int numOfArrays = static_cast<vtkEnlilReader*>(clientdata)->PointDataArraySelection->GetNumberOfArrays();
-    //    std::cout << "Number of Arrays in object: " << numOfArrays << std::endl;
-
-    //    for(int x = 0; x < numOfArrays; x++)
-    //    {
-    //        const char* name = static_cast<vtkEnlilReader*>(clientdata)->PointDataArraySelection->GetArrayName(x);
-    //         int status = static_cast<vtkEnlilReader*>(clientdata)->PointDataArraySelection->ArrayIsEnabled(name);
-    //        std::cout << "Array: " << name
-    //                  << "Status: " << status
-    //                  << std::endl;
-
-
-    //    }
-
-    //    std::cout << "------------------------------------------------" << std::endl;
-
     static_cast<vtkEnlilReader*>(clientdata)->Modified();
 }
 
