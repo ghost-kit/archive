@@ -40,6 +40,17 @@ public:
 
   vtkGetMacro(NumberOfTimeSteps, int)
 
+  //testing the custom property
+  void SetCustomProperty(int _arg)
+  {
+
+      std::cout << "Updating Status: " << std::endl;
+      std::cout << "This works..." << std::endl;
+
+      this->Modified();
+  }
+
+
   //individual SC info Array manipulators
   void SetSCArrayStatus(const char *name, int status);
   int GetSCinfoArrayStatus(const char *name);

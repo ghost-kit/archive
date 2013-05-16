@@ -50,9 +50,25 @@
 
       </StringVectorProperty>
 
+      <IntVectorProperty name="CustomProperty"
+                         command="SetCustomProperty"
+                         number_of_elements="1"
+                         default_values="1"
+                         panel_widget="SpaceCraftInfoProperties">
 
+            <Documentation>
+                This is a custom widget test.
+            </Documentation>
 
+            <BooleanDomain name = "bool" />
 
+        </IntVectorProperty>
+
+    <ExposedProperties>
+
+        <Property name = "customPropertyWidget" />
+
+    </ExposedProperties>
 
       <StringVectorProperty
         name="AvailSCsubinfo"
