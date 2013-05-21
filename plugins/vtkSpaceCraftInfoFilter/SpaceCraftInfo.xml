@@ -50,19 +50,19 @@
 
       </StringVectorProperty>
 
-      <IntVectorProperty name="CustomProperty"
-                         command="SetCustomProperty"
-                         number_of_elements="1"
-                         default_values="1"
-                         panel_widget="SpaceCraftInfoProperties">
+   <IntVectorProperty name="SpaceCraftInfoProperties"
+                      command="SetSCIData"
+                      number_of_elements="1"
+                      default_values="1"
+                      panel_widget="SpaceCraftInfoProperties">
 
-            <Documentation>
-                This is a custom widget test.
-            </Documentation>
+         <Documentation>
+             This is a custom widget test.
+         </Documentation>
 
-            <BooleanDomain name = "bool" />
+         <BooleanDomain name = "bool" />
 
-        </IntVectorProperty>
+    </IntVectorProperty>
 
     <ExposedProperties>
 

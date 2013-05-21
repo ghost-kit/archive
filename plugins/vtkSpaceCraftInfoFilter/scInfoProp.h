@@ -11,7 +11,7 @@ class  scInfoProp : public pqPropertyWidget
         typedef pqPropertyWidget Superclass;
 
 public:
-    scInfoProp(vtkSMProxy *smproxy, vtkSMProperty *smgroup, QWidget *parentObject = 0);
+    scInfoProp(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject = 0);
     virtual ~scInfoProp();
 
 

@@ -41,7 +41,7 @@ public:
   vtkGetMacro(NumberOfTimeSteps, int)
 
   //testing the custom property
-  void SetCustomProperty(int _arg)
+  void SetSCIData(int _arg)
   {
 
       std::cout << "Updating Status: " << std::endl;

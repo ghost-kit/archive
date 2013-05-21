@@ -9,36 +9,35 @@ endif()
 
 include(ParaViewPlugins)
 
-
 # wrap QT
 QT4_WRAP_CPP(
     MOC_BUILT_SOURCES
     filterNetworkAccessModule.h
-    scInfoProp.h
+    ScInfoPropWidget.h
     )
 
+# Wrap UI
+QT4_WRAP_UI(
+    UI_BUILT_SOURCES
+    ScInfoPropWidget.ui
+    )
 
-# create a paraview plugin containing server manager xml and the server
-# manager classes to build
-# this plugin can be loaded on the server side
-
-
+# Property Widget
 set(outifaces0)
 set(outsrcs0)
 ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
         TYPE "SpaceCraftInfoProperties"
-        CLASS_NAME "scInfoProp")
+        CLASS_NAME "ScInfoPropWidget")
 
 
-ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "1.0"
+ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
 	SERVER_MANAGER_XML SpaceCraftInfo.xml
         GUI_INTERFACES ${outifaces0}
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfo.cxx
         SOURCES filterNetworkAccessModule.cpp
-                scInfoProp.cpp
+                ScInfoPropWidget.cpp
                 ${outsrcs0}
-                ${MOC_BUILT_SOURCES})
-
-
-#Properties Panel
+                ${MOC_BUILT_SOURCES}
+                ${UI_BUILT_SOURCES}
+                )
 
