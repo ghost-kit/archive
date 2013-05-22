@@ -228,7 +228,7 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 bool vtkSpaceCraftInfo::getSCList()
 {
     //get data from network
-    this->SCListManager->Get(this->baseURL+dataViewSpacePhys+getObservatoryGroups, QString("ObservatoryGroups"), QString("ObservatoryGroupDescription"));
+//    this->SCListManager->Get(this->baseURL+dataViewSpacePhys+getObservatoryGroups, QString("ObservatoryGroups"), QString("ObservatoryGroupDescription"));
 
     if(this->SCListManager->getNetworkAccessStatus() == 0)
         return true;

@@ -1,109 +1,40 @@
 <ServerManagerConfiguration>
-  <!-- Begin SpaceCraftInfo -->
-  <ProxyGroup name="filters">
+<!-- Begin SpaceCraftInfo -->
+    <ProxyGroup name="filters">
     <SourceProxy name="SpaceCraftInfo" class="vtkSpaceCraftInfo">
 
-      <InputProperty
-        name="Input"
-        command="SetInputConnection">
-        <ProxyGroupDomain name="groups">
-          <Group name="sources"/>
-          <Group name="filters"/>
-        </ProxyGroupDomain>
-        <DataTypeDomain name="input_type">
-          <DataType value="vtkStructuredGrid"/>
-        </DataTypeDomain>
-        <InputArrayDomain name="input_array" attribute_type="point"
-          number_of_components="1" optional="0"/>
-      </InputProperty>
+       <InputProperty name="Input" command="SetInputConnection">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+          <DataTypeDomain name="input_type">
+            <DataType value="vtkStructuredGrid"/>
+          </DataTypeDomain>
 
-      <StringVectorProperty
-        name="AvailSCinfo"
-        information_only="1">
-        <ArraySelectionInformationHelper attribute_name="SCinfo"/>
+          <InputArrayDomain name="input_array" attribute_type="point"
+                            number_of_components="1" optional="0"/>
 
-        <Documentation>
-          This is the Cell Array Selectors.
-        </Documentation>
+       </InputProperty>
 
-      </StringVectorProperty>
+<!--        <PropertyGroup label="SpaceCraft Properties">-->
+            <StringVectorProperty name="SpaceCraftInfoProperties"
+                                command="SetSCIData"
+                                number_of_elements="0"
+                                panel_widget="SpaceCraftInfoProperties"
+                                label = ""
+                                panel_visibility = "default">
 
-      <StringVectorProperty
-        name="AvailSCstatus"
-        command="SetSCArrayStatus"
-        number_of_elements="0"
-        repeat_command="1"
-        number_of_elements_per_command="2"
-        element_types = "2 0"
-        information_property="AvailSCinfo"
-        label="Space Physics Information Available"
-        default_values = "0">
+                <Documentation>
+                This is a custom widget test.
+                </Documentation>
 
-        <ArraySelectionDomain name="array_list">
-          <RequiredProperties>
-            <Property name="AvailSCinfo" function="ArrayList"/>
-          </RequiredProperties>
-        </ArraySelectionDomain>
-        <Documentation>
-          This is the Observatory Group Array Selectors.
-        </Documentation>
-
-      </StringVectorProperty>
-
-   <IntVectorProperty name="SpaceCraftInfoProperties"
-                      command="SetSCIData"
-                      number_of_elements="1"
-                      default_values="1"
-                      panel_widget="SpaceCraftInfoProperties">
-
-         <Documentation>
-             This is a custom widget test.
-         </Documentation>
-
-         <BooleanDomain name = "bool" />
-
-    </IntVectorProperty>
-
-    <ExposedProperties>
-
-        <Property name = "customPropertyWidget" />
-
-    </ExposedProperties>
-
-      <StringVectorProperty
-        name="AvailSCsubinfo"
-        information_only="1">
-        <ArraySelectionInformationHelper attribute_name="SCsubinfo"/>
-
-        <Documentation>
-          This is the Observatory Array Selectors.
-        </Documentation>
-
-      </StringVectorProperty>
-
-      <StringVectorProperty
-        name="AvailSCsubstatus"
-        command="SetSCSubArrayStatus"
-        number_of_elements="0"
-        repeat_command="1"
-        number_of_elements_per_command="2"
-        element_types = "2 0"
-        information_property="AvailSCsubinfo"
-        label="Space Physics Observatories Available"
-        default_values = "0">
-
-        <ArraySelectionDomain name="array_list">
-          <RequiredProperties>
-            <Property name="AvailSCsubinfo" function="ArrayList"/>
-          </RequiredProperties>
-        </ArraySelectionDomain>
-        <Documentation>
-          This is the Observatory Array Selectors.
-        </Documentation>
-
-      </StringVectorProperty>
+            </StringVectorProperty>
+<!--        </PropertyGroup>-->
 
     </SourceProxy>
-  </ProxyGroup>
-  <!-- End SpaceCraftInfo -->
+    </ProxyGroup>
+    <!-- End SpaceCraftInfo -->
+
+
 </ServerManagerConfiguration>

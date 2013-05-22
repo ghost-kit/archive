@@ -12,6 +12,8 @@
 #include <QXmlStreamReader>
 #include <QStack>
 
+typedef QList<QMultiMap<QString, QString> *> filterNetworkList;
+typedef QMap<QString,QString> filterNetworkObject;
 
 class filterNetworkAccessModule : public QObject
 {

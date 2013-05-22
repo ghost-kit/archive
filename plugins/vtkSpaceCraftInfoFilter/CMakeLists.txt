@@ -14,12 +14,14 @@ QT4_WRAP_CPP(
     MOC_BUILT_SOURCES
     filterNetworkAccessModule.h
     ScInfoPropWidget.h
+    selectionBoxWidget.h
     )
 
 # Wrap UI
 QT4_WRAP_UI(
     UI_BUILT_SOURCES
     ScInfoPropWidget.ui
+    selectionBoxWidget.ui
     )
 
 # Property Widget
@@ -36,6 +38,7 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfo.cxx
         SOURCES filterNetworkAccessModule.cpp
                 ScInfoPropWidget.cpp
+                selectionBoxWidget.cpp
                 ${outsrcs0}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}

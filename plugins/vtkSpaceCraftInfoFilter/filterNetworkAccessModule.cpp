@@ -50,7 +50,9 @@ void filterNetworkAccessModule::networkReply()
 
 
         this->consolodateStacks();
+
         this->extractObjects();
+
 
         this->networkAccessStatus = 1;
     }
@@ -131,7 +133,7 @@ void filterNetworkAccessModule::consolodateStacks()
                 //handle the text cases
             case QXmlStreamReader::Characters:
                 //process characters
-               // std::cout << "Characters..." << std::endl;
+                // std::cout << "Characters..." << std::endl;
 
                 //this assumes that the first element is NOT a character element
                 if(tempTextStack.isEmpty())
@@ -144,7 +146,7 @@ void filterNetworkAccessModule::consolodateStacks()
                 {
 
                     //take off the previous
-                 //   std::cout << "Poping off blank text from previous tag" << std::endl;
+                    //   std::cout << "Poping off blank text from previous tag" << std::endl;
                     tempTextStack.pop();
                     tempTextStack.push(tempText);
                 }
@@ -153,7 +155,7 @@ void filterNetworkAccessModule::consolodateStacks()
 
                 //keep everything that we want
             default:
-               // std::cout << "Everything else..." << std::endl;
+                // std::cout << "Everything else..." << std::endl;
                 if(tempQn != this->TopLevel)
                 {
                     //put everything (except the top level)
@@ -180,60 +182,63 @@ void filterNetworkAccessModule::consolodateStacks()
 
 void filterNetworkAccessModule::extractObjects()
 {
-    if(!this->parseQnStack.isEmpty() && this->parseQnStack.front() == this->ObjectLevel)
+    if(!this->parseQnStack.isEmpty())
     {
-        while(!this->parseQnStack.isEmpty())
+        if( this->parseQnStack.front() == this->ObjectLevel)
         {
-            std::cout << "Processing..." << std::endl;
-
-            QXmlStreamReader::TokenType tempType = this->parseTypeStack.front();
-            this->parseTypeStack.pop_front();
-            QString tempQn = this->parseQnStack.front();
-            this->parseQnStack.pop_front();
-            QString tempText = this->parseTextStack.front();
-            this->parseTextStack.pop_front();
-
-            std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
-
-            //create a new object for the stack
-            QMultiMap<QString, QString> *temp = new QMultiMap<QString, QString>;
-            do
+            while(!this->parseQnStack.isEmpty())
             {
-                //get the next item from the stack
-                tempType = this->parseTypeStack.front();
+                std::cout << "Processing..." << std::endl;
+
+                QXmlStreamReader::TokenType tempType = this->parseTypeStack.front();
                 this->parseTypeStack.pop_front();
-
-                tempQn = this->parseQnStack.front();
+                QString tempQn = this->parseQnStack.front();
                 this->parseQnStack.pop_front();
-
-                tempText = this->parseTextStack.front();
+                QString tempText = this->parseTextStack.front();
                 this->parseTextStack.pop_front();
 
-                //DEBUG
-                std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
+                std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
 
-                //create object
-                temp->insert(tempQn, tempText);
-                //temp->operator [](tempQn) = tempText;
-                //temp->insert(tempQn, tempText);
+                //create a new object for the stack
+                QMultiMap<QString, QString> *temp = new QMultiMap<QString, QString>;
+                do
+                {
+                    //get the next item from the stack
+                    tempType = this->parseTypeStack.front();
+                    this->parseTypeStack.pop_front();
+
+                    tempQn = this->parseQnStack.front();
+                    this->parseQnStack.pop_front();
+
+                    tempText = this->parseTextStack.front();
+                    this->parseTextStack.pop_front();
+
+                    //DEBUG
+                    std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
+
+                    //create object
+                    temp->insert(tempQn, tempText);
+                    //temp->operator [](tempQn) = tempText;
+                    //temp->insert(tempQn, tempText);
 
 
-            }while(!this->parseQnStack.isEmpty() && this->parseQnStack.front() != this->ObjectLevel);
+                }while(!this->parseQnStack.isEmpty() && this->parseQnStack.front() != this->ObjectLevel);
 
-            //add object to list
-            std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
-            std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
-            this->finalObjects->push_back(temp);
+                //add object to list
+                std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
+                std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
+                this->finalObjects->push_back(temp);
+
+            }
+            std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
 
         }
-        std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
-
-    }
-    else
-    {
-        std::cerr << "Empty Status: " << this->parseQnStack.size() << std::endl;
-        std::cerr << "Back Item: " << this->parseQnStack.back().toAscii().data() << std::endl;
-        std::cerr << ":EXTRACTION LOOP EXITS WITHOUT EXECUTING:" << std::endl;
+        else
+        {
+            std::cerr << "Empty Status: " << this->parseQnStack.size() << std::endl;
+            std::cerr << "Back Item: " << this->parseQnStack.back().toAscii().data() << std::endl;
+            std::cerr << ":EXTRACTION LOOP EXITS WITHOUT EXECUTING:" << std::endl;
+        }
     }
 
 }

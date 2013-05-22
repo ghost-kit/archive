@@ -101,8 +101,6 @@ protected:
   //Data Output objects
   vtkTable *outputTable;
 
-  //
-
   //------ gui attributes pannel ------//
 
   //global SC info Array manipulators
