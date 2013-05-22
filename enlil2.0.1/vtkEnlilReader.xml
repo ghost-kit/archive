@@ -44,40 +44,6 @@
     </IntVectorProperty>
 
 
-  <!--  <StringVectorProperty
-        name="CellArrayInfo"
-        information_only="1">
-
-        <ArraySelectionInformationHelper attribute_name="Cell"/>
-
-        <Documentation>
-            This is the Cell Array Selector.
-        </Documentation>
-
-    </StringVectorProperty>
-
-    <StringVectorProperty
-        name="CellArrayStatus"
-        command="SetCellArrayStatus"
-        number_of_elements="0"
-        repeat_command="1"
-        number_of_elements_per_command="2"
-        element_types = "2 0"
-        information_property="CellArrayInfo"
-        label="Fields Available"
-        default_values = "0">
-
-        <ArraySelectionDomain name="array_list">
-          <RequiredProperties>
-            <Property name="CellArrayInfo" function="ArrayList"/>
-          </RequiredProperties>
-        </ArraySelectionDomain>
-        <Documentation>
-          This is the Cell Array Selectors.
-        </Documentation>
-
-      </StringVectorProperty>-->
-
       <StringVectorProperty
         name="PointArrayInfo"
         information_only="1">
