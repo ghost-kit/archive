@@ -6,6 +6,7 @@
 #include "selectionBoxWidget.h"
 
 #include <QWidget>
+#include <QListWidgetItem>
 
 namespace Ui {
 class ScInfoPropWidget;
@@ -28,10 +29,10 @@ protected:
     filterNetworkList *currentObservatoryObjects;
 
     //network managers
-    filterNetworkAccessModule *SCListManager;
-    filterNetworkAccessModule *SCInstrumentManager;
-    filterNetworkAccessModule *SCDataManager;
-    filterNetworkAccessModule *SCObservatoryManager;
+//    filterNetworkAccessModule *SCListManager;
+//    filterNetworkAccessModule *SCInstrumentManager;
+//    filterNetworkAccessModule *SCDataManager;
+//    filterNetworkAccessModule *SCObservatoryManager;
 
     //listings
     QStringList GroupList;
@@ -56,8 +57,8 @@ protected:
 
 
     //handlers
-    bool getSCList();
-    bool getSCInstrument();
+    bool getSCList(filterNetworkAccessModule &manager);
+    bool getSCInstrument(filterNetworkAccessModule &manager);
 
     bool getGroupsList();
     bool getObservatoryList(QString Group);
@@ -74,7 +75,7 @@ private slots:
     void selectedObservatory(QString selection);
     void selectedInstrument(QString selection);
     void selectedDataSet(QString selection);
-    void selectedInstrumentElement(QModelIndex index);
+    void selectedInstrumentElement(QListWidgetItem *item);
 
 
 

@@ -2,6 +2,8 @@
 #include "ui_ScInfoPropWidget.h"
 
 #include "pqPropertiesPanel.h"
+#include "filterNetworkAccessModule.h"
+#include <QListWidgetItem>
 
 
 ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject)
@@ -17,9 +19,9 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     this->getInstruments = QString("instruments");
 
     //configure the network manager
-    this->SCListManager = new filterNetworkAccessModule();
-    this->SCInstrumentManager = new filterNetworkAccessModule();
-    this->SCDataManager = new filterNetworkAccessModule();
+//    this->SCListManager = new filterNetworkAccessModule();
+//    this->SCInstrumentManager = new filterNetworkAccessModule();
+//    this->SCDataManager = new filterNetworkAccessModule();
 
 
     //Setup the UI
@@ -29,8 +31,9 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     ui->gridLayout->setVerticalSpacing(pqPropertiesPanel::suggestedVerticalSpacing());
 
     //Load first set of Values
-    this->getSCList();
-    this->currentGroupObjects = this->SCListManager->getFinalOjects();
+    filterNetworkAccessModule SCListManager;
+    this->getSCList(SCListManager);
+    this->currentGroupObjects = SCListManager.getFinalOjects();
 
     //get the observatory group list
     this->getGroupsList();
@@ -40,8 +43,17 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     //connect signals to slots
     connect(ui->Group, SIGNAL(activated(QString)), this, SLOT(selectedGroup(QString)));
+    connect(ui->Group, SIGNAL(highlighted(QString)), this, SLOT(selectedGroup(QString)));
+
     connect(ui->Observatory, SIGNAL(activated(QString)), this, SLOT(selectedObservatory(QString)));
-    connect(ui->Instruments, SIGNAL(clicked(QModelIndex)), this, SLOT(selectedInstrumentElement(QModelIndex)));
+    connect(ui->Observatory, SIGNAL(highlighted(QString)), this, SLOT(selectedObservatory(QString)));
+
+    //connect(ui->Instruments, SIGNAL(itemActivated(QListWidgetItem*)), this, SLOT(selectedInstrumentElement(QListWidgetItem*)));
+    //connect(ui->Instruments, SIGNAL(itemClicked(QListWidgetItem*)), this, SLOT(selectedInstrumentElement(QListWidgetItem*)));
+    connect(ui->Instruments, SIGNAL(itemEntered(QListWidgetItem*)), this, SLOT(selectedInstrumentElement(QListWidgetItem*)));
+
+    //connect(ui->Instruments, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(selectedInstrumentElement(QListWidgetItem*)));
+
     connect(ui->DataSet, SIGNAL(activated(QString)), this, SLOT(selectedDataSet(QString)));
 
     //mark changes
@@ -55,30 +67,30 @@ ScInfoPropWidget::~ScInfoPropWidget()
     delete ui;
 }
 
-bool ScInfoPropWidget::getSCList()
+bool ScInfoPropWidget::getSCList(filterNetworkAccessModule &manager)
 {
 
     //get data from network
-    this->SCListManager->Get(this->baseURL + this->dataViewSpacePhys + this->getObservatoryGroups, QString("ObservatoryGroups"), QString("ObservatoryGroupDescription"));
+    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getObservatoryGroups, QString("ObservatoryGroups"), QString("ObservatoryGroupDescription"));
 
-    if(this->SCListManager->getNetworkAccessStatus() == 0)
+    if(manager.getNetworkAccessStatus() == 0)
         return true;
     else
         return false;
 }
 
-bool ScInfoPropWidget::getSCInstrument()
+bool ScInfoPropWidget::getSCInstrument(filterNetworkAccessModule &manager)
 {
 
     std::cout << QString(this->baseURL + this->dataViewSpacePhys + this->getInstrumentTypes
                  + "?observatory=" + this->currentObservatory).toAscii().data() << std::endl;
 
-    this->SCInstrumentManager->Get(this->baseURL + this->dataViewSpacePhys + this->getInstruments
+    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getInstruments
                                    + "?observatory=" + this->currentObservatory,
                                    QString("Instruments"),
                                    QString("InstrumentDescription"));
 
-    if(this->SCInstrumentManager->getNetworkAccessStatus() == 0)
+    if(manager.getNetworkAccessStatus() == 0)
         return true;
     else
         return false;
@@ -158,14 +170,12 @@ void ScInfoPropWidget::selectedGroup(QString selection)
 
     //clear downstream elements
     this->currentInstrument = "";
+    ui->Instruments->clear();
     ui->Instruments->setDisabled(true);
 
     this->currentDataSet = "";
+    ui->DataSet->clear();
     ui->DataSet->setDisabled(true);
-
-
-
-
 
 }
 
@@ -175,10 +185,13 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
     std::cout << "Observatory Selected: " << selection.toAscii().data() << std::endl;
 
     this->currentObservatory = selection;
+    //this->currentInstrumentObjects->clear();
+
+    filterNetworkAccessModule SCInstrumentManager;
 
     //get data for next item
-    this->getSCInstrument();
-    this->currentInstrumentObjects = this->SCInstrumentManager->getFinalOjects();
+    this->getSCInstrument(SCInstrumentManager);
+    this->currentInstrumentObjects = SCInstrumentManager.getFinalOjects();
 
     //get the required list
     this->getInstrumentList();
@@ -202,8 +215,9 @@ void ScInfoPropWidget::selectedDataSet(QString selection)
 
 }
 
-void ScInfoPropWidget::selectedInstrumentElement(QModelIndex index)
+void ScInfoPropWidget::selectedInstrumentElement(QListWidgetItem * item)
 {
+    std::cout << "Activated Item" << item->text().toAscii().data() << std::endl;
 
     //selection made
 
@@ -230,7 +244,7 @@ bool ScInfoPropWidget::getInstrumentList()
         filterNetworkObject *currentMap = this->currentInstrumentObjects->operator [](x);
 
         QString name = currentMap->operator []("Name");
-        QString desc = currentMap->operator []("ShortDescription");
+        QString desc = currentMap->operator []("LongDescription");
 
         std::cout << "Name: " << name.toAscii().data() << "\tDescription: " << desc.toAscii().data() << std::endl;
 
