@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -40,10 +40,17 @@
       <string>Observatory Data Selection</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="2">
-       <widget class="QComboBox" name="Group">
+      <item row="2" column="0">
+       <widget class="QLabel" name="Instrument_Label">
+        <property name="text">
+         <string>Instruments</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="Observatory">
         <property name="enabled">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <property name="maximumSize">
          <size>
@@ -71,42 +78,17 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="4" column="0">
        <widget class="QLabel" name="DataSet_Label">
         <property name="text">
-         <string>Data Set</string>
+         <string>Data Sets</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="Instrument_Label">
-        <property name="text">
-         <string>Instruments</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QComboBox" name="Observatory">
+      <item row="0" column="2">
+       <widget class="QComboBox" name="Group">
         <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>256</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <item>
-         <property name="text">
-          <string/>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QComboBox" name="DataSet">
-        <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="maximumSize">
          <size>
@@ -138,15 +120,18 @@
         </property>
        </widget>
       </item>
+      <item row="4" column="2">
+       <widget class="QListWidget" name="DataSet"/>
+      </item>
      </layout>
      <zorder>Group</zorder>
      <zorder>Observatory</zorder>
-     <zorder>DataSet</zorder>
      <zorder>Group_Label</zorder>
      <zorder>Observatory_Label</zorder>
      <zorder>Instrument_Label</zorder>
      <zorder>DataSet_Label</zorder>
      <zorder>Instruments</zorder>
+     <zorder>DataSet</zorder>
     </widget>
    </item>
   </layout>

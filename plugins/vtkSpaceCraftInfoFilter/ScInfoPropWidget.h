@@ -27,19 +27,16 @@ protected:
     filterNetworkList *currentGroupObjects;
     filterNetworkList *currentInstrumentObjects;
     filterNetworkList *currentObservatoryObjects;
-
-    //network managers
-//    filterNetworkAccessModule *SCListManager;
-//    filterNetworkAccessModule *SCInstrumentManager;
-//    filterNetworkAccessModule *SCDataManager;
-//    filterNetworkAccessModule *SCObservatoryManager;
+    QList<filterNetworkList *> currentDataObjects;
 
     //listings
     QStringList GroupList;
     QStringList SubGroupList;
-    QStringList InstrumentNameList;
-    QStringList InstrumentDescList;
-    QStringList DataSetList;
+
+    //maps
+    QMultiMap<QString , QString> InstrumentList;
+    QMultiMap<QString , QString> DataSetList;
+
 
     //current target
     QString currentGroup;
@@ -54,7 +51,14 @@ protected:
     QString getObservatoryGroups;
     QString getInstrumentTypes;
     QString getInstruments;
+    QString getInventory;
+    QString getDataSets;
 
+    //instrument Selection
+    QList<QListWidgetItem*> selectedInstruments;
+
+    //data selection
+    QList<QListWidgetItem*> selectedData;
 
     //handlers
     bool getSCList(filterNetworkAccessModule &manager);
@@ -65,7 +69,7 @@ protected:
     bool loadGroupListToGUI();
 
     bool getInstrumentList();
-    bool getDataSet();
+    bool getDataSetOptions(filterNetworkAccessModule &manager, QString dataset);
 
 private:
     Ui::ScInfoPropWidget *ui;
@@ -76,6 +80,9 @@ private slots:
     void selectedInstrument(QString selection);
     void selectedDataSet(QString selection);
     void selectedInstrumentElement(QListWidgetItem *item);
+    void instrumentSelectionChanged();
+    void dataSelectionChanged();
+    void getDataOptions();
 
 
 
