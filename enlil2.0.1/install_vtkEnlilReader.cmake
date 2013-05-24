@@ -25,11 +25,11 @@ if (APPLE)
             ${TMP_DIR}/vtkEnlilReader/${SHARED_LIBRARY_PREFIX}vtkEnlilReader${SHARED_LIBRARY_SUFFIX}
             # names to replace (in order)
             "${PARAVIEW_BINARY_DIR}/lib/=@executable_path/../Libraries/"
-            "/Users/jomu9721/Data/Development/SwFT/superbuild/install/lib/libavformat.dylib=@executable_path/../Libraries/libavformat.52.64.2.dylib"
-            "/Users/jomu9721/Data/Development/SwFT/superbuild/install/lib/libavcodec.dylib=@executable_path/../Libraries/libavcodec.52.72.2.dylib"
-            "/Users/jomu9721/Data/Development/SwFT/superbuild/install/lib/libavutil.dylib=@executable_path/../Libraries/libavutil.50.15.1.dylib"
-            "/Users/jomu9721/Data/Development/SwFT/superbuild/install/lib/libswscale.dylib=@executable_path/../Libraries/libswscale.0.11.0.dylib"
-            "/Users/jomu9721/Data/Development/SwFT/superbuild/paraview/src/paraview-build/lib/=@executable_path/../Libraries/"
+            "/Volumes/Data/Development/SwFt/SuperBuild/paraview/src/paraview-build/lib/libavformat.dylib=@executable_path/../Libraries/libavformat.52.64.2.dylib"
+            "/Volumes/Data/Development/SwFt/SuperBuild/paraview/src/paraview-build/lib/libavcodec.dylib=@executable_path/../Libraries/libavcodec.52.72.2.dylib"
+            "/Volumes/Data/Development/SwFt/SuperBuild/paraview/src/paraview-build/lib/libavutil.dylib=@executable_path/../Libraries/libavutil.50.15.1.dylib"
+            "/Volumes/Data/Development/SwFt/SuperBuild/paraview/src/paraview-build/lib/libswscale.dylib=@executable_path/../Libraries/libswscale.0.11.0.dylib"
+            "/Volumes/Data/Development/SwFt/SuperBuild/paraview/src/paraview-build/lib/=@executable_path/../Libraries/"
             "${QT_LIBRARY_DIR}/Qt=@executable_path/../Frameworks/Qt"
             "${QT_LIBRARY_DIR}/=@executable_path/../Libraries/"
             "libhdf5.7.3.0.dylib=@executable_path/../Libraries/libhdf5.1.8.9.dylib"
