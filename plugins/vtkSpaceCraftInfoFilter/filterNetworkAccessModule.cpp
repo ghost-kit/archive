@@ -221,14 +221,12 @@ void filterNetworkAccessModule::extractObjects()
                     //temp->operator [](tempQn) = tempText;
                     //temp->insert(tempQn, tempText);
 
-
                 }while(!this->parseQnStack.isEmpty() && this->parseQnStack.front() != this->ObjectLevel);
 
                 //add object to list
                 std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
                 std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
                 this->finalObjects->push_back(temp);
-
             }
             std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
 
@@ -240,7 +238,6 @@ void filterNetworkAccessModule::extractObjects()
             std::cerr << ":EXTRACTION LOOP EXITS WITHOUT EXECUTING:" << std::endl;
         }
     }
-
 }
 
 

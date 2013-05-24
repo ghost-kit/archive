@@ -28,7 +28,6 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     ui->Observatory->setDisabled(true);
     ui->Instruments->setDisabled(true);
-    ui->DataSet->setDisabled(true);
 
     //Load first set of Values
     filterNetworkAccessModule SCListManager;
@@ -54,9 +53,6 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     /** Instrument Connections */
     connect(ui->Instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelectionChanged()));
 
-    /** DataSet Connections */
-    connect(ui->DataSet, SIGNAL(itemSelectionChanged()), this, SLOT(dataSelectionChanged()));
-
     //mark changes
     this->setChangeAvailableAsChangeFinished(true);
 
@@ -72,7 +68,9 @@ bool ScInfoPropWidget::getSCList(filterNetworkAccessModule &manager)
 {
 
     //get data from network
-    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getObservatoryGroups, QString("ObservatoryGroups"), QString("ObservatoryGroupDescription"));
+    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getObservatoryGroups,
+                QString("ObservatoryGroups"),
+                QString("ObservatoryGroupDescription"));
 
     if(manager.getNetworkAccessStatus() == 0)
         return true;
@@ -175,16 +173,12 @@ void ScInfoPropWidget::selectedGroup(QString selection)
         ui->Observatory->setDisabled(true);
     }
 
-
     //clear downstream elements
     this->currentInstrument = "";
     ui->Instruments->clear();
     ui->Instruments->setDisabled(true);
 
     this->currentDataSet = "";
-    ui->DataSet->clear();
-    ui->DataSet->setDisabled(true);
-
 }
 
 //process Observatories
@@ -236,36 +230,42 @@ void ScInfoPropWidget::selectedInstrumentElement(QListWidgetItem * item)
         std::cout << "FALSE" << std::endl;
     }
 
-    //selection made
-
 }
 
+//Instrument Selection has Changed
 void ScInfoPropWidget::instrumentSelectionChanged()
 {
     std::cout << "Instrument Selection Changed" << std::endl;
 
-    this->selectedInstruments.clear();
-    this->selectedInstruments = ui->Instruments->selectedItems();
+//    //if we have something to process, lets do it...
+//    this->selectedInstruments.clear();
+//    this->selectedInstruments = ui->Instruments->selectedItems();
 
-    std::cout << "Selected Items: " << std::endl;
+//    if(!selectedInstruments.isEmpty())
+//    {
+//        std::cout << "Selected Items: " << std::endl;
 
-    QList<QListWidgetItem*>::iterator iter;
+//        QList<QListWidgetItem*>::iterator iter;
 
-    for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
-    {
-         QString item = (*iter)->text();
+//        for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
+//        {
+//             QString item = (*iter)->text();
 
-         item = item.split("\t")[0];
+//            item = item.split("\t")[0];
 
-         std::cout << "Item: " << item.toAscii().data() << std::endl;
+//            std::cout << "Item: " << item.toAscii().data() << std::endl;
 
-         filterNetworkAccessModule manager;
-         this->getDataSetOptions(manager, item);
-         this->currentDataObjects.push_back(manager.getFinalOjects());
-    }
+//            filterNetworkAccessModule manager;
+//            this->getDataSetOptions(manager, item);
 
-    ui->DataSet->setEnabled(true);
+//            if(!manager.getFinalOjects()->isEmpty())
+//            {
+//                this->currentDataObjects.push_back(manager.getFinalOjects());
+//            }
+//        }
 
+//        ui->DataSet->setEnabled(true);
+//    }
 }
 
 void ScInfoPropWidget::dataSelectionChanged()
@@ -286,11 +286,8 @@ bool ScInfoPropWidget::getDataSetOptions(filterNetworkAccessModule &manager, QSt
 {
 
     std::cout << "Get Data Set Options" << std::endl;
-
-
     std::cout << QString(this->baseURL + this->dataViewSpacePhys + this->getDataSets
                          + "/" + dataset + "/" + this->getInventory).toAscii().data() << std::endl;
-
 
     manager.Get(this->baseURL + this->dataViewSpacePhys + this->getDataSets
                 + "/" + dataset + "/" + this->getInventory,
@@ -302,9 +299,6 @@ bool ScInfoPropWidget::getDataSetOptions(filterNetworkAccessModule &manager, QSt
     else
         return false;
 
-
-
-    return true;
 }
 
 //get instrument list for current selections
@@ -329,12 +323,14 @@ bool ScInfoPropWidget::getInstrumentList()
         }
         else
         {
-            this->InstrumentList.insert(name, desc);
+            this->InstrumentList.insert(name, name);
         }
-
     }
 
-    GroupList.sort();
+    if(!this->currentInstrumentObjects->isEmpty())
+    {
+        GroupList.sort();
+    }
 
     return true;
 }
