@@ -109,7 +109,7 @@
       <item row="2" column="0">
        <widget class="QLabel" name="Instrument_Label">
         <property name="text">
-         <string>Instruments</string>
+         <string>Data Sets</string>
         </property>
        </widget>
       </item>

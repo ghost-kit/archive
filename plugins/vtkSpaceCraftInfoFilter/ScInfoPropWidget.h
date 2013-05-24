@@ -23,11 +23,14 @@ public:
 
 
 protected:
+    //Filter Components
+    vtkSMProxy *smProxy;
+    vtkSMProperty *smProperty;
+
     //Cached Objects
     filterNetworkList *currentGroupObjects;
     filterNetworkList *currentInstrumentObjects;
     filterNetworkList *currentObservatoryObjects;
-    QList<filterNetworkList *> currentDataObjects;
 
     //listings
     QStringList GroupList;
@@ -35,8 +38,7 @@ protected:
 
     //maps
     QMultiMap<QString , QString> InstrumentList;
-    QMultiMap<QString , QString> DataSetList;
-
+    QStringList DataSetList;
 
     //current target
     QString currentGroup;
@@ -69,7 +71,6 @@ protected:
     bool loadGroupListToGUI();
 
     bool getInstrumentList();
-    bool getDataSetOptions(filterNetworkAccessModule &manager, QString dataset);
 
 private:
     Ui::ScInfoPropWidget *ui;
@@ -78,13 +79,8 @@ private slots:
     void selectedGroup(QString selection);
     void selectedObservatory(QString selection);
     void selectedInstrument(QString selection);
-    void selectedDataSet(QString selection);
     void selectedInstrumentElement(QListWidgetItem *item);
     void instrumentSelectionChanged();
-    void dataSelectionChanged();
-    void getDataOptions();
-
-
 
 };
 

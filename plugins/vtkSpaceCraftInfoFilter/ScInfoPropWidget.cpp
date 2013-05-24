@@ -10,6 +10,10 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     : Superclass(smproxy, parentObject),
     ui(new Ui::ScInfoPropWidget)
 {
+
+    this->smProperty = smproperty;
+    this->smProxy = smproxy;
+
     //URLs for CDAWeb
     this->baseURL = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1");
     this->dataViewSpacePhys = QString("/dataviews/sp_phys/");
@@ -210,13 +214,6 @@ void ScInfoPropWidget::selectedInstrument(QString selection)
     std::cout << "Instrument Selected: " << selection.toAscii().data() << std::endl;
 }
 
-//process Data Set
-void ScInfoPropWidget::selectedDataSet(QString selection)
-{
-    std::cout << "DataSet Selected: " << selection.toAscii().data() << std::endl;
-
-}
-
 void ScInfoPropWidget::selectedInstrumentElement(QListWidgetItem * item)
 {
     std::cout << "Looking at Item " << item->text().toAscii().data() << std::endl;
@@ -237,69 +234,33 @@ void ScInfoPropWidget::instrumentSelectionChanged()
 {
     std::cout << "Instrument Selection Changed" << std::endl;
 
-//    //if we have something to process, lets do it...
-//    this->selectedInstruments.clear();
-//    this->selectedInstruments = ui->Instruments->selectedItems();
+    //if we have something to process, lets do it...
+    this->selectedInstruments = ui->Instruments->selectedItems();
 
-//    if(!selectedInstruments.isEmpty())
-//    {
-//        std::cout << "Selected Items: " << std::endl;
+    if(!selectedInstruments.isEmpty())
+    {
+        std::cout << "Selected Items: " << std::endl;
 
-//        QList<QListWidgetItem*>::iterator iter;
+        QList<QListWidgetItem*>::iterator iter;
 
-//        for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
-//        {
-//             QString item = (*iter)->text();
+        this->DataSetList.clear();
 
-//            item = item.split("\t")[0];
+        //create a list of items
+        for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
+        {
+            QString item = (*iter)->text();
+            item = item.split("\t")[0];
+            this->DataSetList.push_back(item);
+            std::cout << "Item: " << item.toAscii().data() << std::endl;
 
-//            std::cout << "Item: " << item.toAscii().data() << std::endl;
+        }
 
-//            filterNetworkAccessModule manager;
-//            this->getDataSetOptions(manager, item);
+//        this->addPropertyLink(ui->Instruments);
 
-//            if(!manager.getFinalOjects()->isEmpty())
-//            {
-//                this->currentDataObjects.push_back(manager.getFinalOjects());
-//            }
-//        }
-
-//        ui->DataSet->setEnabled(true);
-//    }
-}
-
-void ScInfoPropWidget::dataSelectionChanged()
-{
-    std::cout << "Data Selections have Changed" << std::endl;
-
-}
-
-void ScInfoPropWidget::getDataOptions()
-{
-
-
+    }
 }
 
 
-//get active DataSet
-bool ScInfoPropWidget::getDataSetOptions(filterNetworkAccessModule &manager, QString dataset)
-{
-
-    std::cout << "Get Data Set Options" << std::endl;
-    std::cout << QString(this->baseURL + this->dataViewSpacePhys + this->getDataSets
-                         + "/" + dataset + "/" + this->getInventory).toAscii().data() << std::endl;
-
-    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getDataSets
-                + "/" + dataset + "/" + this->getInventory,
-                                   QString("Variables"),
-                                   QString("VariableDescription"));
-
-    if(manager.getNetworkAccessStatus() == 0)
-        return true;
-    else
-        return false;
-
-}
 
 //get instrument list for current selections
 bool ScInfoPropWidget::getInstrumentList()
