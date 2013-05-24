@@ -4,7 +4,9 @@
 #include "pqPropertiesPanel.h"
 #include "filterNetworkAccessModule.h"
 #include <QListWidgetItem>
-
+#include <vtkSMProxy.h>
+#include <vtkSMProperty.h>
+#include <vtkSMStringVectorProperty.h>
 
 ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject)
     : Superclass(smproxy, parentObject),
@@ -13,6 +15,14 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     this->smProperty = smproperty;
     this->smProxy = smproxy;
+
+    this->svp = vtkSMStringVectorProperty::SafeDownCast(smproperty);
+
+    if(!svp)
+    {
+        return;
+    }
+
 
     //URLs for CDAWeb
     this->baseURL = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1");
@@ -57,8 +67,12 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     /** Instrument Connections */
     connect(ui->Instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelectionChanged()));
 
-    //mark changes
-    this->setChangeAvailableAsChangeFinished(true);
+
+    /** Property Links */
+    this->addPropertyLink(ui->Instruments, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
+
+
+
 
 }
 
@@ -245,17 +259,29 @@ void ScInfoPropWidget::instrumentSelectionChanged()
 
         this->DataSetList.clear();
 
+        QString csvList;
         //create a list of items
         for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
         {
             QString item = (*iter)->text();
             item = item.split("\t")[0];
+
+            if(iter == this->selectedInstruments.begin())
+            {
+                csvList = item;
+            }
+            else
+            {
+                csvList.append(QString("," + item));
+            }
             this->DataSetList.push_back(item);
             std::cout << "Item: " << item.toAscii().data() << std::endl;
 
         }
 
-//        this->addPropertyLink(ui->Instruments);
+        this->svp->SetElement(0, csvList.toAscii().data());
+
+        std::cout << "Time: " <<  svp->GetMTime() << " Class Name: " << svp->GetClassName() << std::endl;
 
     }
 }

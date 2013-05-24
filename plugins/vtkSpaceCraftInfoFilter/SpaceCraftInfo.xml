@@ -17,10 +17,10 @@
 
        </InputProperty>
 
-<!--        <PropertyGroup label="SpaceCraft Properties">-->
+
             <StringVectorProperty name="SpaceCraftInfoProperties"
                                 command="SetSCIData"
-                                number_of_elements="0"
+                                number_of_elements_per_command="1"
                                 panel_widget="SpaceCraftInfoProperties"
                                 label = ""
                                 panel_visibility = "default">
@@ -30,7 +30,10 @@
                 </Documentation>
 
             </StringVectorProperty>
-<!--        </PropertyGroup>-->
+
+            <ExposedProperties>
+                <Property name = "SpaceCraftInfoProperties" />
+            </ExposedProperties>
 
     </SourceProxy>
     </ProxyGroup>

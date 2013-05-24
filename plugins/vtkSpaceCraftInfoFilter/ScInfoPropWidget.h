@@ -8,6 +8,10 @@
 #include <QWidget>
 #include <QListWidgetItem>
 
+#include <vtkSMProxy.h>
+#include <vtkSMProperty.h>
+#include <vtkSMStringVectorProperty.h>
+
 namespace Ui {
 class ScInfoPropWidget;
 }
@@ -26,6 +30,7 @@ protected:
     //Filter Components
     vtkSMProxy *smProxy;
     vtkSMProperty *smProperty;
+    vtkSMStringVectorProperty *svp;
 
     //Cached Objects
     filterNetworkList *currentGroupObjects;

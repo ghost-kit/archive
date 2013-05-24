@@ -96,6 +96,9 @@ int vtkSpaceCraftInfo::ProcessRequest(vtkInformation *request, vtkInformationVec
 //Request Inoformation
 int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+
+    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
+
     vtkInformation *inInfo = inputVector[0]->GetInformationObject(0);
     if(inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
     {
@@ -267,6 +270,12 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
     timeArray->Delete();
 
     return true;
+}
+
+void vtkSpaceCraftInfo::SetSCIData(const char *list)
+{
+
+    std::cout <<  "Setting SCI Data: " << list << std::endl;
 }
 
 //----- GUI SC info array manipulators -----//

@@ -98,6 +98,8 @@ protected:
   bool getSCData();
   bool processCDAWeb(vtkTable *output);
 
+  void SetSCIData(const char *list);
+
   //Data Output objects
   vtkTable *outputTable;
 
