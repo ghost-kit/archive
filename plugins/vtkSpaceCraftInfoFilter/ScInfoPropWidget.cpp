@@ -1,3 +1,8 @@
+//TODO: Need to start by 1) fixing the string pass-back. 2) fix the selection bug for data sets that replicates the entries. 3) replace "test 1" name with correct names in the tree
+// 4) connect the DataSet selection change to the handler. 5)fix the info so it doesn't look so bad..
+
+
+
 #include "ScInfoPropWidget.h"
 #include "ui_ScInfoPropWidget.h"
 
@@ -33,6 +38,7 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     this->getInstruments = QString("instruments");
     this->getDataSets = QString("datasets");
     this->getInventory = QString("variables");
+    this->getDataGroups=QString("datasets");
 
     //Setup the UI
     ui->setupUi(this);
@@ -85,10 +91,10 @@ void ScInfoPropWidget::apply()
     //build a list of elements
     QString csvList;
     QStringList::Iterator iter;
-    for(iter = this->DataSetList.begin(); iter != this->DataSetList.end(); ++iter)
+    for(iter = this->DataSetRetrunList.begin(); iter != this->DataSetRetrunList.end(); ++iter)
     {
         QString item = (*iter);
-        if(iter == this->DataSetList.begin())
+        if(iter == this->DataSetRetrunList.begin())
         {
             csvList = item;
         }
@@ -138,6 +144,22 @@ bool ScInfoPropWidget::getSCInstrument(filterNetworkAccessModule &manager)
         return false;
 }
 
+bool ScInfoPropWidget::getSciDataGroup(filterNetworkAccessModule &manager, QString dataset)
+{
+    std::cout << QString(this->baseURL + this->dataViewSpacePhys + this->getDataGroups).toAscii().data() << std::endl;
+
+    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getDataSets + "?observatoryGroup="
+                + this->currentGroup + "&observatory=" + this->currentObservatory + "&instrument=" + dataset ,
+                                   QString("Datasets"),
+                                   QString("DatasetDescription"));
+
+    if(manager.getNetworkAccessStatus() == 0)
+        return true;
+    else
+        return false;
+}
+
+
 //parse for groups
 bool ScInfoPropWidget::getGroupsList()
 {
@@ -157,6 +179,12 @@ bool ScInfoPropWidget::getGroupsList()
     }
 
     GroupList.sort();
+
+    return true;
+}
+
+bool ScInfoPropWidget::getDataSetsList()
+{
 
     return true;
 }
@@ -220,6 +248,8 @@ void ScInfoPropWidget::selectedGroup(QString selection)
     this->currentInstrument = "";
     ui->Instruments->clear();
     ui->Instruments->setDisabled(true);
+    ui->DataSet->reset();
+    ui->DataSet->setDisabled(true);
 
     this->currentDataSet = "";
 }
@@ -247,59 +277,105 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
 }
 
 
-//process Instruments
-void ScInfoPropWidget::selectedInstrument(QString selection)
-{
-    std::cout << "Instrument Selected: " << selection.toAscii().data() << std::endl;
-}
-
-void ScInfoPropWidget::selectedInstrumentElement(QListWidgetItem * item)
-{
-    std::cout << "Looking at Item " << item->text().toAscii().data() << std::endl;
-
-    if(item->isSelected())
-    {
-        std::cout << "TRUE" << std::endl;
-    }
-    else
-    {
-        std::cout << "FALSE" << std::endl;
-    }
-
-}
 
 //Instrument Selection has Changed
+void ScInfoPropWidget::getAllDataSetInfo(QStringList dataSets)
+{
+    this->currentDataGroupObjects.clear();
+
+    std::cout << "Processing List to get next dataset" << std::flush << std::endl;
+
+    QStringList::Iterator iter2;
+    for(iter2 = dataSets.begin(); iter2 != dataSets.end(); ++iter2)
+    {
+        QString item = (*iter2);
+
+        filterNetworkAccessModule SCDataSetListManager;
+        this->getSciDataGroup(SCDataSetListManager, item);
+        this->currentDataGroupObjects.push_back(SCDataSetListManager.getFinalOjects());
+    }
+}
+
+void ScInfoPropWidget::setupDataSets()
+{
+
+    QVector<filterNetworkList *>::Iterator iter;
+
+    ui->DataSet->clear();
+    this->DataList.clear();
+
+    for(iter=this->currentDataGroupObjects.begin(); iter != this->currentDataGroupObjects.end(); ++iter)
+    {
+        std::cout << "Processing..." << std::endl;
+        filterNetworkList *item = (*iter);
+
+        QList<QTreeWidgetItem*> treelist;
+
+        for(int x = 0; x < item->size(); x++)
+        {
+            filterNetworkObject *currentMap = item->operator [](x);
+
+            QString label = currentMap->operator []("Label");
+            QString id = currentMap->operator []("Id");
+
+            std::cout << "Name: " << id.toAscii().data() << " Description: " << label.toAscii().data() << std::endl;
+
+            this->DataList.insert(id, QString(id + label));
+
+            QTreeWidgetItem * child = new QTreeWidgetItem();
+            child->setText(0,QString(id + "\t" + label));
+
+            treelist.push_back(child);
+
+        }
+
+        QTreeWidgetItem *newItem = new QTreeWidgetItem();
+        newItem->setText(0,"test1");
+        newItem->addChildren(treelist);
+
+        ui->DataSet->addTopLevelItem(newItem);
+        ui->DataSet->setEnabled(true);
+
+    }
+
+}
+
 void ScInfoPropWidget::instrumentSelectionChanged()
 {
     std::cout << "Instrument Selection Changed" << std::endl;
 
     //if we have something to process, lets do it...
-    this->selectedInstruments = ui->Instruments->selectedItems();
 
-    //clear the old list
-    this->DataSetList.clear();
+    QList<QListWidgetItem*> instruments = ui->Instruments->selectedItems();
+    QStringList dataSet;
 
-    if(!selectedInstruments.isEmpty())
+    if(!instruments.isEmpty())
     {
         std::cout << "Selected Items: " << std::endl;
 
-        QString csvList;
-
         //create a list of items
         QList<QListWidgetItem*>::iterator iter;
-        for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
+        for(iter = instruments.begin(); iter != instruments.end(); ++iter)
         {
             QString item = (*iter)->text();
             item = item.split("\t")[0];
 
-            this->DataSetList.push_back(item);
+            dataSet.push_back(item);
             std::cout << "Item: " << item.toAscii().data() << std::endl;
 
         }
 
+        getAllDataSetInfo(dataSet);
         std::cout << "Time: " <<  svp->GetMTime() << " Class Name: " << svp->GetClassName() << std::endl;
 
     }
+
+    this->setupDataSets();
+
+}
+
+void ScInfoPropWidget::dataGroupSelectionChanged()
+{
 }
 
 
@@ -337,3 +413,5 @@ bool ScInfoPropWidget::getInstrumentList()
 
     return true;
 }
+
+

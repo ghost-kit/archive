@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>398</width>
     <height>481</height>
    </rect>
   </property>
@@ -37,17 +37,27 @@
       </font>
      </property>
      <property name="title">
-      <string>Observatory Data Selection</string>
+      <string>Data Selection</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="2">
-       <widget class="QComboBox" name="Group">
-        <property name="enabled">
+      <item row="3" column="2">
+       <widget class="QListWidget" name="Instruments">
+        <property name="selectionMode">
+         <enum>QAbstractItemView::MultiSelection</enum>
+        </property>
+        <property name="sortingEnabled">
          <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QComboBox" name="Observatory">
+        <property name="enabled">
+         <bool>false</bool>
         </property>
         <property name="maximumSize">
          <size>
-          <width>256</width>
+          <width>265</width>
           <height>16777215</height>
          </size>
         </property>
@@ -59,30 +69,26 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="Observatory_Label">
+       <widget class="QLabel" name="Group_Label">
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
-         <string>Observatory</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QListWidget" name="Instruments">
-        <property name="selectionMode">
-         <enum>QAbstractItemView::MultiSelection</enum>
-        </property>
-        <property name="sortingEnabled">
-         <bool>true</bool>
+         <string>Obs. Group</string>
         </property>
        </widget>
       </item>
       <item row="1" column="2">
-       <widget class="QComboBox" name="Observatory">
+       <widget class="QComboBox" name="Group">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="maximumSize">
          <size>
-          <width>256</width>
+          <width>265</width>
           <height>16777215</height>
          </size>
         </property>
@@ -93,24 +99,37 @@
         </item>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="Group_Label">
-        <property name="maximumSize">
-         <size>
-          <width>80</width>
-          <height>16777215</height>
-         </size>
-        </property>
+      <item row="2" column="0">
+       <widget class="QLabel" name="Observatory_Label">
         <property name="text">
-         <string>Group</string>
+         <string>Observatory</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="Instrument_Label">
+      <item row="3" column="0">
+       <widget class="QLabel" name="Instruments_Label">
         <property name="text">
-         <string>Data Sets</string>
+         <string>Instrument</string>
         </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="DataSet_Label">
+        <property name="text">
+         <string>Data Set</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="2">
+       <widget class="QTreeWidget" name="DataSet">
+        <property name="selectionMode">
+         <enum>QAbstractItemView::MultiSelection</enum>
+        </property>
+        <column>
+         <property name="text">
+          <string notr="true">1</string>
+         </property>
+        </column>
        </widget>
       </item>
      </layout>
@@ -118,8 +137,10 @@
      <zorder>Observatory</zorder>
      <zorder>Group_Label</zorder>
      <zorder>Observatory_Label</zorder>
-     <zorder>Instrument_Label</zorder>
      <zorder>Instruments</zorder>
+     <zorder>Instruments_Label</zorder>
+     <zorder>DataSet_Label</zorder>
+     <zorder>DataSet</zorder>
     </widget>
    </item>
   </layout>

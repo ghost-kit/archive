@@ -40,16 +40,6 @@ public:
 
   vtkGetMacro(NumberOfTimeSteps, int)
 
-  //testing the custom property
-  void SetSCIData(int _arg)
-  {
-
-      std::cout << "Updating Status: " << std::endl;
-      std::cout << "This works..." << std::endl;
-
-      this->Modified();
-  }
-
   //Callbacks
   void SetSCIData(const char *group, const char *observatory, const char *list);
 
