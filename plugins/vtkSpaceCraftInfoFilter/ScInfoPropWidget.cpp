@@ -58,15 +58,12 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     /** Group Connections */
     connect(ui->Group, SIGNAL(activated(QString)), this, SLOT(selectedGroup(QString)));
-    connect(ui->Group, SIGNAL(highlighted(QString)), this, SLOT(selectedGroup(QString)));
 
     /** Observatory Connections */
     connect(ui->Observatory, SIGNAL(activated(QString)), this, SLOT(selectedObservatory(QString)));
-    connect(ui->Observatory, SIGNAL(highlighted(QString)), this, SLOT(selectedObservatory(QString)));
 
     /** Instrument Connections */
     connect(ui->Instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelectionChanged()));
-
 
     /** Property Links */
     this->addPropertyLink(ui->Instruments, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
@@ -80,6 +77,34 @@ ScInfoPropWidget::~ScInfoPropWidget()
 {
 
     delete ui;
+}
+
+void ScInfoPropWidget::apply()
+{
+
+    //build a list of elements
+    QString csvList;
+    QStringList::Iterator iter;
+    for(iter = this->DataSetList.begin(); iter != this->DataSetList.end(); ++iter)
+    {
+        QString item = (*iter);
+        if(iter == this->DataSetList.begin())
+        {
+            csvList = item;
+        }
+        else
+        {
+            csvList.append(QString("," + item));
+        }
+    }
+
+    this->svp->SetElement(0, this->currentGroup.toAscii().data());
+    this->svp->SetElement(1, this->currentObservatory.toAscii().data());
+    this->svp->SetElement(2, csvList.toAscii().data());
+
+    //apply the upstream parameters
+    Superclass::apply();
+
 }
 
 bool ScInfoPropWidget::getSCList(filterNetworkAccessModule &manager)
@@ -251,35 +276,26 @@ void ScInfoPropWidget::instrumentSelectionChanged()
     //if we have something to process, lets do it...
     this->selectedInstruments = ui->Instruments->selectedItems();
 
+    //clear the old list
+    this->DataSetList.clear();
+
     if(!selectedInstruments.isEmpty())
     {
         std::cout << "Selected Items: " << std::endl;
 
-        QList<QListWidgetItem*>::iterator iter;
-
-        this->DataSetList.clear();
-
         QString csvList;
+
         //create a list of items
+        QList<QListWidgetItem*>::iterator iter;
         for(iter = this->selectedInstruments.begin(); iter != this->selectedInstruments.end(); ++iter)
         {
             QString item = (*iter)->text();
             item = item.split("\t")[0];
 
-            if(iter == this->selectedInstruments.begin())
-            {
-                csvList = item;
-            }
-            else
-            {
-                csvList.append(QString("," + item));
-            }
             this->DataSetList.push_back(item);
             std::cout << "Item: " << item.toAscii().data() << std::endl;
 
         }
-
-        this->svp->SetElement(0, csvList.toAscii().data());
 
         std::cout << "Time: " <<  svp->GetMTime() << " Class Name: " << svp->GetClassName() << std::endl;
 

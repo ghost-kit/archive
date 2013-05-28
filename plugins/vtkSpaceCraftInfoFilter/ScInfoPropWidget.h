@@ -24,6 +24,7 @@ public:
     ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject = 0);
     ~ScInfoPropWidget();
 
+    void apply();
 
 protected:
     //Filter Components
@@ -75,6 +76,8 @@ protected:
     bool loadGroupListToGUI();
 
     bool getInstrumentList();
+
+
 
 private:
     Ui::ScInfoPropWidget *ui;

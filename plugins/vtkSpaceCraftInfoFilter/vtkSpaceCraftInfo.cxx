@@ -198,9 +198,11 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::SetSCIData(const char *list)
+void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, const char *list)
 {
 
+    std::cout << "Group: " << group << std::endl;
+    std::cout << "Observatory: " << observatory << std::endl;
     std::cout <<  "Setting SCI Data: " << list << std::endl;
 
     QString dataList = QString(list);

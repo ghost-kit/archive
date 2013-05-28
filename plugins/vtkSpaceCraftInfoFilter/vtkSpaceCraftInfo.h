@@ -51,7 +51,7 @@ public:
   }
 
   //Callbacks
-  void SetSCIData(const char *list);
+  void SetSCIData(const char *group, const char *observatory, const char *list);
 
 protected:
   vtkSpaceCraftInfo();
