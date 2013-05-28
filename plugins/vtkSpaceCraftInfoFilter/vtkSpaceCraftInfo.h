@@ -50,21 +50,8 @@ public:
       this->Modified();
   }
 
-
-  //individual SC info Array manipulators
-  void SetSCArrayStatus(const char *name, int status);
-  int GetSCinfoArrayStatus(const char *name);
-  int GetNumberOfSCinfoArrays();
-  const char* GetSCinfoArrayName(int index);
-
-  //individual SC Sub Array info Manipulators
-  void SetSCSubArrayStatus(const char *name, int status);
-  int GetSCsubinfoArrayStatus(const char *name);
-  int GetNumberOfSCsubinfoArrays();
-  const char* GetSCsubinfoArrayName(int index);
-
   //Callbacks
-  void SelectionCallback(vtkObject* object, unsigned long vtkNotUsed(eventid), void* clientdata, void* vtkNotUsed(calldata));
+  void SetSCIData(const char *list);
 
 protected:
   vtkSpaceCraftInfo();
@@ -83,7 +70,7 @@ protected:
   // Records the number of timesteps present
   int NumberOfTimeSteps;
   double requestedTimeValue;
-  double* getTimeSteps();
+  double *getTimeSteps();
 
   // This Data Structure yeilds the value of the timestep by integer step
   //    timeSteps[timeStep] = time step value
@@ -94,44 +81,24 @@ protected:
   QMap <QString, QMap< double, double* > >  satPositions;
 
   //SpaceCraft Data Collection utilities
-  bool getSCList();
   bool getSCData();
   bool processCDAWeb(vtkTable *output);
 
-  void SetSCIData(const char *list);
+  //Requested Data
+  QStringList requestedData;
 
-  //Data Output objects
-  vtkTable *outputTable;
 
   //------ gui attributes pannel ------//
 
-  //global SC info Array manipulators
-  void DisableAllSCArrays();
-  void EnableAllSCArrays();
-
-  //array population methods
-  void populateSCinfoArrays();
-
   //gui data objects
   QString CacheFileName;
-  vtkDataArraySelection* SpaceCraftArraySelections;
-  int NumberOfSCInfoArrays;
-  void SetNumberOfSCinfoArrays(int set) {this->NumberOfSCInfoArrays = set;}
 
-  vtkDataArraySelection* SpaceCraftSubArraySelections;
-  vtkDataArraySelection* SpaceCraftDataArraySelections;
+  //Info items
+  vtkInformation* inInfo;
+  vtkInformation* outInfo;
+  vtkTable* output;
 
-  //CDAWEB
-  filterNetworkAccessModule *SCListManager;
-  QString baseURL;
-  QString dataViewSpacePhys;
-  QString getObservatorys;
-  QString getObservatoryGroups;
-  QString getInstrumentTypes;
-  int networkAccessStatus;
 
-  //Cached Objects
-  QList< QMultiMap <QString, QString>* > *currentGroupObjects;
 
 private:
   vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);

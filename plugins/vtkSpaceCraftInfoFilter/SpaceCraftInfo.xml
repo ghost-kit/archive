@@ -21,6 +21,7 @@
             <StringVectorProperty name="SpaceCraftInfoProperties"
                                 command="SetSCIData"
                                 number_of_elements_per_command="1"
+                                number_of_elements = "1"
                                 panel_widget="SpaceCraftInfoProperties"
                                 label = ""
                                 panel_visibility = "default">

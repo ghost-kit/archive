@@ -3,7 +3,6 @@
 
 #include "pqPropertyWidget.h"
 #include "filterNetworkAccessModule.h"
-#include "selectionBoxWidget.h"
 
 #include <QWidget>
 #include <QListWidgetItem>
