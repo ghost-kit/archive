@@ -40,9 +40,9 @@ void filterNetworkAccessModule::networkReply()
             this->xmlReader.readNext();
 
             //parse XML
-            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
-            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
-            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
+//            std::cout << "xmlType: " << this->xmlReader.tokenString().toAscii().data() << std::endl;
+//            std::cout << "xmlQN: " << this->xmlReader.qualifiedName().toAscii().data() << std::endl;
+//            std::cout << "xmlText: " << this->xmlReader.text().toAscii().data() << std::endl;
             this->parseTypeStack.push_front(this->xmlReader.tokenType());
             this->parseQnStack.push_front(this->xmlReader.qualifiedName().toString());
             this->parseTextStack.push_front(this->xmlReader.text().toString());
@@ -63,7 +63,7 @@ void filterNetworkAccessModule::networkReply()
 
         //process error
         this->networkAccessStatus = reply->error();
-        std::cout << "HTTP ERROR: " << this->networkAccessStatus << " : "<< netStatus.toAscii().data() << std::endl;
+        std::cerr << "HTTP ERROR: " << this->networkAccessStatus << " : "<< netStatus.toAscii().data() << std::endl;
         this->networkAccessStatus = 999;
     }
 
@@ -176,7 +176,7 @@ void filterNetworkAccessModule::consolodateStacks()
 
         //remember the stack is upside down at this point
 
-        std::cout << "Parsing complete to stacks" << std::endl;
+//        std::cout << "Parsing complete to stacks" << std::endl;
     }
 }
 
@@ -188,7 +188,7 @@ void filterNetworkAccessModule::extractObjects()
         {
             while(!this->parseQnStack.isEmpty())
             {
-                std::cout << "Processing..." << std::endl;
+//                std::cout << "Processing..." << std::endl;
 
                 QXmlStreamReader::TokenType tempType = this->parseTypeStack.front();
                 this->parseTypeStack.pop_front();
@@ -197,7 +197,7 @@ void filterNetworkAccessModule::extractObjects()
                 QString tempText = this->parseTextStack.front();
                 this->parseTextStack.pop_front();
 
-                std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
+//                std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
 
                 //create a new object for the stack
                 QMultiMap<QString, QString> *temp = new QMultiMap<QString, QString>;
@@ -214,7 +214,7 @@ void filterNetworkAccessModule::extractObjects()
                     this->parseTextStack.pop_front();
 
                     //DEBUG
-                    std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
+//                    std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
 
                     //create object
                     temp->insert(tempQn, tempText);
@@ -224,11 +224,11 @@ void filterNetworkAccessModule::extractObjects()
                 }while(!this->parseQnStack.isEmpty() && this->parseQnStack.front() != this->ObjectLevel);
 
                 //add object to list
-                std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
-                std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
+//                std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
+//                std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
                 this->finalObjects->push_back(temp);
             }
-            std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
+//            std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;
 
         }
         else
@@ -254,10 +254,10 @@ QNetworkReply *filterNetworkAccessModule::Get()
     {
         QEventLoop loop;
         loop.connect(this, SIGNAL(dataProcessed()), SLOT(quit()));
-        std::cout << "...in event loop..." << std::endl;
+//        std::cout << "...in event loop..." << std::endl;
         loop.exec();
 
-        std::cout << "EVENT LOOP HAS EXITED" << std::endl;
+//        std::cout << "EVENT LOOP HAS EXITED" << std::endl;
     }
     return this->reply;
 }

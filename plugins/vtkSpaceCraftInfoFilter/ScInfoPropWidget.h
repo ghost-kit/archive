@@ -11,6 +11,8 @@
 #include <vtkSMProperty.h>
 #include <vtkSMStringVectorProperty.h>
 
+#include <QReadWriteLock>
+
 namespace Ui {
 class ScInfoPropWidget;
 }
@@ -36,7 +38,7 @@ protected:
     filterNetworkList *currentGroupObjects;
     filterNetworkList *currentInstrumentObjects;
     filterNetworkList *currentObservatoryObjects;
-    QVector<filterNetworkList *> currentDataGroupObjects;
+    QSet<filterNetworkList *> currentDataGroupObjects;
 
     //listings
     QStringList GroupList;
@@ -70,6 +72,13 @@ protected:
 
     //data selection
     QList<QListWidgetItem*> selectedData;
+    QAtomicInt InstrumentLock;
+    QAtomicInt DataLock;
+
+    QAtomicInt ReprocessLock;
+
+    QAtomicInt InstruemntSelectionsDenied;
+
 
 
     //handlers
@@ -98,6 +107,14 @@ private slots:
     void selectedObservatory(QString selection);
     void instrumentSelectionChanged();
     void dataGroupSelectionChanged();
+
+    void processDeniedInstrumentRequests();
+
+    void processDeniedDataRequests();
+
+signals:
+    void recheckSelections();
+    void completedInstrumentProcessing();
 
 };
 

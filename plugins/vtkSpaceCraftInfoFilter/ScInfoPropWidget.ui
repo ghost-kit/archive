@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>398</width>
-    <height>481</height>
+    <width>406</width>
+    <height>548</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -42,8 +42,17 @@
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="3" column="2">
        <widget class="QListWidget" name="Instruments">
+        <property name="minimumSize">
+         <size>
+          <width>265</width>
+          <height>200</height>
+         </size>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
+        </property>
         <property name="selectionMode">
-         <enum>QAbstractItemView::MultiSelection</enum>
+         <enum>QAbstractItemView::ExtendedSelection</enum>
         </property>
         <property name="sortingEnabled">
          <bool>true</bool>
@@ -60,6 +69,9 @@
           <width>265</width>
           <height>16777215</height>
          </size>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
         </property>
         <item>
          <property name="text">
@@ -92,6 +104,9 @@
           <height>16777215</height>
          </size>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
+        </property>
         <item>
          <property name="text">
           <string/>
@@ -122,12 +137,42 @@
       </item>
       <item row="4" column="2">
        <widget class="QTreeWidget" name="DataSet">
-        <property name="selectionMode">
-         <enum>QAbstractItemView::MultiSelection</enum>
+        <property name="minimumSize">
+         <size>
+          <width>265</width>
+          <height>200</height>
+         </size>
         </property>
+        <property name="focusPolicy">
+         <enum>Qt::ClickFocus</enum>
+        </property>
+        <property name="horizontalScrollBarPolicy">
+         <enum>Qt::ScrollBarAsNeeded</enum>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectItems</enum>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="wordWrap">
+         <bool>false</bool>
+        </property>
+        <property name="columnCount">
+         <number>1</number>
+        </property>
+        <attribute name="headerVisible">
+         <bool>true</bool>
+        </attribute>
         <column>
          <property name="text">
-          <string notr="true">1</string>
+          <string notr="true">Available Data Sets for Time Range</string>
          </property>
         </column>
        </widget>
