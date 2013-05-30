@@ -207,7 +207,7 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
     QString dataList = QString(list);
 
-    this->requestedData = dataList.split(",");
+    this->requestedData = dataList.split(";");
 
     std::cout << "Number of Data Elements: " << this->requestedData.size() << std::endl;
 

@@ -11,6 +11,8 @@
 #include <QListWidgetItem>
 #include <vtkSMProxy.h>
 #include <vtkSMProperty.h>
+#include <vtkSMSessionProxyManager.h>
+#include <vtkSMGlobalPropertiesManager.h>
 #include <vtkSMStringVectorProperty.h>
 
 ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject)
@@ -77,10 +79,7 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     connect(this, SIGNAL(recheckSelections()), this, SLOT(instrumentSelectionChanged()));
 
     /** Property Links */
-    this->addPropertyLink(ui->Instruments, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
-
-
-
+    this->addPropertyLink(ui->DataSet, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
 
 }
 
@@ -92,26 +91,83 @@ ScInfoPropWidget::~ScInfoPropWidget()
 
 void ScInfoPropWidget::apply()
 {
+    std::cout << "APPLY CLICKED" << std::endl;
 
     //build a list of elements
-    QString csvList;
-    QStringList::Iterator iter;
-    for(iter = this->DataSetRetrunList.begin(); iter != this->DataSetRetrunList.end(); ++iter)
+    QList<QTreeWidgetItem *> selectedElements = ui->DataSet->selectedItems();
+    QList<QTreeWidgetItem *>::Iterator iter = selectedElements.begin();
+
+    QMap<QString, QStringList> DataMap;
+
+    //Get Instruments and Keys
+    for(iter = selectedElements.begin(); iter != selectedElements.end(); ++iter)
     {
-        QString item = (*iter);
-        if(iter == this->DataSetRetrunList.begin())
+        QString Instrument;
+
+        //Make sure we only get the Elements with Parents (i.e. non-insturment slecetions)
+        if((*iter)->parent())
         {
-            csvList = item;
-        }
-        else
-        {
-            csvList.append(QString("," + item));
+            Instrument = (*iter)->parent()->text(0);
+            DataMap[Instrument].push_back(this->DataList[Instrument].key((*iter)->text(0)));
         }
     }
 
+    //Create the needed string
+    //  Insturments separated by ;
+    //  Data sets separated by ,
+    QString DataString;
+
+    QStringList keys = DataMap.keys();
+    QList<QStringList> values = DataMap.values();
+
+    for(int x = 0; x < keys.size(); x++)
+    {
+        if(DataString.isEmpty())
+        {
+            DataString = keys[x] + ":";
+
+            std::cout << "Size of Value: " << values[x].size() << std::endl;
+            for(int y = 0; y < values[x].size(); y++)
+            {
+                if(y == 0)
+                {
+                    DataString = DataString + values[x][y];
+                }
+                else
+                {
+                    DataString = DataString + "," + values[x][y];
+                }
+
+            }
+        }
+        else
+        {
+            DataString = DataString + ";" + keys[x] + ":";
+
+            std::cout << "Size of Value: " << values[x].size() << std::endl;
+            for(int y = 0; y < values[x].size(); y++)
+            {
+                if(y == 0)
+                {
+                    DataString = DataString + values[x][y];
+                }
+                else
+                {
+                    DataString = DataString + "," + values[x][y];
+                }
+            }
+
+
+        }
+    }
+
+    std::cerr << "CodeString: " << DataString.toAscii().data() << std::endl;
+
+
+
     this->svp->SetElement(0, this->currentGroup.toAscii().data());
     this->svp->SetElement(1, this->currentObservatory.toAscii().data());
-    this->svp->SetElement(2, csvList.toAscii().data());
+    this->svp->SetElement(2, DataString.toAscii().data());
 
     //apply the upstream parameters
     Superclass::apply();
@@ -323,6 +379,8 @@ void ScInfoPropWidget::setupDataSets()
     ui->DataSet->clear();
     this->DataList.clear();
 
+    QMap<QString, QMap<QString , QString> > List;
+
     std::cerr << "Size of Selection List: " << this->currentDataGroupObjects.size() << std::endl;
 
     for(iter=this->currentDataGroupObjects.begin(); iter != this->currentDataGroupObjects.end(); ++iter)
@@ -331,6 +389,9 @@ void ScInfoPropWidget::setupDataSets()
         filterNetworkList *item = (*iter);
 
         QList<QTreeWidgetItem*> treelist;
+        QMap<QString, QString> temp;
+
+        QString obsGroup;
 
         for(int x = 0; x < item->size(); x++)
         {
@@ -338,10 +399,11 @@ void ScInfoPropWidget::setupDataSets()
 
             QString label = currentMap->operator []("Label");
             QString id = currentMap->operator []("Id");
+            obsGroup = currentMap->operator[]("Instrument");
 
             std::cout << "Name: " << id.toAscii().data() << " Description: " << label.toAscii().data() << std::endl;
 
-            this->DataList.insert(id, QString(id + label));
+            temp.insert(id,label);
 
             QTreeWidgetItem * child = new QTreeWidgetItem();
             child->setText(0,QString(label));
@@ -350,14 +412,20 @@ void ScInfoPropWidget::setupDataSets()
 
         }
 
+        List.insert(obsGroup, temp);
+
         QTreeWidgetItem *newItem = new QTreeWidgetItem();
-        newItem->setText(0,"test1");
+        newItem->setText(0,obsGroup);
         newItem->addChildren(treelist);
+        newItem->setExpanded(true);
 
         ui->DataSet->addTopLevelItem(newItem);
         ui->DataSet->setEnabled(true);
 
     }
+
+    this->DataList = List;
+
 
 }
 
@@ -425,6 +493,8 @@ void ScInfoPropWidget::instrumentSelectionChanged()
 
 void ScInfoPropWidget::dataGroupSelectionChanged()
 {
+    std::cout << "Data Selection has Changed." << std::endl;
+
 }
 
 void ScInfoPropWidget::processDeniedInstrumentRequests()

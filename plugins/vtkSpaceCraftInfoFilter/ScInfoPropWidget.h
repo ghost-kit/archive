@@ -46,7 +46,7 @@ protected:
 
     //maps
     QMultiMap<QString , QString> InstrumentList;
-    QMultiMap<QString , QString> DataList;
+    QMap<QString, QMap<QString , QString> > DataList;
     QStringList DataSetRetrunList;
 
     //current target
