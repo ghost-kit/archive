@@ -165,7 +165,7 @@
         </attribute>
         <column>
          <property name="text">
-          <string notr="true">Available Data Sets for Time Range</string>
+          <string notr="true">Available Data Sets for Selected Instruments</string>
          </property>
         </column>
        </widget>
