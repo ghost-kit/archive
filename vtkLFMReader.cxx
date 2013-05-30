@@ -78,10 +78,10 @@ int vtkLFMReader::CanReadFile(const char *filename)
   if ( //(metaDoubles.count(string("mjd")) == 0) ||
       (metaInts.count(string("time_step")) == 0) || 
       (metaFloats.count(string("time")) == 0) ||
-      (metaFloats.count(string("tilt_angle")) == 0) ||
+      //(metaFloats.count(string("tilt_angle")) == 0) ||
       //(metaStrings.count(string("I/O Revision")) == 0) ||
       //(metaStrings.count(string("Repository Revision")) == 0) ||
-      (metaStrings.count(string("file_contents")) == 0) ||
+      //(metaStrings.count(string("file_contents")) == 0) ||
       (metaStrings.count(string("dipole_moment")) == 0) ||
       (metaStrings.count(string("written_by")) == 0) ){
     
