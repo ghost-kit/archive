@@ -42,6 +42,9 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     this->getInventory = QString("variables");
     this->getDataGroups=QString("datasets");
 
+    this->dataColumn1 = new QTableWidgetItem("Instrument");
+    this->dataColumn2 = new QTableWidgetItem("Description");
+
     //Setup the UI
     ui->setupUi(this);
     ui->gridLayout->setMargin(pqPropertiesPanel::suggestedMargin());
@@ -50,6 +53,7 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     ui->Observatory->setDisabled(true);
     ui->Instruments->setDisabled(true);
+    ui->DataSet->setDisabled(true);
 
     //Load first set of Values
     filterNetworkAccessModule SCListManager;
@@ -308,9 +312,13 @@ void ScInfoPropWidget::selectedGroup(QString selection)
     //clear downstream elements
     this->currentInstrument = "";
     ui->Instruments->clear();
+    ui->Instruments->setHorizontalHeaderItem(0,  this->dataColumn1);
+    ui->Instruments->setHorizontalHeaderItem(1, this->dataColumn2);
+
     ui->Instruments->setDisabled(true);
-    ui->DataSet->reset();
+    ui->DataSet->clear();
     ui->DataSet->setDisabled(true);
+
 
     this->currentDataSet = "";
 }
@@ -333,8 +341,38 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
     this->getInstrumentList();
 
     ui->Instruments->clear();
-    ui->Instruments->addItems(this->InstrumentList.values());
+    ui->Instruments->setRowCount(this->InstrumentList.size());
+    ui->Instruments->setColumnCount(2);
+
+    ui->Instruments->setWordWrap(false);
+    QTableWidgetItem *column1 = new QTableWidgetItem();
+    QTableWidgetItem *column2 = new QTableWidgetItem();
+
+    column1->setText( "Instrument");
+    column2->setText( "Description");
+
+    ui->Instruments->setHorizontalHeaderItem(0, column1);
+    ui->Instruments->setHorizontalHeaderItem(1, column2);
+
+    for(int x = 0; x < this->InstrumentList.size(); x++)
+    {
+        std::cout << "Adding Instruments..." << std::endl;
+
+        QTableWidgetItem *newItem = new QTableWidgetItem();
+        QTableWidgetItem *newItem2 = new QTableWidgetItem();
+
+        newItem->setText( this->InstrumentList.keys()[x]);
+        newItem2->setText( this->InstrumentList.values()[x]);
+
+        ui->Instruments->setItem(x,0,newItem);
+        ui->Instruments->setItem(x,1,newItem2);
+    }
+
+
     ui->Instruments->setEnabled(true);
+
+    ui->DataSet->clear();
+    ui->DataSet->setDisabled(true);
 }
 
 
@@ -442,7 +480,7 @@ void ScInfoPropWidget::instrumentSelectionChanged()
         std::cout << "Lock Aquired" << std::endl;
 
 
-        QList<QListWidgetItem*> instruments = ui->Instruments->selectedItems();
+        QList<QTableWidgetItem*> instruments = ui->Instruments->selectedItems();
         QStringList dataSet;
 
         std::cerr << "Size of Selection List (Pre Processing): " << instruments.size() << std::endl;
@@ -452,7 +490,7 @@ void ScInfoPropWidget::instrumentSelectionChanged()
             std::cout << "Selected Items: " << std::endl;
 
             //create a list of items
-            QList<QListWidgetItem*>::iterator iter;
+            QList<QTableWidgetItem*>::iterator iter;
             for(iter = instruments.begin(); iter != instruments.end(); ++iter)
             {
                 QString item = (*iter)->text();
@@ -531,14 +569,8 @@ bool ScInfoPropWidget::getInstrumentList()
 
         std::cout << "Name: " << name.toAscii().data() << " Description: " << desc.toAscii().data() << std::endl;
 
-        if(name != desc)
-        {
-            this->InstrumentList.insert(name, name + "\t" + desc);
-        }
-        else
-        {
-            this->InstrumentList.insert(name, name);
-        }
+        this->InstrumentList.insert(name, desc);
+
     }
 
     if(!this->currentInstrumentObjects->isEmpty())

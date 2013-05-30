@@ -40,33 +40,20 @@
       <string>Data Selection</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="3" column="2">
-       <widget class="QListWidget" name="Instruments">
-        <property name="minimumSize">
-         <size>
-          <width>265</width>
-          <height>200</height>
-         </size>
-        </property>
-        <property name="focusPolicy">
-         <enum>Qt::ClickFocus</enum>
-        </property>
-        <property name="selectionMode">
-         <enum>QAbstractItemView::ExtendedSelection</enum>
-        </property>
-        <property name="sortingEnabled">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="2">
        <widget class="QComboBox" name="Observatory">
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="maximumSize">
+        <property name="minimumSize">
          <size>
           <width>265</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
           <height>16777215</height>
          </size>
         </property>
@@ -98,9 +85,15 @@
         <property name="enabled">
          <bool>true</bool>
         </property>
-        <property name="maximumSize">
+        <property name="minimumSize">
          <size>
           <width>265</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
           <height>16777215</height>
          </size>
         </property>
@@ -177,15 +170,68 @@
         </column>
        </widget>
       </item>
+      <item row="3" column="2">
+       <widget class="QTableWidget" name="Instruments">
+        <property name="minimumSize">
+         <size>
+          <width>265</width>
+          <height>165</height>
+         </size>
+        </property>
+        <property name="lineWidth">
+         <number>0</number>
+        </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionBehavior">
+         <enum>QAbstractItemView::SelectRows</enum>
+        </property>
+        <property name="showGrid">
+         <bool>false</bool>
+        </property>
+        <property name="gridStyle">
+         <enum>Qt::NoPen</enum>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="columnCount">
+         <number>2</number>
+        </property>
+        <attribute name="horizontalHeaderStretchLastSection">
+         <bool>true</bool>
+        </attribute>
+        <attribute name="verticalHeaderVisible">
+         <bool>false</bool>
+        </attribute>
+        <attribute name="verticalHeaderDefaultSectionSize">
+         <number>15</number>
+        </attribute>
+        <attribute name="verticalHeaderMinimumSectionSize">
+         <number>10</number>
+        </attribute>
+        <column>
+         <property name="text">
+          <string>Instrument</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>Description</string>
+         </property>
+        </column>
+       </widget>
+      </item>
      </layout>
      <zorder>Group</zorder>
      <zorder>Observatory</zorder>
      <zorder>Group_Label</zorder>
      <zorder>Observatory_Label</zorder>
-     <zorder>Instruments</zorder>
      <zorder>Instruments_Label</zorder>
      <zorder>DataSet_Label</zorder>
      <zorder>DataSet</zorder>
+     <zorder>Instruments</zorder>
     </widget>
    </item>
   </layout>

@@ -12,6 +12,7 @@
 #include <vtkSMStringVectorProperty.h>
 
 #include <QReadWriteLock>
+#include <QTableWidgetItem>
 
 namespace Ui {
 class ScInfoPropWidget;
@@ -79,6 +80,8 @@ protected:
 
     QAtomicInt InstruemntSelectionsDenied;
 
+    QTableWidgetItem *dataColumn1;
+    QTableWidgetItem *dataColumn2;
 
 
     //handlers
