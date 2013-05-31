@@ -43,8 +43,8 @@ protected:
     QMap<QString, QList<filterNetworkList *> > currentVariablesObjects;
 
     //listings
-    QStringList GroupList;
-    QStringList SubGroupList;
+    QStringList ObsGroupList;
+    QStringList ObservatoryList;
 
     //maps
     QMultiMap<QString , QString> InstrumentList;

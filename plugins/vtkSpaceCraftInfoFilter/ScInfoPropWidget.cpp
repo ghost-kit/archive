@@ -1,4 +1,4 @@
-//TODO: 1) Adjust the system to accept Instrument Type as the top level selection
+//TODO:
 //      2) Fix DataSet repeated querries
 //      3) Fix Variable Selection
 //      4) Optimize the call pattern for information
@@ -171,14 +171,10 @@ void ScInfoPropWidget::apply()
                     DataString = DataString + "," + values[x][y];
                 }
             }
-
-
         }
     }
 
     std::cerr << "CodeString: " << DataString.toAscii().data() << std::endl;
-
-
 
     this->svp->SetElement(0, this->currentGroup.toAscii().data());
     this->svp->SetElement(1, this->currentObservatory.toAscii().data());
@@ -198,10 +194,8 @@ bool ScInfoPropWidget::getSCList(filterNetworkAccessModule &manager)
                 QString("ObservatoryGroups"),
                 QString("ObservatoryGroupDescription"));
 
-    if(manager.getNetworkAccessStatus() == 0)
-        return true;
-    else
-        return false;
+    return true;
+
 }
 
 //==================================================================
@@ -215,11 +209,8 @@ bool ScInfoPropWidget::getSCInstrument(filterNetworkAccessModule &manager)
                 + "?observatory=" + this->currentObservatory,
                 QString("Instruments"),
                 QString("InstrumentDescription"));
+    return true;
 
-    if(manager.getNetworkAccessStatus() == 0)
-        return true;
-    else
-        return false;
 }
 
 //==================================================================
@@ -232,10 +223,8 @@ bool ScInfoPropWidget::getSciDataGroup(filterNetworkAccessModule &manager, QStri
                 QString("Datasets"),
                 QString("DatasetDescription"));
 
-    if(manager.getNetworkAccessStatus() == 0)
-        return true;
-    else
-        return false;
+    return true;
+
 }
 
 //==================================================================
@@ -264,11 +253,11 @@ bool ScInfoPropWidget::getGroupsList()
 
         QString name = currentMap->operator []("Name");
 
-        this->GroupList.push_back(name);
+        this->ObsGroupList.push_back(name);
 
     }
 
-    GroupList.sort();
+    ObsGroupList.sort();
 
     return true;
 }
@@ -285,7 +274,7 @@ bool ScInfoPropWidget::getDataSetsList()
 bool ScInfoPropWidget::getObservatoryList(QString Group)
 {
     //clear what is there already
-    this->SubGroupList.clear();
+    this->ObservatoryList.clear();
 
     //find the ObservatoryId
     for(int x = 0; x < this->currentGroupObjects->size(); x++)
@@ -294,11 +283,11 @@ bool ScInfoPropWidget::getObservatoryList(QString Group)
 
         if(currentMap->operator []("Name") == Group)
         {
-            this->SubGroupList = currentMap->values("ObservatoryId");
+            this->ObservatoryList = currentMap->values("ObservatoryId");
         }
     }
 
-    this->SubGroupList.sort();
+    this->ObservatoryList.sort();
 
     return true;
 }
@@ -309,7 +298,12 @@ bool ScInfoPropWidget::loadGroupListToGUI()
 {
     ui->Group->clear();
     ui->Group->addItem("--- Select Group ---");
-    ui->Group->addItems(this->GroupList);
+    ui->Group->addItems(this->ObsGroupList);
+
+    ui->Observatory->setDisabled(true);
+    ui->Instruments->setDisabled(true);
+    ui->DataSet->setDisabled(true);
+    ui->Variables->setDisabled(true);
 
     return true;
 }
@@ -328,7 +322,7 @@ void ScInfoPropWidget::selectedGroup(QString selection)
         this->getObservatoryList(selection);
         ui->Observatory->clear();
         ui->Observatory->addItem("--- Select Observatory ---");
-        ui->Observatory->addItems(this->SubGroupList);
+        ui->Observatory->addItems(this->ObservatoryList);
         ui->Observatory->setEnabled(true);
     }
     else
@@ -339,14 +333,11 @@ void ScInfoPropWidget::selectedGroup(QString selection)
 
     //clear downstream elements
     this->currentInstrument = "";
-    ui->Instruments->clear();
-//    ui->Instruments->setHorizontalHeaderItem(0,  this->dataColumn1);
-//    ui->Instruments->setHorizontalHeaderItem(1, this->dataColumn2);
 
+    ui->Instruments->clear();
     ui->Instruments->setDisabled(true);
     ui->DataSet->clear();
     ui->DataSet->setDisabled(true);
-
 
     this->currentDataSet = "";
 }
@@ -368,6 +359,9 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
 
     //get the required list
     this->getInstrumentList();
+
+    ui->Variables->clear();
+    ui->Variables->setDisabled(true);
 
     ui->Instruments->clear();
     ui->Instruments->setRowCount(this->InstrumentList.size());
@@ -769,7 +763,7 @@ bool ScInfoPropWidget::getInstrumentList()
 
     if(!this->currentInstrumentObjects->isEmpty())
     {
-        GroupList.sort();
+        ObsGroupList.sort();
     }
 
     return true;
