@@ -188,7 +188,7 @@ void filterNetworkAccessModule::extractObjects()
         {
             while(!this->parseQnStack.isEmpty())
             {
-//                std::cout << "Processing..." << std::endl;
+                std::cout << "Processing..." << std::endl;
 
                 QXmlStreamReader::TokenType tempType = this->parseTypeStack.front();
                 this->parseTypeStack.pop_front();
@@ -197,7 +197,7 @@ void filterNetworkAccessModule::extractObjects()
                 QString tempText = this->parseTextStack.front();
                 this->parseTextStack.pop_front();
 
-//                std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
+                std::cout << "QN : " << tempQn.toAscii().data() <<  " : " << tempType << std::endl;
 
                 //create a new object for the stack
                 QMultiMap<QString, QString> *temp = new QMultiMap<QString, QString>;
@@ -214,18 +214,17 @@ void filterNetworkAccessModule::extractObjects()
                     this->parseTextStack.pop_front();
 
                     //DEBUG
-//                    std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
+                    std::cout << "Adding: (" << tempQn.toAscii().data() << "," << tempText.toAscii().data() << ")" << std::endl;
 
                     //create object
                     temp->insert(tempQn, tempText);
-                    //temp->operator [](tempQn) = tempText;
-                    //temp->insert(tempQn, tempText);
+
 
                 }while(!this->parseQnStack.isEmpty() && this->parseQnStack.front() != this->ObjectLevel);
 
                 //add object to list
-//                std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
-//                std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
+                std::cout << "adding record for " << temp->count() << " submaps" << std::endl;
+                std::cout << "block: " << temp->value(QString("name")).toAscii().data() << std::endl;
                 this->finalObjects->push_back(temp);
             }
 //            std::cout << "Number of Objects:" << this->finalObjects->size() << std::endl;

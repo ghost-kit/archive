@@ -1,5 +1,7 @@
-//TODO: Need to start by 1) fixing the string pass-back. 2) fix the selection bug for data sets that replicates the entries. 3) replace "test 1" name with correct names in the tree
-// 4) connect the DataSet selection change to the handler. 5)fix the info so it doesn't look so bad..
+//TODO: 1) Adjust the system to accept Instrument Type as the top level selection
+//      2) Fix DataSet repeated querries
+//      3) Fix Variable Selection
+//      4) Optimize the call pattern for information
 
 
 
@@ -39,13 +41,15 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     this->getInstrumentTypes = QString("instrumentTypes");
     this->getInstruments = QString("instruments");
     this->getDataSets = QString("datasets");
-    this->getInventory = QString("variables");
     this->getDataGroups=QString("datasets");
+    this->getVariables=QString("variables");
+    this->getInventory=QString("inventory");
 
+
+    //Setup the UI
     this->dataColumn1 = new QTableWidgetItem("Instrument");
     this->dataColumn2 = new QTableWidgetItem("Description");
 
-    //Setup the UI
     ui->setupUi(this);
     ui->gridLayout->setMargin(pqPropertiesPanel::suggestedMargin());
     ui->gridLayout->setHorizontalSpacing(pqPropertiesPanel::suggestedHorizontalSpacing());
@@ -87,12 +91,15 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
 }
 
+
+//==================================================================
 ScInfoPropWidget::~ScInfoPropWidget()
 {
 
     delete ui;
 }
 
+//==================================================================
 void ScInfoPropWidget::apply()
 {
     std::cout << "APPLY CLICKED" << std::endl;
@@ -178,6 +185,7 @@ void ScInfoPropWidget::apply()
 
 }
 
+//==================================================================
 bool ScInfoPropWidget::getSCList(filterNetworkAccessModule &manager)
 {
 
@@ -192,6 +200,7 @@ bool ScInfoPropWidget::getSCList(filterNetworkAccessModule &manager)
         return false;
 }
 
+//==================================================================
 bool ScInfoPropWidget::getSCInstrument(filterNetworkAccessModule &manager)
 {
 
@@ -209,6 +218,7 @@ bool ScInfoPropWidget::getSCInstrument(filterNetworkAccessModule &manager)
         return false;
 }
 
+//==================================================================
 bool ScInfoPropWidget::getSciDataGroup(filterNetworkAccessModule &manager, QString dataset)
 {
     std::cout << QString(this->baseURL + this->dataViewSpacePhys + this->getDataGroups).toAscii().data() << std::endl;
@@ -224,7 +234,18 @@ bool ScInfoPropWidget::getSciDataGroup(filterNetworkAccessModule &manager, QStri
         return false;
 }
 
+//==================================================================
+bool ScInfoPropWidget::getSciVariables(filterNetworkAccessModule &manager, QString dataset)
+{
+    std::cout << QString(this->baseURL + this->dataViewSpacePhys + this->getDataGroups).toAscii().data() << std::endl;
 
+    manager.Get(this->baseURL + this->dataViewSpacePhys + this->getDataSets + "/" + dataset + "/" + this->getVariables,
+                QString("Variables"),
+                QString("VariableDescription"));
+    return true;
+}
+
+//==================================================================
 //parse for groups
 bool ScInfoPropWidget::getGroupsList()
 {
@@ -248,12 +269,14 @@ bool ScInfoPropWidget::getGroupsList()
     return true;
 }
 
+//==================================================================
 bool ScInfoPropWidget::getDataSetsList()
 {
 
     return true;
 }
 
+//==================================================================
 //parse Observatory List
 bool ScInfoPropWidget::getObservatoryList(QString Group)
 {
@@ -276,7 +299,7 @@ bool ScInfoPropWidget::getObservatoryList(QString Group)
     return true;
 }
 
-
+//==================================================================
 //load the group list to the GUI
 bool ScInfoPropWidget::loadGroupListToGUI()
 {
@@ -287,6 +310,7 @@ bool ScInfoPropWidget::loadGroupListToGUI()
     return true;
 }
 
+//==================================================================
 //process the change in selection on the selection box
 void ScInfoPropWidget::selectedGroup(QString selection)
 {
@@ -323,6 +347,7 @@ void ScInfoPropWidget::selectedGroup(QString selection)
     this->currentDataSet = "";
 }
 
+//==================================================================
 //process Observatories
 void ScInfoPropWidget::selectedObservatory(QString selection)
 {
@@ -376,7 +401,7 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
 }
 
 
-
+//==================================================================
 //Instrument Selection has Changed
 void ScInfoPropWidget::getAllDataSetInfo(QStringList dataSets)
 {
@@ -396,6 +421,8 @@ void ScInfoPropWidget::getAllDataSetInfo(QStringList dataSets)
     {
         QString item = (*iter2);
 
+        std::cout << "Item Contents: " << item.toAscii().data() << std::endl;
+
         filterNetworkAccessModule SCDataSetListManager;
         this->getSciDataGroup(SCDataSetListManager, item);
         newDataObjectGroup.insert(SCDataSetListManager.getFinalOjects());
@@ -404,11 +431,45 @@ void ScInfoPropWidget::getAllDataSetInfo(QStringList dataSets)
     //this is the poor mans way of defeating the race condition...
     //still need to fix out of order access when copying...
     this->currentDataGroupObjects = newDataObjectGroup;
-    std::cerr << "Size of Current Data objects Group (PostProcessing): " << this->currentDataGroupObjects.size() << std::endl;
 
 
 }
 
+//==================================================================
+void ScInfoPropWidget::getAllVariableSetInfo(QMap<QString, QStringList> DataSetList)
+{
+    std::cout << "Getting All Variable Set Information" << std::endl;
+    int count = 0;
+
+    QSet<filterNetworkList *> newVariableObjectGroup;
+
+   QMap<QString, QStringList>::Iterator iter;
+   for(iter = DataSetList.begin(); iter != DataSetList.end(); ++iter)
+   {
+       QStringList Instrument = DataSetList.keys();
+       QList<QStringList> DataSets = DataSetList.values();
+
+       std::cout << "Instrument: " << Instrument[count].toAscii().data() << std::endl;
+       for(int i = 0; i < DataSets[count].size(); i++)
+       {
+           std::cout << "\t|" << DataSets[count][i].toAscii().data()
+                     << ":\t" << (this->DataList[Instrument[count]][DataSets[count][i]]).toAscii().data() << std::endl;
+
+           //Configure the Needs for Variables Selection List
+           filterNetworkAccessModule SCVariableListManager;
+           this->getSciVariables(SCVariableListManager, DataSets[count][i]);
+           newVariableObjectGroup.insert(SCVariableListManager.getFinalOjects());
+
+       }
+
+       count ++;
+   }
+   //this is the poor mans way of defeating the race condition...
+   //still need to fix out of order access when copying...
+   this->currentVariablesObjects = newVariableObjectGroup;
+}
+
+//==================================================================
 void ScInfoPropWidget::setupDataSets()
 {
 
@@ -463,78 +524,128 @@ void ScInfoPropWidget::setupDataSets()
     }
 
     this->DataList = List;
-
-
 }
 
+//==================================================================
+void ScInfoPropWidget::setupVariableSets()
+{
+    std::cout << "Setting up Variables list" << std::endl;
+}
+
+//==================================================================
 void ScInfoPropWidget::instrumentSelectionChanged()
 {
-    std::cout << "Instrument Selection Changed" << std::endl;
-
-    //if we have something to process, lets do it...
-
+    //get the lock and process, or mark as future request
     if(this->InstrumentLock.testAndSetAcquire(0,1))
     {
-        sleep(1);
-
-        std::cout << "Lock Aquired" << std::endl;
-
-
+        //get all selected items... we will strip out columns other than 0 later..
         QList<QTableWidgetItem*> instruments = ui->Instruments->selectedItems();
         QStringList dataSet;
 
-        std::cerr << "Size of Selection List (Pre Processing): " << instruments.size() << std::endl;
-
+        //verify that the instruments list is no empty before processing.
         if(!instruments.isEmpty())
         {
-            std::cout << "Selected Items: " << std::endl;
-
             //create a list of items
             QList<QTableWidgetItem*>::iterator iter;
             for(iter = instruments.begin(); iter != instruments.end(); ++iter)
             {
                 QString item = (*iter)->text();
-                item = item.split("\t")[0];
 
-                dataSet.push_back(item);
-                std::cout << "Item: " << item.toAscii().data() << std::endl;
-
+                //make sure we only get the info from column 0
+                if(ui->Instruments->column((*iter)) == 0)
+                {
+                    //add to the data list
+                    dataSet.push_back(item);
+                }
             }
 
-            std::cerr << "PreProcessing Size of dataSet String List: " << dataSet.size() << std::endl;
-
+            //retrieve all of the data information
             getAllDataSetInfo(dataSet);
-            std::cout << "Time: " <<  svp->GetMTime() << " Class Name: " << svp->GetClassName() << std::endl;
-
         }
 
+        //setup the next selection box.
         this->setupDataSets();
+
+        //release lock.
         this->InstrumentLock.deref();
 
+        //see if requests came in while we were locked.
         connect(this, SIGNAL(completedInstrumentProcessing()), this, SLOT(processDeniedInstrumentRequests()));
 
         if(this->InstruemntSelectionsDenied.testAndSetAcquire(1,1))
         {
+            //requests pending, so process them.
             emit this->completedInstrumentProcessing();
+        }
+    }
+    else
+    {
+        //Lock was not aquired, thus request is being processed.  since we only really need to
+        // process the last request, we will just set this counter to 1, regardless of how many
+        // requests are made.
+        this->InstruemntSelectionsDenied.testAndSetAcquire(0,1);
+    }
+}
+
+
+//==================================================================
+void ScInfoPropWidget::dataGroupSelectionChanged()
+{
+    std::cout << "Data Selection has changed." << std::endl;
+
+    if(this->DataLock.testAndSetAcquire(0,1))
+    {
+        std::cout << "Lock Aquired" << std::endl;
+
+        QList<QTreeWidgetItem*> dataSets = ui->DataSet->selectedItems();
+
+        QMap<QString, QStringList> DataMap;
+        std::cerr << "Size of Selection List (Pre Processing): " << dataSets.size() << std::endl;
+
+        if(!dataSets.isEmpty())
+        {
+            std::cout << "Selected Items: " << std::endl;
+
+            //create a list of items
+            QList<QTreeWidgetItem*>::iterator iter;
+            for(iter = dataSets.begin(); iter != dataSets.end(); ++iter)
+            {
+
+                QString Instrument;
+
+                //Make sure we only get the Elements with Parents (i.e. non-insturment slecetions)
+                if((*iter)->parent())
+                {
+                    Instrument = (*iter)->parent()->text(0);
+                    DataMap[Instrument].push_back(this->DataList[Instrument].key((*iter)->text(0)));
+                }
+            }
+
+
+            getAllVariableSetInfo(DataMap);
+        }
+
+        this->setupVariableSets();
+        this->DataLock.deref();
+
+        connect(this, SIGNAL(completedDataProcessing()), this, SLOT(processDeniedDataRequests()));
+
+        if(this->DataSelectionDenied.testAndSetAcquire(1,1))
+        {
+            emit this->completedDataProcessing();
         }
     }
     else
     {
         std::cerr << "Lock Not Aquired... marking for later use..." << std::endl;
 
-        this->InstruemntSelectionsDenied.testAndSetAcquire(0,1);
+        this->DataSelectionDenied.testAndSetAcquire(0,1);
 
     }
 
-
 }
 
-void ScInfoPropWidget::dataGroupSelectionChanged()
-{
-    std::cout << "Data Selection has Changed." << std::endl;
-
-}
-
+//==================================================================
 void ScInfoPropWidget::processDeniedInstrumentRequests()
 {
 
@@ -545,14 +656,15 @@ void ScInfoPropWidget::processDeniedInstrumentRequests()
 
 }
 
+//==================================================================
 void ScInfoPropWidget::processDeniedDataRequests()
 {
 
-    std::cout << "Data Selection has changed." << std::endl;
+
 }
 
 
-
+//==================================================================
 //get instrument list for current selections
 bool ScInfoPropWidget::getInstrumentList()
 {

@@ -179,19 +179,32 @@ bool vtkSpaceCraftInfo::getSCData()
 //=========================================================================================//
 bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 {
-    for(int x = 0; x < this->requestedData.size(); x++)
-    {
-        if(!this->requestedData[x].isEmpty())
-        {
-            vtkDoubleArray *dataArray = vtkDoubleArray::New();
-            dataArray->SetNumberOfComponents(1);
-            dataArray->SetName(this->requestedData[x].toAscii().data());
+//    for(int x = 0; x < this->requestedData.size(); x++)
+//    {
+//        if(!this->requestedData[x].isEmpty())
+//        {
+//            //split the incoming data strings
+//            QStringList Split = this->requestedData[x].split(":");
 
-            dataArray->InsertNextValue(this->requestedTimeValue);
-            output->GetRowData()->AddArray(dataArray);
-            dataArray->Delete();
-        }
-    }
+//            QStringList DataSets = Split[1].split(",");
+//            QString     Instrument = Split[0];
+
+
+//            //iterate over the data strings, get the data, and store localy
+//            QStringList::Iterator iter;
+//            for(iter = DataSets.begin(); iter != DataSets.end(); ++iter)
+//            {
+//                vtkDoubleArray *dataArray = vtkDoubleArray::New();
+//                dataArray->SetNumberOfComponents(1);
+//                dataArray->SetName((*iter).toAscii().data());
+
+//                dataArray->InsertNextValue(this->requestedTimeValue);
+//                output->GetRowData()->AddArray(dataArray);
+//                dataArray->Delete();
+//            }
+
+//        }
+//    }
 
     return true;
 }
@@ -210,6 +223,27 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     this->requestedData = dataList.split(";");
 
     std::cout << "Number of Data Elements: " << this->requestedData.size() << std::endl;
+    for(int x = 0; x < this->requestedData.size(); x++)
+    {
+        if(!this->requestedData[x].isEmpty())
+        {
+            //split the incoming data strings
+            QStringList Split = this->requestedData[x].split(":");
+
+            QStringList DataSets = Split[1].split(",");
+            QString     Instrument = Split[0];
+
+
+            //iterate over the data strings, get the data, and store localy
+            QStringList::Iterator iter;
+            for(iter = DataSets.begin(); iter != DataSets.end(); ++iter)
+            {
+
+
+            }
+
+        }
+    }
 
     this->Modified();
 

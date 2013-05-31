@@ -40,6 +40,7 @@ protected:
     filterNetworkList *currentInstrumentObjects;
     filterNetworkList *currentObservatoryObjects;
     QSet<filterNetworkList *> currentDataGroupObjects;
+    QSet<filterNetworkList *> currentVariablesObjects;
 
     //listings
     QStringList GroupList;
@@ -67,6 +68,7 @@ protected:
     QString getInventory;
     QString getDataSets;
     QString getDataGroups;
+    QString getVariables;
 
     //instrument Selection
     QList<QListWidgetItem*> selectedInstruments;
@@ -79,6 +81,7 @@ protected:
     QAtomicInt ReprocessLock;
 
     QAtomicInt InstruemntSelectionsDenied;
+    QAtomicInt DataSelectionDenied;
 
     QTableWidgetItem *dataColumn1;
     QTableWidgetItem *dataColumn2;
@@ -88,6 +91,7 @@ protected:
     bool getSCList(filterNetworkAccessModule &manager);
     bool getSCInstrument(filterNetworkAccessModule &manager);
     bool getSciDataGroup(filterNetworkAccessModule &manager, QString dataset);
+    bool getSciVariables(filterNetworkAccessModule &manager, QString dataset);
 
     bool getGroupsList();
     bool getObservatoryList(QString Group);
@@ -97,7 +101,10 @@ protected:
     bool getDataSetsList();
 
     void getAllDataSetInfo(QStringList dataSets);
+    void getAllVariableSetInfo(QMap<QString, QStringList> DataSetList);
+
     void setupDataSets();
+    void setupVariableSets();
 
 
 
@@ -108,16 +115,17 @@ private:
 private slots:
     void selectedGroup(QString selection);
     void selectedObservatory(QString selection);
+
     void instrumentSelectionChanged();
     void dataGroupSelectionChanged();
 
     void processDeniedInstrumentRequests();
-
     void processDeniedDataRequests();
 
 signals:
     void recheckSelections();
     void completedInstrumentProcessing();
+    void completedDataProcessing();
 
 };
 
