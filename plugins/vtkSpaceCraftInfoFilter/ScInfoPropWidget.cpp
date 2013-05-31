@@ -102,6 +102,10 @@ ScInfoPropWidget::~ScInfoPropWidget()
 //==================================================================
 void ScInfoPropWidget::apply()
 {
+
+    //TODO: Need to capture the Selected Variables to pass back to filter.
+
+
     std::cout << "APPLY CLICKED" << std::endl;
 
     //build a list of elements
@@ -336,8 +340,8 @@ void ScInfoPropWidget::selectedGroup(QString selection)
     //clear downstream elements
     this->currentInstrument = "";
     ui->Instruments->clear();
-    ui->Instruments->setHorizontalHeaderItem(0,  this->dataColumn1);
-    ui->Instruments->setHorizontalHeaderItem(1, this->dataColumn2);
+//    ui->Instruments->setHorizontalHeaderItem(0,  this->dataColumn1);
+//    ui->Instruments->setHorizontalHeaderItem(1, this->dataColumn2);
 
     ui->Instruments->setDisabled(true);
     ui->DataSet->clear();
@@ -388,6 +392,8 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
 
         newItem->setText( this->InstrumentList.keys()[x]);
         newItem2->setText( this->InstrumentList.values()[x]);
+
+        newItem->setTextColor(QColor("Dark Blue"));
 
         ui->Instruments->setItem(x,0,newItem);
         ui->Instruments->setItem(x,1,newItem2);
