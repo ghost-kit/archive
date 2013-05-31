@@ -40,7 +40,7 @@ protected:
     filterNetworkList *currentInstrumentObjects;
     filterNetworkList *currentObservatoryObjects;
     QSet<filterNetworkList *> currentDataGroupObjects;
-    QSet<filterNetworkList *> currentVariablesObjects;
+    QMap<QString, QList<filterNetworkList *> > currentVariablesObjects;
 
     //listings
     QStringList GroupList;
@@ -49,6 +49,7 @@ protected:
     //maps
     QMultiMap<QString , QString> InstrumentList;
     QMap<QString, QMap<QString , QString> > DataList;
+    QMap<QString, QMap<QString, QString> > VariableList;
     QStringList DataSetRetrunList;
 
     //current target
@@ -123,7 +124,8 @@ private slots:
     void processDeniedDataRequests();
 
 signals:
-    void recheckSelections();
+    void recheckInstrumentSelections();
+    void recheckDataSetSelction();
     void completedInstrumentProcessing();
     void completedDataProcessing();
 

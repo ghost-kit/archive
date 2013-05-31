@@ -40,21 +40,50 @@
       <string>Data Selection</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="3" column="0">
-       <widget class="QLabel" name="Instruments_Label">
+      <item row="2" column="0">
+       <widget class="QLabel" name="Group_Label">
+        <property name="maximumSize">
+         <size>
+          <width>80</width>
+          <height>16777215</height>
+         </size>
+        </property>
         <property name="text">
-         <string>Instrument</string>
+         <string>Obs. Group</string>
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="Variables_Label">
-        <property name="text">
-         <string>Variables</string>
+      <item row="7" column="2">
+       <widget class="QTreeWidget" name="Variables">
+        <property name="minimumSize">
+         <size>
+          <width>265</width>
+          <height>165</height>
+         </size>
         </property>
+        <property name="alternatingRowColors">
+         <bool>true</bool>
+        </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+        <property name="sortingEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="animated">
+         <bool>true</bool>
+        </property>
+        <property name="columnCount">
+         <number>1</number>
+        </property>
+        <column>
+         <property name="text">
+          <string>Available Variables</string>
+         </property>
+        </column>
        </widget>
       </item>
-      <item row="3" column="2">
+      <item row="4" column="2">
        <widget class="QTableWidget" name="Instruments">
         <property name="minimumSize">
          <size>
@@ -107,27 +136,7 @@
         </column>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="Group_Label">
-        <property name="maximumSize">
-         <size>
-          <width>80</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Obs. Group</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="DataSet_Label">
-        <property name="text">
-         <string>Data Set</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
+      <item row="2" column="2">
        <widget class="QComboBox" name="Group">
         <property name="enabled">
          <bool>true</bool>
@@ -154,7 +163,28 @@
         </item>
        </widget>
       </item>
-      <item row="2" column="2">
+      <item row="5" column="0">
+       <widget class="QLabel" name="DataSet_Label">
+        <property name="text">
+         <string>Data Set</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="Instruments_Label">
+        <property name="text">
+         <string>Instrument</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="Variables_Label">
+        <property name="text">
+         <string>Variables</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
        <widget class="QComboBox" name="Observatory">
         <property name="enabled">
          <bool>false</bool>
@@ -181,14 +211,14 @@
         </item>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="Observatory_Label">
         <property name="text">
          <string>Observatory</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="2">
+      <item row="5" column="2">
        <widget class="QTreeWidget" name="DataSet">
         <property name="minimumSize">
          <size>
@@ -233,40 +263,15 @@
         </column>
        </widget>
       </item>
-      <item row="6" column="2">
-       <widget class="QTreeWidget" name="Variables">
-        <property name="minimumSize">
-         <size>
-          <width>265</width>
-          <height>165</height>
-         </size>
+      <item row="1" column="0">
+       <widget class="QLabel" name="DataType_Label">
+        <property name="text">
+         <string>Data Type</string>
         </property>
-        <property name="alternatingRowColors">
-         <bool>true</bool>
-        </property>
-        <property name="selectionMode">
-         <enum>QAbstractItemView::ExtendedSelection</enum>
-        </property>
-        <property name="sortingEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="animated">
-         <bool>true</bool>
-        </property>
-        <property name="columnCount">
-         <number>2</number>
-        </property>
-        <column>
-         <property name="text">
-          <string>Available Variables</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>Time Ranges</string>
-         </property>
-        </column>
        </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QComboBox" name="DataType"/>
       </item>
      </layout>
      <zorder>Group</zorder>
@@ -279,6 +284,8 @@
      <zorder>Instruments</zorder>
      <zorder>Variables_Label</zorder>
      <zorder>Variables</zorder>
+     <zorder>DataType_Label</zorder>
+     <zorder>DataType</zorder>
     </widget>
    </item>
   </layout>

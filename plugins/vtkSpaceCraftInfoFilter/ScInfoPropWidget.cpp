@@ -80,14 +80,14 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     /** Instrument Connections */
     connect(ui->Instruments, SIGNAL(itemSelectionChanged()), this, SLOT(instrumentSelectionChanged()));
-    connect(this, SIGNAL(recheckSelections()), this, SLOT(instrumentSelectionChanged()));
+    connect(this, SIGNAL(recheckInstrumentSelections()), this, SLOT(instrumentSelectionChanged()));
 
     /** Data Selection Changed */
     connect(ui->DataSet, SIGNAL(itemSelectionChanged()), this, SLOT(dataGroupSelectionChanged()));
-    connect(this, SIGNAL(recheckSelections()), this, SLOT(instrumentSelectionChanged()));
+    connect(this, SIGNAL(recheckDataSetSelction()), this, SLOT(dataGroupSelectionChanged()));
 
     /** Property Links */
-    this->addPropertyLink(ui->DataSet, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
+    this->addPropertyLink(ui->Variables, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
 
 }
 
@@ -441,32 +441,35 @@ void ScInfoPropWidget::getAllVariableSetInfo(QMap<QString, QStringList> DataSetL
     std::cout << "Getting All Variable Set Information" << std::endl;
     int count = 0;
 
-    QSet<filterNetworkList *> newVariableObjectGroup;
+    QMap<QString, QList<filterNetworkList *> > newVariableObjectGroup;
 
-   QMap<QString, QStringList>::Iterator iter;
-   for(iter = DataSetList.begin(); iter != DataSetList.end(); ++iter)
-   {
-       QStringList Instrument = DataSetList.keys();
-       QList<QStringList> DataSets = DataSetList.values();
+    QMap<QString, QStringList>::Iterator iter;
+    for(iter = DataSetList.begin(); iter != DataSetList.end(); ++iter)
+    {
+        QStringList Instrument = DataSetList.keys();
+        QList<QStringList> DataSets = DataSetList.values();
 
-       std::cout << "Instrument: " << Instrument[count].toAscii().data() << std::endl;
-       for(int i = 0; i < DataSets[count].size(); i++)
-       {
-           std::cout << "\t|" << DataSets[count][i].toAscii().data()
-                     << ":\t" << (this->DataList[Instrument[count]][DataSets[count][i]]).toAscii().data() << std::endl;
+        std::cout << "Instrument: " << Instrument[count].toAscii().data() << std::endl;
+        for(int i = 0; i < DataSets[count].size(); i++)
+        {
+            std::cout << "\t|" << DataSets[count][i].toAscii().data()
+                      << ":\t" << (this->DataList[Instrument[count]][DataSets[count][i]]).toAscii().data() << std::endl;
 
-           //Configure the Needs for Variables Selection List
-           filterNetworkAccessModule SCVariableListManager;
-           this->getSciVariables(SCVariableListManager, DataSets[count][i]);
-           newVariableObjectGroup.insert(SCVariableListManager.getFinalOjects());
+            //Configure the Needs for Variables Selection List
+            filterNetworkAccessModule SCVariableListManager;
+            this->getSciVariables(SCVariableListManager, DataSets[count][i]);
 
-       }
+            QString DataName = this->DataList[Instrument[count]][DataSets[count][i]];
 
-       count ++;
-   }
-   //this is the poor mans way of defeating the race condition...
-   //still need to fix out of order access when copying...
-   this->currentVariablesObjects = newVariableObjectGroup;
+            newVariableObjectGroup[DataName].append(SCVariableListManager.getFinalOjects());
+
+        }
+
+        count ++;
+    }
+    //this is the poor mans way of defeating the race condition...
+    //still need to fix out of order access when copying...
+    this->currentVariablesObjects = newVariableObjectGroup;
 }
 
 //==================================================================
@@ -505,7 +508,7 @@ void ScInfoPropWidget::setupDataSets()
             temp.insert(id,label);
 
             QTreeWidgetItem * child = new QTreeWidgetItem();
-            child->setText(0,QString(label));
+            child->setText(0,label);
 
             treelist.push_back(child);
 
@@ -515,11 +518,12 @@ void ScInfoPropWidget::setupDataSets()
 
         QTreeWidgetItem *newItem = new QTreeWidgetItem();
         newItem->setText(0,obsGroup);
+        newItem->setTextColor(0, QColor("dark blue"));
         newItem->addChildren(treelist);
-        newItem->setExpanded(true);
 
         ui->DataSet->addTopLevelItem(newItem);
         ui->DataSet->setEnabled(true);
+        ui->DataSet->expandAll();
 
     }
 
@@ -530,6 +534,70 @@ void ScInfoPropWidget::setupDataSets()
 void ScInfoPropWidget::setupVariableSets()
 {
     std::cout << "Setting up Variables list" << std::endl;
+
+    QMap<QString, QList<filterNetworkList *> >::Iterator iter;
+    QList<filterNetworkList *>::Iterator iter2;
+
+    int count = 0;
+
+    ui->Variables->clear();
+    this->VariableList.clear();
+
+    QMap<QString, QMap<QString, QString> > List;
+
+    std::cerr << "Size of Variable Selection List: " << this->currentVariablesObjects.size() << std::endl;
+
+    for(iter=this->currentVariablesObjects.begin(); iter != this->currentVariablesObjects.end(); ++iter)
+    {
+        std::cout << "Processing Varaibles..." << std::endl;
+        QStringList keys = this->currentVariablesObjects.keys();
+        QList<filterNetworkList *> item = (*iter);
+
+
+        QList<QTreeWidgetItem*> treelist;
+        QMap<QString, QString> temp;
+
+        QString DataSet = keys[count];
+
+        for(iter2= item.begin(); iter2 != item.end(); ++iter2)
+        {
+            filterNetworkList *item2 = (*iter2);
+
+
+            for(int x = 0; x < item2->size(); x++)
+            {
+                filterNetworkObject *currentMap = item2->operator [](x);
+
+                QString Name = currentMap->operator []("Name");
+                QString Desc = currentMap->operator []("LongDescription");
+
+
+                std::cout << "Variable Name: " << Name.toAscii().data() << " Description: " << Desc.toAscii().data() << std::endl;
+
+                temp.insert(Name, Desc);
+
+                QTreeWidgetItem * child = new QTreeWidgetItem();
+                child->setText(0, Desc);
+
+                treelist.push_back(child);
+
+            }
+            List.insert(DataSet, temp);
+        }
+
+        count ++;
+
+        QTreeWidgetItem *newItem = new QTreeWidgetItem();
+        newItem->setText(0,DataSet);
+        newItem->setTextColor(0, QColor("dark blue"));
+        newItem->addChildren(treelist);
+
+        ui->Variables->addTopLevelItem(newItem);
+        ui->Variables->setEnabled(true);
+        ui->Variables->expandAll();
+
+    }
+
 }
 
 //==================================================================
@@ -619,6 +687,7 @@ void ScInfoPropWidget::dataGroupSelectionChanged()
                     Instrument = (*iter)->parent()->text(0);
                     DataMap[Instrument].push_back(this->DataList[Instrument].key((*iter)->text(0)));
                 }
+
             }
 
 
@@ -651,7 +720,7 @@ void ScInfoPropWidget::processDeniedInstrumentRequests()
 
     if(this->InstruemntSelectionsDenied.testAndSetAcquire(1,0))
     {
-        emit this->recheckSelections();
+        emit this->recheckInstrumentSelections();
     }
 
 }
@@ -660,6 +729,13 @@ void ScInfoPropWidget::processDeniedInstrumentRequests()
 void ScInfoPropWidget::processDeniedDataRequests()
 {
 
+
+    if(this->DataSelectionDenied.testAndSetAcquire(1,0))
+    {
+        std::cout << "Retrying requests" << std::endl;
+
+        emit this->recheckDataSetSelction();
+    }
 
 }
 
