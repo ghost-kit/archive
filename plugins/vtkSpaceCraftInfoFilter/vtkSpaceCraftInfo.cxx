@@ -44,6 +44,9 @@
 #include <vtkSmartPointer.h>
 #include <vtksys/ios/sstream>
 
+
+#include "cdf.h"
+
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
 vtkSpaceCraftInfo::vtkSpaceCraftInfo()

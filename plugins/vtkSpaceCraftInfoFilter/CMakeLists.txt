@@ -2,12 +2,19 @@ PROJECT(SpaceCraftInfo)
 
 cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR})
+
 if(NOT ParaView_BINARY_DIR)
   find_package(ParaView REQUIRED)
   include(${PARAVIEW_USE_FILE})
 endif()
 
 include(ParaViewPlugins)
+
+find_package(cdf REQUIRED)
+include_directories(${cdf_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${cdf_LIBRARIRES})
+
 
 # wrap QT
 QT4_WRAP_CPP(
@@ -40,4 +47,6 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}
                 )
+
+target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS})
 
