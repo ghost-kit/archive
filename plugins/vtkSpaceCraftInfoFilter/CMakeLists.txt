@@ -23,6 +23,7 @@ QT4_WRAP_CPP(
     ScInfoPropWidget.h
     statusbar.h
     status.h
+    filedownloader.h
     )
 
 # Wrap UI
@@ -50,6 +51,7 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 statusbar.cpp
                 status.cpp
                 DateTime.C
+                filedownloader.cpp
                 ${outsrcs0}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}

@@ -39,6 +39,7 @@
 #include "QNetworkReply"
 #include "QURL"
 #include "QStringList"
+#include "qeventloop.h"
 
 #include <vector>
 #include <vtkSmartPointer.h>
@@ -49,6 +50,7 @@
 #include "filterNetworkAccessModule.h"
 
 #include "DateTime.h"
+#include "filedownloader.h"
 
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
@@ -56,6 +58,8 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
 {
     this->NumberOfTimeSteps = 0;
     this->processed = false;
+
+    this->tempFilePath = "/tmp/";
 }
 
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
@@ -190,6 +194,19 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
     return true;
 }
 
+//=========================================================================================//
+void vtkSpaceCraftInfo::LoadCDFData()
+{
+
+    QMap<QString, QString>::Iterator iter;
+    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    {
+        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
+                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+    }
+
+}
+
 
 //=========================================================================================//
 void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, const char *list)
@@ -210,8 +227,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     Status statusBar;
     statusBar.setStatusBarMessage(("Getting Data for "));
     statusBar.setWindowTitle("Downloading Data...");
-    statusBar.updateAll();
-    statusBar.updatesEnabled();
     statusBar.show();
 
 
@@ -221,7 +236,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     for(int x = 0; x < this->requestedData.size(); x++)
     {
         statusBar.setStatus(count/total * 100);
-        statusBar.updateAll();
         statusBar.hide();
         statusBar.show();
 
@@ -290,6 +304,51 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                     //get the data
                     manager.Get(url,QString("DataResult"),QString("FileDescription"));
 
+                    filterNetworkList *objects = manager.getFinalOjects();
+
+                    filterNetworkList::Iterator iter;
+
+                    //save our uri objects for processing
+                    for(iter=objects->begin(); iter != objects->end(); ++iter)
+                    {
+                        filterNetworkObject* currentObject = (*iter);
+
+                        if(currentObject->contains("Name"))
+                        {
+                            this->uriList[DSet] = currentObject;
+
+                            std::cout << "URI: " << this->uriList[DSet]->operator []("Name").toAscii().data() << std::endl;
+
+                            //Download the actual files
+
+                            FileDownloader recievedFile(this->uriList[DSet]->operator []("Name") );
+
+                            // Save the file to the TEMP space on disk
+                            QString fileName = this->tempFilePath + DSet + "-" + QString(startTime.getISO8601DateTimeString().c_str()) +  "-" + QString(endTime.getISO8601DateTimeString().c_str()) + ".cdf";
+                            QFile file(fileName);
+
+                            if(file.open(QIODevice::WriteOnly))
+                            {
+                                QDataStream out(&file);
+                                out << recievedFile.downloadedData();
+                                file.close();
+
+                                this->CacheFileName[DSet] = fileName;
+                            }
+                            else
+                            {
+                                std::cerr << "ERROR WRITING TO DISK" << std::endl;
+                            }
+
+                            //load the data from disk using CDF
+                            this->LoadCDFData();
+
+
+
+                        }
+
+                    }
+
                 }
 
             }
@@ -298,6 +357,9 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
         count ++;
 
     }
+    statusBar.setStatus(100);
+    statusBar.hide();
+    statusBar.show();
 
     this->Modified();
 

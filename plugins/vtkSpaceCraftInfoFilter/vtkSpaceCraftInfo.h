@@ -33,6 +33,7 @@ class vtkCallbackCommand;
 
 class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm, QObject
 {
+
 public:
   static vtkSpaceCraftInfo *New();
   vtkTypeMacro(vtkSpaceCraftInfo,vtkTableAlgorithm)
@@ -79,6 +80,11 @@ protected:
   QString group;
   QString observatory;
 
+  void LoadCDFData();
+
+  //temp file paths
+  QString tempFilePath;
+
   //Cached Data
   QMap<QString, QMap<QDateTime, QVector<double> > > DataCache;
 
@@ -88,13 +94,13 @@ protected:
   //------ gui attributes pannel ------//
 
   //gui data objects
-  QString CacheFileName;
+  QMap<QString, QString> CacheFileName;
+  QMap<QString, filterNetworkObject*> uriList;
 
   //Info items
   vtkInformation* inInfo;
   vtkInformation* outInfo;
   vtkTable* output;
-
 
 
 private:
