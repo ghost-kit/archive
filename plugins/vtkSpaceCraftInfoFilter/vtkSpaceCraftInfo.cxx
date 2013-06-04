@@ -288,7 +288,7 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                     std::cerr << url.toAscii().data() << std::endl;
 
                     //get the data
-                    manager.Get(url,"BLAH", "BLAHS");
+                    manager.Get(url,QString("DataResult"),QString("FileDescription"));
 
                 }
 
