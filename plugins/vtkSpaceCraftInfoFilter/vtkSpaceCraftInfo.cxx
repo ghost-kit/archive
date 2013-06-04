@@ -44,15 +44,18 @@
 #include <vtkSmartPointer.h>
 #include <vtksys/ios/sstream>
 
-
 #include "cdf.h"
+#include "status.h"
+#include "filterNetworkAccessModule.h"
+
+#include "DateTime.h"
 
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
 vtkSpaceCraftInfo::vtkSpaceCraftInfo()
 {
     this->NumberOfTimeSteps = 0;
-
+    this->processed = false;
 }
 
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
@@ -182,32 +185,7 @@ bool vtkSpaceCraftInfo::getSCData()
 //=========================================================================================//
 bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 {
-//    for(int x = 0; x < this->requestedData.size(); x++)
-//    {
-//        if(!this->requestedData[x].isEmpty())
-//        {
-//            //split the incoming data strings
-//            QStringList Split = this->requestedData[x].split(":");
 
-//            QStringList DataSets = Split[1].split(",");
-//            QString     Instrument = Split[0];
-
-
-//            //iterate over the data strings, get the data, and store localy
-//            QStringList::Iterator iter;
-//            for(iter = DataSets.begin(); iter != DataSets.end(); ++iter)
-//            {
-//                vtkDoubleArray *dataArray = vtkDoubleArray::New();
-//                dataArray->SetNumberOfComponents(1);
-//                dataArray->SetName((*iter).toAscii().data());
-
-//                dataArray->InsertNextValue(this->requestedTimeValue);
-//                output->GetRowData()->AddArray(dataArray);
-//                dataArray->Delete();
-//            }
-
-//        }
-//    }
 
     return true;
 }
@@ -224,10 +202,32 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     QString dataList = QString(list);
 
     this->requestedData = dataList.split(";");
+    this->group = QString(group);
+    this->observatory = QString(observatory);
 
-    std::cout << "Number of Data Elements: " << this->requestedData.size() << std::endl;
+    this->processed = false;
+
+    Status statusBar;
+    statusBar.setStatusBarMessage(("Getting Data for "));
+    statusBar.setWindowTitle("Downloading Data...");
+    statusBar.updateAll();
+    statusBar.updatesEnabled();
+    statusBar.show();
+
+
+    int count = 0;
+    double total = requestedData.size();
+
     for(int x = 0; x < this->requestedData.size(); x++)
     {
+        statusBar.setStatus(count/total * 100);
+        statusBar.updateAll();
+        statusBar.hide();
+        statusBar.show();
+
+        std::cout << "Count: " << count << " Progress should be: " << count/total * 100 << std::endl;
+
+
         if(!this->requestedData[x].isEmpty())
         {
             //split the incoming data strings
@@ -242,10 +242,61 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
             for(iter = DataSets.begin(); iter != DataSets.end(); ++iter)
             {
 
+                // split the Instrument request
+                QStringList parts = (*iter).split("~");
+
+                //get the data set
+                QString DSet = parts[0];
+                QStringList VarSet;
+
+                statusBar.setStatusBarMessage(("Getting Data for " + DSet));
+                statusBar.updateAll();
+
+                //get the variables we need to get data on
+                if(parts[1] != "")
+                {
+                    VarSet = parts[1].split("|");
+
+                    filterNetworkAccessModule manager;
+                    QString url;
+
+                    DateTime startTime(this->timeSteps.first());
+                    DateTime endTime(this->timeSteps.last());
+
+
+                    url = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys")
+                            + "/datasets/" + DSet
+                            + "/data/"
+                            + QString(startTime.getISO8601DateTimeString().c_str())
+                            + ","
+                            + QString(endTime.getISO8601DateTimeString().c_str()) + "/";
+
+                    for(int a = 0; a < VarSet.size(); a++)
+                    {
+                        if(a != 0)
+                        {
+                            url = url + "," + VarSet[a];
+                        }
+                        else
+                        {
+                            url = url + VarSet[a];
+                        }
+                    }
+
+                    url = url + "?format=cdf";
+
+                    std::cerr << url.toAscii().data() << std::endl;
+
+                    //get the data
+                    manager.Get(url,"BLAH", "BLAHS");
+
+                }
 
             }
 
         }
+        count ++;
+
     }
 
     this->Modified();

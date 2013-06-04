@@ -21,12 +21,16 @@ QT4_WRAP_CPP(
     MOC_BUILT_SOURCES
     filterNetworkAccessModule.h
     ScInfoPropWidget.h
+    statusbar.h
+    status.h
     )
 
 # Wrap UI
 QT4_WRAP_UI(
     UI_BUILT_SOURCES
     ScInfoPropWidget.ui
+    statusbar.ui
+    status.ui
     )
 
 # Property Widget
@@ -43,6 +47,9 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfo.cxx
         SOURCES filterNetworkAccessModule.cpp
                 ScInfoPropWidget.cpp
+                statusbar.cpp
+                status.cpp
+                DateTime.C
                 ${outsrcs0}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}

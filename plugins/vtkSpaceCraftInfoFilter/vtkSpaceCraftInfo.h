@@ -76,6 +76,13 @@ protected:
 
   //Requested Data
   QStringList requestedData;
+  QString group;
+  QString observatory;
+
+  //Cached Data
+  QMap<QString, QMap<QDateTime, QVector<double> > > DataCache;
+
+  bool processed;
 
 
   //------ gui attributes pannel ------//
