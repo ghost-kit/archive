@@ -465,9 +465,9 @@ std::string DateTime::getISO8601DateTimeString(void) const
     out << month;
 
   if (day < 10)
-    out << "0" << day;
+      out << "0" << day << "T";
   else
-    out << day;
+      out << day << "T";
 
   if (hours < 10)
     out << "0" << hours;
