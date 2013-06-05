@@ -57,5 +57,5 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 ${UI_BUILT_SOURCES}
                 )
 
-target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS})
+target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS} /usr/local/lib/libcdf.a)
 

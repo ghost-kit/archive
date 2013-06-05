@@ -333,7 +333,7 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                             if(file.open(QIODevice::WriteOnly))
                             {
                                 QDataStream out(&file);
-                                out << recievedFile.downloadedData();
+                                file.write(recievedFile.downloadedData());
                                 file.close();
 
                                 this->CacheFileName[DSet] = fileName;
