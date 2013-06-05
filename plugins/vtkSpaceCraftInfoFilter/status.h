@@ -16,6 +16,7 @@ public:
     ~Status();
 
     void setStatusBarMessage(QString message);
+    void setStatusCount(QString countMessage);
     void updateAll();
 
 public slots:

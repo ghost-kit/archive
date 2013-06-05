@@ -18,6 +18,11 @@ void Status::setStatusBarMessage(QString message)
     ui->message->setText(message);
 }
 
+void Status::setStatusCount(QString countMessage)
+{
+    ui->recordCount->setText(countMessage);
+}
+
 void Status::updateAll()
 {
     ui->status->hide();

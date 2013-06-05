@@ -225,18 +225,18 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     this->processed = false;
 
     Status statusBar;
-    statusBar.setStatusBarMessage(("Getting Data for "));
+    statusBar.setStatusBarMessage(("Downloading "));
     statusBar.setWindowTitle("Downloading Data...");
     statusBar.show();
 
 
-    int count = 0;
+    int count = 1;
     double total = requestedData.size();
 
     for(int x = 0; x < this->requestedData.size(); x++)
     {
         statusBar.setStatus(count/total * 100);
-        statusBar.hide();
+//        statusBar.hide();
         statusBar.show();
 
         std::cout << "Count: " << count << " Progress should be: " << count/total * 100 << std::endl;
@@ -263,7 +263,8 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                 QString DSet = parts[0];
                 QStringList VarSet;
 
-                statusBar.setStatusBarMessage(("Getting Data for " + DSet));
+                statusBar.setStatusBarMessage(("Downloading " + DSet));
+                statusBar.setStatusCount(QString("Gathering Information..."));
                 statusBar.updateAll();
 
                 //get the variables we need to get data on
@@ -276,7 +277,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
                     DateTime startTime(this->timeSteps.first());
                     DateTime endTime(this->timeSteps.last());
-
 
                     url = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys")
                             + "/datasets/" + DSet
@@ -321,6 +321,9 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
                             //Download the actual files
 
+                            statusBar.setStatusCount(QString("Getting " + QString::number(this->uriList[DSet]->operator []("Length").toDouble()/1e6) + " MBs"));
+                            statusBar.show();
+
                             FileDownloader recievedFile(this->uriList[DSet]->operator []("Name") );
 
                             // Save the file to the TEMP space on disk
@@ -340,11 +343,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                                 std::cerr << "ERROR WRITING TO DISK" << std::endl;
                             }
 
-                            //load the data from disk using CDF
-                            this->LoadCDFData();
-
-
-
                         }
 
                     }
@@ -360,6 +358,10 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     statusBar.setStatus(100);
     statusBar.hide();
     statusBar.show();
+
+    //load the data from disk using CDF
+    this->LoadCDFData();
+
 
     this->Modified();
 
