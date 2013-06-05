@@ -203,6 +203,31 @@ void vtkSpaceCraftInfo::LoadCDFData()
     {
         std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
                   << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+
+
+        //Required CDF values for file
+        CDFid id;
+        CDFstatus status;
+        char text[CDF_STATUSTEXT_LEN+1];
+
+
+        //open the CDF file
+        status = CDFopen((*iter).toAscii().data(), &id);
+        if(status)
+        {
+            CDFerror(status, text);
+            std::cerr <<  "ERROR: " << text << std::endl;
+        }
+        else
+        {
+            std::cout << "File Opened Successfully" << std::endl;
+        }
+
+        //Read the files
+
+
+        CDFclose(id);
+
     }
 
 }
@@ -341,6 +366,7 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                             else
                             {
                                 std::cerr << "ERROR WRITING TO DISK" << std::endl;
+
                             }
 
                         }
@@ -361,7 +387,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
     //load the data from disk using CDF
     this->LoadCDFData();
-
 
     this->Modified();
 
