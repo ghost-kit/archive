@@ -8,6 +8,9 @@
 //  Date:   01 Apr 2013                                                         //
 //==============================================================================//
 
+#define DEBUG 1
+
+
 #ifndef _vtkSpaceCraftInfo_h
 #define _vtkSpaceCraftInfo_h
 #include "vtkStructuredGridAlgorithm.h"
@@ -86,7 +89,8 @@ protected:
   QString tempFilePath;
 
   //Cached Data
-  QMap<QString, QMap<QDateTime, QVector<double> > > DataCache;
+  //DataCache[DataSet][Variable][element][component]
+  QMap <QString, QMap< QString, QVector<QVector <double> > > >  DataCache;
 
   bool processed;
 

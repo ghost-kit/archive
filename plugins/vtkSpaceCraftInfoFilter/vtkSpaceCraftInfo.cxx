@@ -46,6 +46,7 @@
 #include <vtksys/ios/sstream>
 
 #include "cdf.h"
+#include "cdflib.h"
 #include "status.h"
 #include "filterNetworkAccessModule.h"
 
@@ -212,7 +213,7 @@ void vtkSpaceCraftInfo::LoadCDFData()
 
 
         //open the CDF file
-        status = CDFopen((*iter).toAscii().data(), &id);
+        status = CDFopenCDF((*iter).toAscii().data(), &id);
         if(status)
         {
             CDFerror(status, text);
@@ -223,10 +224,49 @@ void vtkSpaceCraftInfo::LoadCDFData()
             std::cout << "File Opened Successfully" << std::endl;
         }
 
-        //Read the files
+        //get details of the file being read
+        long numDims;
+        long dimSizes[CDF_MAX_DIMS];
+
+        long encoding;
+        long majority;
+        long maxrRec;
+        long numrVars;
+        long maxzRec;
+        long numzVars;
+        long numAttrs;
+
+        status = CDFinquireCDF(id, &numDims, dimSizes,
+                               &encoding, &majority, &maxrRec,
+                               &numrVars, &maxzRec, &numzVars,
+                               &numAttrs);
+        if(status != CDF_OK)
+        {
+            CDFgetStatusText(status, text);
+            std::cerr << "ERROR: " << text << std::endl;
+        }
+
+#ifdef DEBUG
+        std::cout << "Number of Dims: " <<  numDims << std::endl << "encoding: " << encoding << std::endl << "majority: " << majority
+                  << std::endl << "maxRrec: " << maxrRec <<  std::endl << "numRvars: " << numrVars << std::endl
+                  << "maxZrec: " << maxzRec << std::endl << "numZvars: " << numzVars << std::endl << "numAttrs: " << numAttrs << std::endl;
+#endif
+
+        for(long i = 0; i < numzVars; i++)
+        {
+            char varName[CDF_VAR_NAME_LEN256];
+            status = CDFgetzVarName(id, i, varName);
+            if(status != CDF_OK)
+            {
+                CDFgetStatusText(status, text);
+                std::cerr << "ERROR: " << text << std::endl;
+            }
+
+            std::cout << "Var Name: " << varName << std::endl;
+        }
 
 
-        CDFclose(id);
+        CDFcloseCDF(id);
 
     }
 
@@ -256,15 +296,17 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
 
     int count = 1;
-    double total = requestedData.size();
+    int totalcount = requestedData.size();
+    double totalSets = 0;
+    for(int c = 0; c < totalcount; c++ )
+    {
+        totalSets = totalSets + this->requestedData[c].split(",").size();
+    }
 
     for(int x = 0; x < this->requestedData.size(); x++)
     {
-        statusBar.setStatus(count/total * 100);
-//        statusBar.hide();
-        statusBar.show();
 
-        std::cout << "Count: " << count << " Progress should be: " << count/total * 100 << std::endl;
+        std::cout << "Count: " << count << " Progress should be: " << count/totalSets * 100 << std::endl;
 
 
         if(!this->requestedData[x].isEmpty())
@@ -280,6 +322,8 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
             QStringList::Iterator iter;
             for(iter = DataSets.begin(); iter != DataSets.end(); ++iter)
             {
+                statusBar.setStatus(count/totalSets * 100);
+                statusBar.show();
 
                 // split the Instrument request
                 QStringList parts = (*iter).split("~");
@@ -337,6 +381,9 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                     for(iter=objects->begin(); iter != objects->end(); ++iter)
                     {
                         filterNetworkObject* currentObject = (*iter);
+                        count++;
+                        statusBar.setStatus(count/totalSets * 100);
+                        statusBar.show();
 
                         if(currentObject->contains("Name"))
                         {
@@ -345,7 +392,7 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                             std::cout << "URI: " << this->uriList[DSet]->operator []("Name").toAscii().data() << std::endl;
 
                             //Download the actual files
-
+                            statusBar.setStatusBarMessage(("Downloading " + DSet));
                             statusBar.setStatusCount(QString("Getting " + QString::number(this->uriList[DSet]->operator []("Length").toDouble()/1e6) + " MBs"));
                             statusBar.show();
 
@@ -374,11 +421,16 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                     }
 
                 }
+                else
+                {
+                    count++;
+                    statusBar.setStatus(count/totalSets * 100);
+                    statusBar.show();
+                }
 
             }
 
         }
-        count ++;
 
     }
     statusBar.setStatus(100);
