@@ -54,6 +54,8 @@
 #include "DateTime.h"
 #include "filedownloader.h"
 
+#include <iomanip>
+
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
 vtkSpaceCraftInfo::vtkSpaceCraftInfo()
@@ -251,7 +253,7 @@ bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> 
     return true;
 }
 
-bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, QMap<QString, QVector<QVector<double> > > &data)
+bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, QMap<QString, QVector <QPair < double, QString> > >  &data)
 {
     CDFid id;
     CDFstatus status;
@@ -267,10 +269,6 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, 
     long numzVars =0;
     long numAttrs =0;
 
-    std::cout << "DataSet: " << DataSet.toAscii().data() << std::endl;
-    std::cout << "FileName: " << this->CacheFileName[DataSet].toAscii().data() << std::endl;
-
-
     //open the file
     status = CDFopenCDF(this->CacheFileName[DataSet].toAscii().data(), &id);
     this->checkCDFstatus(status);
@@ -281,33 +279,24 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, 
                            &numAttrs);
     this->checkCDFstatus(status);
 
-#ifdef DEBUG
-    std::cout << "Number of Dims: " <<  numDims << std::endl << "encoding: " << encoding << std::endl << "majority: " << majority
-              << std::endl << "maxRrec: " << maxrRec <<  std::endl << "numRvars: " << numrVars << std::endl
-              << "maxZrec: " << maxzRec << std::endl << "numZvars: " << numzVars << std::endl << "numAttrs: " << numAttrs << std::endl;
-#endif
-
     //get epoch (required)
     QVector<double> fileEpochList;
-    long numElements;
+    long numRecords;
     long epochVarNum = CDFgetVarNum(id, (char*)"Epoch");
 
-    status = CDFgetzVarMaxWrittenRecNum(id, epochVarNum, &numElements);
+    status = CDFgetzVarNumRecsWritten(id, epochVarNum, &numRecords);
     checkCDFstatus(status);
 
     //get the actual data
-    double *EpochBuffer = new double[numElements];
+    double *EpochBuffer = new double[numRecords];
 
     status = CDFgetzVarAllRecordsByVarID(id, epochVarNum, EpochBuffer);
     this->checkCDFstatus(status);
-    this->cToQVector(EpochBuffer, numElements, fileEpochList);
-
-    double required_epoch = 0;
+    this->cToQVector(EpochBuffer, numRecords, fileEpochList);
 
     QVector<DateTime> convertedFileEpoch;
+
     DateTime neededEpoch(requestedEpoch);
-    std::cout << "Requested Epoch: " << requestedEpoch << std::endl;
-    std::cout << "DateTime: " << neededEpoch.getDateTimeString() << std::endl;
 
     //convert epoch to DateTime
     long year;
@@ -317,35 +306,51 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, 
     long minute;
     long second;
     long msec;
-    for(int c = 0; c < numElements; c++)
+
+    for(int c = 0; c < numRecords; c++)
     {
         //break down the epoch
         EPOCHbreakdown(EpochBuffer[c], &year, &month, &day, &hour, &minute, &second, &msec);
 
         //create DATE_TIME OBJECT from epoch
-        convertedFileEpoch.push_back( DateTime(year, month, day, hour, minute, second));
-     }
+        DateTime convert(year, month, day, hour, minute, second);
+        convertedFileEpoch.push_back( convert);
 
-    QVector<DateTime>::Iterator i = qLowerBound(convertedFileEpoch.begin(), convertedFileEpoch.end(), neededEpoch);
-
-    if((*i) > neededEpoch)
-    {
-        //get the time BEFORE
-        //TODO: at some point we will need to interpolate the data for a better fit.
-        --i;
     }
 
-    //if we get a bad object, do this...
-    if(!convertedFileEpoch.contains((*i)))
+
+
+    QVector<DateTime>::ConstIterator i = qLowerBound(convertedFileEpoch.constBegin(), convertedFileEpoch.constEnd(), neededEpoch);
+
+    //assign the values
+    long indexOfFound;
+
+    if(i != convertedFileEpoch.begin() )
     {
-        std::cerr << "BAD DATE CONVERSION... WE HAVE AN ERROR IN "
-                  << __FUNCTION__ << " near line " << __LINE__ << std::endl;
+        //get the previous value
+        if((*i) > neededEpoch && i != convertedFileEpoch.end())
+        {
+            --i;
+        }
+
     }
 
-    std::cout << "Requested: " << neededEpoch.getDateTimeString().c_str() << std::endl;
-    std::cout << "Found:     " << (*i).getDateTimeString().c_str() << std::endl;
-    std::cout << "===============================================" << std::endl;
+    //make sure we are using a valid location
+    if(i != convertedFileEpoch.end())
+    {
+        indexOfFound = convertedFileEpoch.indexOf((*i));
+    }
+    else
+    {
+        indexOfFound = convertedFileEpoch.indexOf(convertedFileEpoch.last());
+    }
 
+#ifdef DEBUG
+    std::cout << "Requested Date:       " << neededEpoch.getDateTimeString() << std::endl;
+    std::cout << "Nearest Lower Found:  " << convertedFileEpoch[indexOfFound].getDateTimeString() << std::endl;
+    std::cout << "Found Record:         " << indexOfFound << std::endl;
+    std::cout << "---------------------------------" << std::endl;
+#endif
 
     //dont need the buffer anymore
     delete [] EpochBuffer;
@@ -354,6 +359,112 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, 
     //get the data for the required epoch
     for(int c = 0; c < numzVars; c++)
     {
+        //get the variable info
+        char varName[CDF_VAR_NAME_LEN256 +1];
+        long dataType;
+        long numElements;
+        long recVary;
+        long numDims;
+        long dimSizes[CDF_MAX_DIMS];
+        long dimVarys[CDF_MAX_DIMS];
+
+        //call CDF
+        status = CDFinquirezVar(id, c,
+                                varName,
+                                &dataType,
+                                &numElements,
+                                &numDims,
+                                dimSizes,
+                                &recVary,
+                                dimVarys);
+
+        this->checkCDFstatus(status);
+
+#ifdef DEBUG
+        std::cout << "VarName:     " << varName << std::endl
+                  << "DataType:    " << dataType << std::endl
+                  << "numElements: " << numElements << std::endl
+                  << "numDims:     " << numDims << std::endl
+                  << "dimSizes[0]: " << dimSizes << std::endl
+                  << "recVary:     " << recVary <<  std::endl
+                  << "dimVarys[0]: " << dimVarys[0] << std::endl;
+
+#endif
+
+        if(numElements == 1)
+        {
+            double  *dataUnitD;
+            float   *dataUnitF;
+            long    *dataUnitL;
+
+            //we don't have to worry about multi-dimensional data
+            switch(dataType)
+            {
+            case CDF_FLOAT:
+                //allocate space
+                dataUnitF = new float[numElements];
+
+                //get data record
+                status = CDFgetzVarRecordData(id, c, indexOfFound ,dataUnitF);
+
+#ifdef DEBUG
+                std::cout << "================================="  << std::endl;
+                std::cout << "DataUnit[" << indexOfFound << "]: " << dataUnitF[0] << std::endl;
+#endif
+                break;
+
+            case CDF_DOUBLE:
+                //allocate space
+                dataUnitD = new double[numElements];
+
+                //get data record
+                status = CDFgetzVarRecordData(id, c, indexOfFound ,dataUnitD);
+
+
+#ifdef DEBUG
+                std::cout << "================================="  << std::endl;
+                std::cout << "DataUnit[" << indexOfFound << "]: " << dataUnitD[0] << std::endl;
+#endif
+                break;
+
+            case CDF_EPOCH:
+            case CDF_EPOCH16:
+
+
+                break;
+
+            case CDF_INT1:
+            case CDF_INT2:
+            case CDF_INT4:
+            case CDF_INT8:
+
+                //allocate space
+                dataUnitL = new long[numElements];
+                //get data record
+                status = CDFgetzVarRecordData(id, c, indexOfFound ,dataUnitL);
+
+#ifdef DEBUG
+                std::cout << "================================="  << std::endl;
+                std::cout << "DataUnit[" << indexOfFound << "]: " << dataUnitL[0] << std::endl;
+#endif
+                break;
+
+            default:
+                break;
+
+            }
+
+        }
+#ifdef DEBUG
+            std::cout << "---------------------------------" << std::endl;
+#endif
+
+
+        //inserting the data into the cache
+        QPair<double, QString> newDataPoint;
+
+        data[varName].push_back(newDataPoint);
+
 
     }
 
@@ -362,19 +473,6 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, 
 
     CDFcloseCDF(id);
 
-
-
-    //    char varName[CDF_VAR_NAME_LEN256];
-    //    status = CDFgetzVarName(id, i, varName);
-    //    this->checkCDFstatus(status);
-
-    //#ifdef DEBUG
-    //    std::cout << "Var Name: " << varName << std::endl;
-    //#endif
-
-
-
-
     return true;
 }
 
@@ -382,6 +480,9 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, 
 //=========================================================================================//
 void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, const char *list)
 {
+
+    //remove list of previous files
+    this->uriList.clear();
 
     std::cout << "Group: " << group << std::endl;
     std::cout << "Observatory: " << observatory << std::endl;
@@ -451,7 +552,9 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                     QString url;
 
                     DateTime startTime(this->timeSteps.first());
+                    startTime.incrementMinutes(-60);
                     DateTime endTime(this->timeSteps.last());
+                    endTime.incrementMinutes(+60);
 
                     url = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys")
                             + "/datasets/" + DSet

@@ -93,7 +93,7 @@ protected:
 
   //Cached Data
   //DataCache[DataSet][EPOCH][Variable][element][component]
-  QMap <QString, QMap< double, QMap<QString, QVector<QVector <double> > > > >  DataCache;
+  QMap <QString, QMap< double, QMap<QString, QVector <QPair < double, QString> > > > >   DataCache;
   QMap<QString, QVector<double> > Epoch;
   bool processed;
 
@@ -101,7 +101,7 @@ protected:
 
   //IN: DataSet IN: Epoch OUT: data OUT: bool success
   //NOTE: method will ADD TO the data list provided, not replace.
-  bool getDataForEpoch(QString DataSet, double Epoch, QMap<QString, QVector<QVector<double> > > &data);
+  bool getDataForEpoch(QString DataSet, double Epoch, QMap<QString, QVector <QPair < double, QString> > >  &data);
 
 
   //------ gui attributes pannel ------//
