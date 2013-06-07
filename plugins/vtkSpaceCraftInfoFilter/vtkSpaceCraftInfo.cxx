@@ -40,6 +40,7 @@
 #include "QURL"
 #include "QStringList"
 #include "qeventloop.h"
+#include "QtAlgorithms"
 
 #include <vector>
 #include <vtkSmartPointer.h>
@@ -142,6 +143,13 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
         this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     }
 
+    //if the data still needs to be loaded, load it...
+    if(!this->processed)
+    {
+        this->LoadCDFData();
+    }
+
+    //process to return the needed information
     this->processCDAWeb(this->output);
     return 1;
 }
@@ -196,6 +204,16 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 }
 
 //=========================================================================================//
+void vtkSpaceCraftInfo::checkCDFstatus(CDFstatus status)
+{
+    char text[CDF_STATUSTEXT_LEN+1];
+    if(status != CDF_OK)
+    {
+        CDFgetStatusText(status, text);
+        std::cerr << "ERROR: " << text << std::endl;
+    }
+}
+
 void vtkSpaceCraftInfo::LoadCDFData()
 {
 
@@ -205,71 +223,159 @@ void vtkSpaceCraftInfo::LoadCDFData()
         std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
                   << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
 
-
-        //Required CDF values for file
-        CDFid id;
-        CDFstatus status;
-        char text[CDF_STATUSTEXT_LEN+1];
-
-
-        //open the CDF file
-        status = CDFopenCDF((*iter).toAscii().data(), &id);
-        if(status)
+        //if not EPOCH, load the data THAT WE NEED
+        for(int x =0; x < this->timeSteps.size(); x++)
         {
-            CDFerror(status, text);
-            std::cerr <<  "ERROR: " << text << std::endl;
-        }
-        else
-        {
-            std::cout << "File Opened Successfully" << std::endl;
+            QString DataSet = this->CacheFileName.key(*iter);
+            double time = this->timeSteps[x];
+            //get the data
+            this->getDataForEpoch(DataSet, time, this->DataCache[DataSet][time]);
+
         }
 
-        //get details of the file being read
-        long numDims;
-        long dimSizes[CDF_MAX_DIMS];
 
-        long encoding;
-        long majority;
-        long maxrRec;
-        long numrVars;
-        long maxzRec;
-        long numzVars;
-        long numAttrs;
 
-        status = CDFinquireCDF(id, &numDims, dimSizes,
-                               &encoding, &majority, &maxrRec,
-                               &numrVars, &maxzRec, &numzVars,
-                               &numAttrs);
-        if(status != CDF_OK)
-        {
-            CDFgetStatusText(status, text);
-            std::cerr << "ERROR: " << text << std::endl;
-        }
+
+        this->processed = true;
+    }
+
+}
+
+bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> &vector)
+{
+    for(int x = 0; x < dataSize; x++)
+    {
+        vector.push_back(data[x]);
+    }
+
+    return true;
+}
+
+bool vtkSpaceCraftInfo::getDataForEpoch(QString DataSet, double requestedEpoch, QMap<QString, QVector<QVector<double> > > &data)
+{
+    CDFid id;
+    CDFstatus status;
+
+    long numDims =0;
+    long dimSizes[CDF_MAX_DIMS];
+
+    long encoding =0;
+    long majority =0;
+    long maxrRec =0;
+    long numrVars =0;
+    long maxzRec =0;
+    long numzVars =0;
+    long numAttrs =0;
+
+    std::cout << "DataSet: " << DataSet.toAscii().data() << std::endl;
+    std::cout << "FileName: " << this->CacheFileName[DataSet].toAscii().data() << std::endl;
+
+
+    //open the file
+    status = CDFopenCDF(this->CacheFileName[DataSet].toAscii().data(), &id);
+    this->checkCDFstatus(status);
+
+    status = CDFinquireCDF(id, &numDims, dimSizes,
+                           &encoding, &majority, &maxrRec,
+                           &numrVars, &maxzRec, &numzVars,
+                           &numAttrs);
+    this->checkCDFstatus(status);
 
 #ifdef DEBUG
-        std::cout << "Number of Dims: " <<  numDims << std::endl << "encoding: " << encoding << std::endl << "majority: " << majority
-                  << std::endl << "maxRrec: " << maxrRec <<  std::endl << "numRvars: " << numrVars << std::endl
-                  << "maxZrec: " << maxzRec << std::endl << "numZvars: " << numzVars << std::endl << "numAttrs: " << numAttrs << std::endl;
+    std::cout << "Number of Dims: " <<  numDims << std::endl << "encoding: " << encoding << std::endl << "majority: " << majority
+              << std::endl << "maxRrec: " << maxrRec <<  std::endl << "numRvars: " << numrVars << std::endl
+              << "maxZrec: " << maxzRec << std::endl << "numZvars: " << numzVars << std::endl << "numAttrs: " << numAttrs << std::endl;
 #endif
 
-        for(long i = 0; i < numzVars; i++)
-        {
-            char varName[CDF_VAR_NAME_LEN256];
-            status = CDFgetzVarName(id, i, varName);
-            if(status != CDF_OK)
-            {
-                CDFgetStatusText(status, text);
-                std::cerr << "ERROR: " << text << std::endl;
-            }
+    //get epoch (required)
+    QVector<double> fileEpochList;
+    long numElements;
+    long epochVarNum = CDFgetVarNum(id, (char*)"Epoch");
 
-            std::cout << "Var Name: " << varName << std::endl;
-        }
+    status = CDFgetzVarMaxWrittenRecNum(id, epochVarNum, &numElements);
+    checkCDFstatus(status);
+
+    //get the actual data
+    double *EpochBuffer = new double[numElements];
+
+    status = CDFgetzVarAllRecordsByVarID(id, epochVarNum, EpochBuffer);
+    this->checkCDFstatus(status);
+    this->cToQVector(EpochBuffer, numElements, fileEpochList);
+
+    double required_epoch = 0;
+
+    QVector<DateTime> convertedFileEpoch;
+    DateTime neededEpoch(requestedEpoch);
+    std::cout << "Requested Epoch: " << requestedEpoch << std::endl;
+    std::cout << "DateTime: " << neededEpoch.getDateTimeString() << std::endl;
+
+    //convert epoch to DateTime
+    long year;
+    long month;
+    long day;
+    long hour;
+    long minute;
+    long second;
+    long msec;
+    for(int c = 0; c < numElements; c++)
+    {
+        //break down the epoch
+        EPOCHbreakdown(EpochBuffer[c], &year, &month, &day, &hour, &minute, &second, &msec);
+
+        //create DATE_TIME OBJECT from epoch
+        convertedFileEpoch.push_back( DateTime(year, month, day, hour, minute, second));
+     }
+
+    QVector<DateTime>::Iterator i = qLowerBound(convertedFileEpoch.begin(), convertedFileEpoch.end(), neededEpoch);
+
+    if((*i) > neededEpoch)
+    {
+        //get the time BEFORE
+        //TODO: at some point we will need to interpolate the data for a better fit.
+        --i;
+    }
+
+    //if we get a bad object, do this...
+    if(!convertedFileEpoch.contains((*i)))
+    {
+        std::cerr << "BAD DATE CONVERSION... WE HAVE AN ERROR IN "
+                  << __FUNCTION__ << " near line " << __LINE__ << std::endl;
+    }
+
+    std::cout << "Requested: " << neededEpoch.getDateTimeString().c_str() << std::endl;
+    std::cout << "Found:     " << (*i).getDateTimeString().c_str() << std::endl;
+    std::cout << "===============================================" << std::endl;
 
 
-        CDFcloseCDF(id);
+    //dont need the buffer anymore
+    delete [] EpochBuffer;
+    EpochBuffer = NULL;
+
+    //get the data for the required epoch
+    for(int c = 0; c < numzVars; c++)
+    {
 
     }
 
+
+
+
+    CDFcloseCDF(id);
+
+
+
+    //    char varName[CDF_VAR_NAME_LEN256];
+    //    status = CDFgetzVarName(id, i, varName);
+    //    this->checkCDFstatus(status);
+
+    //#ifdef DEBUG
+    //    std::cout << "Var Name: " << varName << std::endl;
+    //#endif
+
+
+
+
+    return true;
 }
 
 
@@ -394,13 +500,13 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
                             //Download the actual files
                             statusBar.setStatusBarMessage(("Downloading " + DSet));
                             statusBar.setStatusCount(QString("Getting " + QString::number(this->uriList[DSet]->operator []("Length").toDouble()/1e6) + " MBs"));
-                            statusBar.show();
+                                                             statusBar.show();
 
-                            FileDownloader recievedFile(this->uriList[DSet]->operator []("Name") );
+                                                     FileDownloader recievedFile(this->uriList[DSet]->operator []("Name") );
 
-                            // Save the file to the TEMP space on disk
-                            QString fileName = this->tempFilePath + DSet + "-" + QString(startTime.getISO8601DateTimeString().c_str()) +  "-" + QString(endTime.getISO8601DateTimeString().c_str()) + ".cdf";
-                            QFile file(fileName);
+                                                     // Save the file to the TEMP space on disk
+                                                     QString fileName = this->tempFilePath + DSet + "-" + QString(startTime.getISO8601DateTimeString().c_str()) +  "-" + QString(endTime.getISO8601DateTimeString().c_str()) + ".cdf";
+                                    QFile file(fileName);
 
                             if(file.open(QIODevice::WriteOnly))
                             {
@@ -433,12 +539,13 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
         }
 
     }
+
+    this->processed = false;
+
     statusBar.setStatus(100);
-    statusBar.hide();
     statusBar.show();
 
-    //load the data from disk using CDF
-    this->LoadCDFData();
+    statusBar.hide();
 
     this->Modified();
 
