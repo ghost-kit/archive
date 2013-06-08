@@ -30,6 +30,8 @@
 
 #include "filterNetworkAccessModule.h"
 
+#include "DateTime.h"
+
 class vtkDataSet;
 class vtkTable;
 class vtkDataSetAttributes;
@@ -38,6 +40,8 @@ class vtkCallbackCommand;
 
 class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm, QObject
 {
+
+    typedef QMap<QString, QVector <QPair < QVariant, QString> > >   epochDataEntry;
 
 public:
   static vtkSpaceCraftInfo *New();
@@ -48,8 +52,7 @@ public:
 
   //Callbacks
   void SetSCIData(const char *group, const char *observatory, const char *list);
-
-  void checkCDFstatus(CDFstatus status);
+  long getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch);
 protected:
   vtkSpaceCraftInfo();
   ~vtkSpaceCraftInfo();
@@ -93,15 +96,17 @@ protected:
 
   //Cached Data
   //DataCache[DataSet][EPOCH][Variable][element][component]
-  QMap <QString, QMap< double, QMap<QString, QVector <QPair < double, QString> > > > >   DataCache;
+  QMap <QString, QMap< double, epochDataEntry > >   DataCache;
   QMap<QString, QVector<double> > Epoch;
   bool processed;
 
   bool cToQVector(double* data, long dataSize, QVector<double> &vector);
-
+  void checkCDFstatus(CDFstatus status);
+  void getCDFUnits(CDFstatus status, CDFid id, int VarNum, QString &UnitText);
+  void convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, double *EpochBuffer, long numRecords);
   //IN: DataSet IN: Epoch OUT: data OUT: bool success
   //NOTE: method will ADD TO the data list provided, not replace.
-  bool getDataForEpoch(QString DataSet, double Epoch, QMap<QString, QVector <QPair < double, QString> > >  &data);
+  bool getDataForEpoch(QString &DataSet, double Epoch, epochDataEntry  &data);
 
 
   //------ gui attributes pannel ------//
