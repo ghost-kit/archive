@@ -11,9 +11,9 @@ endif()
 
 include(ParaViewPlugins)
 
-find_package(cdf REQUIRED)
-include_directories(${cdf_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${cdf_LIBRARIRES})
+#find_package(cdf REQUIRED)
+include_directories(${LIBCDF_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${LIBCDF_LIBRARIES})
 
 
 # wrap QT
@@ -57,5 +57,4 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 ${UI_BUILT_SOURCES}
                 )
 
-target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS} /usr/local/lib/libcdf.a)
-
+target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS})

@@ -767,6 +767,23 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
 }
 
+//=========================================================================================//
+//Time Fit Handler
+void vtkSpaceCraftInfo::SetTimeFitHandler(int handler)
+{
+    std::cout << "Selected a New Time Fit Handler" << std::endl;
+    this->Modified();
+}
+
+
+//=========================================================================================//
+//Bad Data Fit Handler
+void vtkSpaceCraftInfo::SetBadDataHandler(int handler)
+{
+    std::cout << "Selected a New Bad Data Handler" << std::endl;
+    this->Modified();
+}
+
 
 
 

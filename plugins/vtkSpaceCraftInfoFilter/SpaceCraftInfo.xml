@@ -17,6 +17,49 @@
 
        </InputProperty>
 
+            <IntVectorProperty name="TimeFitHandler"
+                                command="SetTimeFitHandler"
+                                number_of_elements_per_command="1"
+                                label="Time Fit Handler"
+                                panel_visibility="default">
+
+                <EnumerationDomain name="enum">
+                    <Entry value="0" text="Fit to next lower available time" />
+                    <Entry value="1" text="Fit to next higher available time" />
+                    <Entry value="2" text="Interpolate Linearly over time"/>
+                </EnumerationDomain>
+
+                <Documentation>
+                    Select how you would like to fit CDAweb data to your model data.
+                    1) "Fit to Next Lower" will provide data from the closest time less than model time
+                    2) "Fit to Next Upper" will proivde data from the closest time greater than model time
+                    3) "Interpolate Linearly" between the two closest valid data points
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+            <IntVectorProperty name="BadDataHandler"
+                                command="SetBadDataHandler"
+                                number_of_elements_per_command="1"
+                                label="Bad Data Handler"
+                                panel_visibility="default">
+
+                <EnumerationDomain name="enum">
+                    <Entry value="0" text="Omit"/>
+                    <Entry value="1" text="Linear Interpolation"/>
+                    <Entry value="3" text="Raw Data (do nothing)"/>
+                </EnumerationDomain>
+
+                <Documentation>
+                    Select how you would like to handle bad data within the CDF files.
+                    1) "OMIT" will just not provide the value to the filter
+                    2) "Linear Interpolation" will interpolate over time
+                    3) "Raw Data" will provide data AS-IS from the CDF file
+                </Documentation>
+
+            </IntVectorProperty>
+
 
             <StringVectorProperty name="SpaceCraftInfoProperties"
                                 command="SetSCIData"
@@ -27,7 +70,7 @@
                                 panel_visibility = "default">
 
                 <Documentation>
-                This is a custom widget test.
+                Select the Desired space craft and data sets from NASAs CDAweb.
                 </Documentation>
 
             </StringVectorProperty>
