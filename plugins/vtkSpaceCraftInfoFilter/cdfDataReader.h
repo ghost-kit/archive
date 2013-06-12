@@ -49,6 +49,9 @@ public:
     int getMajority() const;
     void setMajority(int value);
 
+    long getNumberElements() const;
+    void setNumberElements(long value);
+
 protected:
     //data returned from cdf call
     QVector<QVariant> data;
@@ -57,6 +60,8 @@ protected:
     int dataDims;
     QVector<int> Extents;
     int majority;
+    long numberElements;
+    QVariant invalidData;
 
 
 private:
@@ -74,8 +79,8 @@ public:
     QList<QVector<QVariant> > getGlobalAttribute(QString Attribute);
     QList<QVector<QVariant> > getGlobalAttribute(int64_t Attribute);
 
-    QList<QVector<QVariant> > getZVariableAttribute(QString Attribute, QString Variable);
-    QList<QVector<QVariant> > getZVariableAttribute(int64_t Attribute, int64_t Variable);
+    QList<QVector<QVariant> > getZVariableAttribute(const QString Attribute, const QString Variable);
+    QList<QVector<QVariant> > getZVariableAttribute(const int64_t Attribute, const int64_t Variable);
 
     QMap<QString, QList<QVector<QVariant> > > getZVariableAttributes(QStringList Attributes, QString Variable);
     QMap<QString, QList<QVector< QVariant > > > getZVaraibleAttributes(QStringList Attributes, int64_t Variable);
@@ -100,32 +105,14 @@ protected:
     QString FileName;
     CDFid fileId;
 
-    //temp variables
-    double* doubleVars;
-    double  invalid_Double;
-
-    float*  floatVars;
-    float   invalid_Float;
-
-    int*    intVars;
-    int     invalid_Int;
-
-    long*   longVars;
-    long    invalid_Long;
-
-    char*   stringVars;
-    char*   invalid_String;
-
-    double* epochVars;
-    double  invalid_Epoch;
-
+    long    majority;
 private:
     //file handlers
     bool openFile();
     bool closeFile();
 
     //Error Handlers
-    bool CDFstatusOK( CDFstatus status);
+    bool CDFstatusOK(CDFstatus status, bool suppress=false);
     bool cToQVector(void *data, long dataSize, long dataType, QVector<QVariant> &vector);
 };
 

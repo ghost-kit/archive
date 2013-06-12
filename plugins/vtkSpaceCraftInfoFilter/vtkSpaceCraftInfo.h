@@ -31,6 +31,7 @@
 #include "filterNetworkAccessModule.h"
 
 #include "DateTime.h"
+#include "cdfDataReader.h"
 
 class vtkDataSet;
 class vtkTable;
@@ -104,8 +105,8 @@ protected:
 
   bool cToQVector(double* data, long dataSize, QVector<double> &vector);
   void checkCDFstatus(CDFstatus status);
-  void getCDFUnits(CDFstatus status, CDFid id, int VarNum, QString &UnitText);
-  void convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, double *EpochBuffer, long numRecords);
+  void getCDFUnits(cdfDataReader &reader, QString &VarName, QString &UnitText);
+  void convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, cdfDataSet Epoch);
   //IN: DataSet IN: Epoch OUT: data OUT: bool success
   //NOTE: method will ADD TO the data list provided, not replace.
   bool getDataForEpoch(QString &DataSet, double Epoch, epochDataEntry  &data);

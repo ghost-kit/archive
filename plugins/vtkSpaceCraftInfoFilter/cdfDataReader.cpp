@@ -7,34 +7,24 @@
 //===============================================================//
 cdfDataReader::cdfDataReader(QString FileName)
 {
+    CDFstatus status;
     //record the file name
     this->FileName = FileName;
 
-    //intial conditions
-    this->doubleVars    = NULL;
-    this->floatVars     = NULL;
-    this->intVars       = NULL;
-    this->longVars      = NULL;
-    this->stringVars    = NULL;
-    this->epochVars     = NULL;
+    this->openFile();
+    status = CDFgetMajority(this->fileId, &majority);
 
-    this->invalid_Double = 0;
-    this->invalid_Epoch  = 0;
-    this->invalid_Float  = 0;
-    this->invalid_Int    = 0;
-    this->invalid_Long   = 0;
-    this->invalid_String = 0;
+    //print error message if thre is one
+    this->CDFstatusOK(status);
 
 }
 
 //===============================================================//
 cdfDataReader::~cdfDataReader()
 {
-    if(doubleVars)  delete [] this->doubleVars;
-    if(floatVars)   delete [] this->floatVars;
-    if(intVars)     delete [] this->intVars;
-    if(longVars)    delete [] this->longVars;
-    if(epochVars)   delete [] this->epochVars;
+    //currently the file is staying open the entire time the object exists
+    //we may want to change this behavior in the future
+    this->closeFile();
 }
 
 //===============================================================//
@@ -263,19 +253,18 @@ QList<QVector<QVariant> > cdfDataReader::getGlobalAttribute(int64_t Attribute)
 }
 
 //===============================================================//
-QList<QVector<QVariant > > cdfDataReader::getZVariableAttribute(QString Attribute, QString Variable)
+QList<QVector<QVariant > > cdfDataReader::getZVariableAttribute(const QString Attribute, const QString Variable)
 {
-    QList<QVector<QVariant> > returnVal;
+
+    long attNum = CDFgetAttrNum(this->fileId, Attribute.toAscii().data());
+    long varNum = CDFgetVarNum(this->fileId, Variable.toAscii().data());
 
     //convert the names to values, and call other version of the call
-    returnVal = this->getZVariableAttribute(CDFgetAttrNum(this->fileId, Attribute.toAscii().data()),
-                                            CDFgetVarNum(this->fileId, Variable.toAscii().data()));
-
-    return returnVal;
+    return  this->getZVariableAttribute(attNum, varNum);
 }
 
 //===============================================================//
-QList<QVector<QVariant > > cdfDataReader::getZVariableAttribute(int64_t Attribute, int64_t Variable)
+QList<QVector<QVariant > > cdfDataReader::getZVariableAttribute(const int64_t Attribute, const int64_t Variable)
 {
     CDFstatus status;
     QList<QVector<QVariant> > returnVal;
@@ -549,9 +538,6 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
     long numElements=0;
     long recVary=0;
     long dataType=0;
-    long majority=0;
-
-    status = CDFgetMajority(this->fileId, &majority);
 
     status = CDFinquirezVar(this->fileId, variable, varName, &dataType, &numElements,
                             &numDims, dimSizes, &recVary, dimVarys);
@@ -592,7 +578,11 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
                 break;
             case CDF_CHAR:
                 //variables are characters
-                data = new char[numValues];
+                data = new char[numValues+1];
+                break;
+            case CDF_EPOCH:
+            case CDF_EPOCH16:
+                data = new double[numValues];
                 break;
             default:
                 std::cerr << "INVALID DATA TYPE" << std::endl;
@@ -605,6 +595,12 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
             QVector<QVariant> Qdata;
             this->cToQVector(data, numValues, dataType, Qdata);
 
+            if(dataType == CDF_CHAR)
+            {
+                char* temp = (char*)data;
+                temp[numValues] = '\0';
+            }
+
             //process the data
             if(CDFstatusOK(status))
             {
@@ -613,6 +609,7 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
                 returnVal.setName(varName);
                 returnVal.setDataDims(numDims);
                 returnVal.setDataType(dataType);
+                returnVal.setNumberElements(numElements);
 
                 QVector<int> Extents;
                 for(int k = 0; k < numDims; k++)
@@ -636,6 +633,8 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
                 else if(dataType == CDF_INT4)        delete [] (int32_t*)data;
                 else if(dataType == CDF_INT8)        delete [] (int64_t*)data;
                 else if(dataType == CDF_FLOAT)       delete [] (char*)data;
+                else if(dataType == CDF_EPOCH)       delete [] (double*)data;
+
             }
         }
     }
@@ -646,15 +645,123 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
 //===============================================================//
 cdfDataSet cdfDataReader::getZVariableRecord(QString variable, int64_t record)
 {
-    cdfDataSet returnVal;
 
-    return returnVal;
+    return this->getZVariableRecord(CDFgetVarNum(this->fileId, variable.toAscii().data()), record);
+
 }
 
 //===============================================================//
 cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
 {
+    CDFstatus status;
     cdfDataSet returnVal;
+
+    char varName[CDF_VAR_NAME_LEN256 +1];
+    long dataType=0;
+    long numElements=0;
+    long recVary=0;
+    long numDims=0;
+    long dimSizes[CDF_MAX_DIMS];
+    long dimVarys[CDF_MAX_DIMS];
+    long numValues=1;
+
+    status = CDFinquirezVar(this->fileId, variable, varName, &dataType, &numElements, &numDims,
+                            dimSizes, &recVary, dimVarys);
+
+    if(this->CDFstatusOK(status))
+    {
+        void *data = NULL;
+        //calculte the number of values to be retrieved
+        numValues = numElements;
+
+        switch(dataType)
+        {
+        case CDF_FLOAT:
+
+            data = new float[numValues];
+            break;
+
+        case CDF_DOUBLE:
+            data = new double[numValues];
+            break;
+
+        case CDF_INT1:
+            data = new int8_t[numValues];
+            break;
+
+        case CDF_INT2:
+            data = new int16_t[numValues];
+            break;
+
+        case CDF_INT4:
+            data = new int32_t[numValues];
+            break;
+
+        case CDF_INT8:
+            data = new int64_t[numValues];
+            break;
+
+        case CDF_CHAR:
+            data = new char[numValues+1];
+            break;
+
+        case CDF_EPOCH:
+        case CDF_EPOCH16:
+            data = new double[numValues];
+            break;
+
+        default:
+            std::cerr << "Unsuported data type" << std::endl;
+            exit(EXIT_FAILURE);
+            break;
+        }
+
+        //get data record
+        status = CDFgetzVarRecordData(this->fileId, variable, record ,data);
+        QVector<QVariant> Qdata;
+        this->cToQVector(data, numValues, dataType, Qdata);
+
+        if(dataType == CDF_CHAR)
+        {
+            char* temp = (char*)data;
+            temp[numValues] = '\0';
+        }
+        //process the data
+        if(CDFstatusOK(status))
+        {
+            //setup the returnvalues
+            returnVal.setVector(Qdata);
+            returnVal.setName(varName);
+            returnVal.setDataDims(numDims);
+            returnVal.setDataType(dataType);
+            returnVal.setNumberElements(numElements);
+
+            QVector<int> Extents;
+            for(int k = 0; k < numDims; k++)
+            {
+                //put the extents into the extents
+                Extents.push_back(dimSizes[k]);
+            }
+
+            //set the return values
+            returnVal.setExtents(Extents);
+            returnVal.setMajority(majority);
+        }
+
+        //deallocate the data
+        if(data)
+        {
+            if(dataType == CDF_FLOAT)            delete [] (float*)data;
+            else if(dataType == CDF_DOUBLE)      delete [] (double*)data;
+            else if(dataType == CDF_INT1)        delete [] (int8_t*)data;
+            else if(dataType == CDF_INT2)        delete [] (int16_t*)data;
+            else if(dataType == CDF_INT4)        delete [] (int32_t*)data;
+            else if(dataType == CDF_INT8)        delete [] (int64_t*)data;
+            else if(dataType == CDF_FLOAT)       delete [] (char*)data;
+            else if(dataType == CDF_EPOCH)       delete [] (double*)data;
+        }
+    }
+
 
     return returnVal;
 }
@@ -663,6 +770,8 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
 //===============================================================//
 cdfDataSet cdfDataReader::getZVariableRecords(QString variable, QVector<int64_t> recordList)
 {
+
+    std::cerr << "NOT YET IMPLEMENTED" << std::endl;
     cdfDataSet returnVal;
 
     return returnVal;
@@ -671,6 +780,7 @@ cdfDataSet cdfDataReader::getZVariableRecords(QString variable, QVector<int64_t>
 //===============================================================//
 cdfDataSet cdfDataReader::getZVariableRecords(int64_t variable, QVector<int64_t> recordList)
 {
+    std::cerr << "NOT YET IMPLEMENTED" << std::endl;
     cdfDataSet returnVal;
 
     return returnVal;
@@ -699,14 +809,17 @@ bool cdfDataReader::closeFile()
 }
 
 //===============================================================//
-bool cdfDataReader::CDFstatusOK(CDFstatus status)
+bool cdfDataReader::CDFstatusOK(CDFstatus status, bool suppress)
 {
+
     if(status != CDF_OK)
     {
         char text[CDF_STATUSTEXT_LEN +1];
         CDFgetStatusText(status, text);
-        std::cerr << "ERROR: " << text << std::endl;
-
+        if(!suppress)
+        {
+            std::cerr << "ERROR: " << text << std::endl;
+        }
         //error closing file
         return false;
     }
@@ -731,7 +844,8 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
 
         break;
     }
-
+    case CDF_EPOCH16:
+    case CDF_EPOCH:
     case CDF_DOUBLE:
     {
         double *dataD = (double*)data;
@@ -835,6 +949,11 @@ cdfDataSet::cdfDataSet()
     this->dataDims = 0;
 }
 
+QVector<QVariant> cdfDataSet::getData()
+{
+    return this->data;
+}
+
 //===============================================================//
 void cdfDataSet::setVector(QVector<QVariant> vector)
 {
@@ -863,4 +982,14 @@ int cdfDataSet::getMajority() const
 void cdfDataSet::setMajority(int value)
 {
     majority = value;
+}
+
+long cdfDataSet::getNumberElements() const
+{
+    return numberElements;
+}
+
+void cdfDataSet::setNumberElements(long value)
+{
+    numberElements = value;
 }

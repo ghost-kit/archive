@@ -56,6 +56,8 @@
 
 #include <iomanip>
 
+#include "cdfDataReader.h"
+
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
 //=========================================================================================//
@@ -293,40 +295,26 @@ bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> 
 }
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::getCDFUnits(CDFstatus status, CDFid id, int VarNum, QString &UnitText)
+void vtkSpaceCraftInfo::getCDFUnits(cdfDataReader &reader, QString &VarName, QString &UnitText)
 {
+    QString attName = QString("UNITS");
 
-    long attrN;
-    long dataType;
-    long numElems;
-    char *Units = NULL;
+    QList<QVector<QVariant> >  Units = reader.getZVariableAttribute(attName, VarName);
 
-    attrN = CDFgetAttrNum (id, (char*)"UNITS");
-
-    status = CDFinquireAttrzEntry(id, attrN, VarNum, &dataType, &numElems);
-    this->checkCDFstatus(status);
-    if(status == CDF_OK)
+    if(Units.size() > 0)
     {
-        Units = new char[numElems + 1];
-        status = CDFgetAttrzEntry (id, attrN, VarNum, Units);
-        this->checkCDFstatus(status);
-        Units[numElems] = '\0';
-
-        UnitText = QString(Units);
+        UnitText = Units[0][0].toString();
     }
     else
     {
         UnitText = QString("N/A");
     }
 
-#ifdef DEBUG
-    std::cout << "UNITS: " << UnitText.toAscii().data() << std::endl;
-#endif
 
 }
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, double *EpochBuffer, long numRecords)
+void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, cdfDataSet Epoch)
 {
     long year;
     long month;
@@ -336,10 +324,12 @@ void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileE
     long second;
     long msec;
 
-    for(int c = 0; c < numRecords; c++)
+    QVector<QVariant> epochList = Epoch.getData();
+
+    for(int c = 0; c < epochList.size(); c++)
     {
         //break down the epoch
-        EPOCHbreakdown(EpochBuffer[c], &year, &month, &day, &hour, &minute, &second, &msec);
+        EPOCHbreakdown(epochList[c].toDouble(), &year, &month, &day, &hour, &minute, &second, &msec);
 
         //create DATE_TIME OBJECT from epoch
         DateTime convert(year, month, day, hour, minute, second);
@@ -391,209 +381,69 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
 {
 
     //A Whole Mess of needed Variables...
-    QVector<DateTime> convertedFileEpoch;
+    QVector<DateTime> FileEpochsAsDateTime;
     DateTime neededEpoch(requestedEpoch);
-    double *EpochBuffer;
     long indexOfFound;
 
-    double  *dataUnitD;
-    float   *dataUnitF;
-    long    *dataUnitL;
+    cdfDataReader cdfFile(this->CacheFileName[DataSet]);
 
+    cdfDataSet Epoch = cdfFile.getZVariable("Epoch");
+    cdfDataSet DataForEpochRequested;
 
-    long epochVarNum;
-    QVector<double> fileEpochList;
-    long numRecords;
+    //convert to Epoch Times
+    this->convertEpochToDateTime(FileEpochsAsDateTime, Epoch);
 
-    CDFid id;
-    CDFstatus status;
+    // get the next lowest time
+    indexOfFound = getNearestLowerIndex(neededEpoch, FileEpochsAsDateTime);
 
-    long numDims =0;
-    long dimSizes[CDF_MAX_DIMS];
+    QStringList varsAvailable = cdfFile.getZVariableList();
 
-    long encoding =0;
-    long majority =0;
-    long maxrRec =0;
-    long numrVars =0;
-    long maxzRec =0;
-    long numzVars =0;
-    long numAttrs =0;
-
-
-
-    //open the file
-    status = CDFopenCDF(this->CacheFileName[DataSet].toAscii().data(), &id);
-    this->checkCDFstatus(status);
-
-    status = CDFinquireCDF(id, &numDims, dimSizes,
-                           &encoding, &majority, &maxrRec,
-                           &numrVars, &maxzRec, &numzVars,
-                           &numAttrs);
-    this->checkCDFstatus(status);
-
-    //get epoch (required)
-    epochVarNum = CDFgetVarNum(id, (char*)"Epoch");
-
-    status = CDFgetzVarNumRecsWritten(id, epochVarNum, &numRecords);
-    checkCDFstatus(status);
-
-    //get the actual data
-    EpochBuffer = new double[numRecords];
-
-    status = CDFgetzVarAllRecordsByVarID(id, epochVarNum, EpochBuffer);
-    this->checkCDFstatus(status);
-    this->cToQVector(EpochBuffer, numRecords, fileEpochList);
-
-    //convert epoch to DateTime and get nearest index
-    convertEpochToDateTime(convertedFileEpoch, EpochBuffer, numRecords);
-    indexOfFound = getNearestLowerIndex(neededEpoch, convertedFileEpoch);
-
-    //dont need the buffer anymore
-    delete [] EpochBuffer;
-    EpochBuffer = NULL;
-
-    //====================================
-    //get the data for the required epoch
-    //====================================
-    //get the variable info
-    // TODO: Check to see if MetaVar exists for multi-dimensionsonal
-
-    for(int c = 0; c < numzVars; c++)
+    for(int c = 0; c < varsAvailable.size(); c++)
     {
-        char varName[CDF_VAR_NAME_LEN256 +1];
-        long dataType;
-        long numElements;
-        long recVary;
-        long numDims;
-        long dimSizes[CDF_MAX_DIMS];
-        long dimVarys[CDF_MAX_DIMS];
-        //get Variable stats
-        status = CDFinquirezVar(id, c, varName, &dataType, &numElements, &numDims,
-                                dimSizes, &recVary, dimVarys);
-        this->checkCDFstatus(status);
-
-#ifdef DEBUG
-        std::cout << "VarName:     " << varName << std::endl;
-        std::cout << "Dims:        " << numDims << std::endl;
-
-#endif
 
         //get the units
         QString Units;
-        getCDFUnits(status, id, c, Units);
+        getCDFUnits(cdfFile, varsAvailable[c], Units);
+#ifdef DEBUG
+        std::cout << "================================="  << std::endl;
+        std::cout << "UNITS[" << varsAvailable[c].toAscii().data() << "]: " << Units.toAscii().data() << std::endl;
+#endif
 
-        //get the data
-        //we don't have to worry about multi-dimensional data
-        switch(dataType)
+        cdfDataSet InData = cdfFile.getZVariableRecord(c, indexOfFound);
+        QVector<QVariant> dataSet = InData.getData();
+
+        //for now I am only dealing with single dimensional data
+        if(dataSet.size() <= 1)
         {
-        case CDF_FLOAT:
-            //allocate space
-            dataUnitF = new float[numElements];
+            long numElements = InData.getNumberElements();
+            QVector<QVariant>::Iterator iter;
 
-            //get data record
-            status = CDFgetzVarRecordData(id, c, indexOfFound ,dataUnitF);
-
-#ifdef DEBUG
-            std::cout << "================================="  << std::endl;
-            std::cout << "DataUnit[" << indexOfFound << "]: " << dataUnitF[0] << std::endl;
-#endif
-
-            //inserting the data into the cache
-            //we insert each element for the given variable.
-            for(int k=0; k < numElements; k++)
+            //cycle through the items
+            for(iter = dataSet.begin(); iter != dataSet.end();)
             {
-                QPair<QVariant, QString> newDataPoint;
-                newDataPoint.first = QVariant(dataUnitF[k]);
-                newDataPoint.second = Units;
+                for(int h=0; h < numElements; h++)
+                {
+                    QPair<QVariant,QString> newElem;
+                    newElem.first = *iter;
+                    newElem.second = Units;
 
-                data[varName].push_back(newDataPoint);
+                    data[InData.getName()].push_back(newElem);
+                    ++iter;
+                }
             }
-
-            delete [] dataUnitF;
-
-            break;
-
-        case CDF_DOUBLE:
-            //allocate space
-            dataUnitD = new double[numElements];
-
-            //get data record
-            status = CDFgetzVarRecordData(id, c, indexOfFound ,dataUnitD);
-
-
-#ifdef DEBUG
-            std::cout << "================================="  << std::endl;
-            std::cout << "DataUnit[" << indexOfFound << "]: " << dataUnitD[0] << std::endl;
-#endif
-
-            //inserting the data into the cache
-            //we insert each element for the given variable.
-            for(int k=0; k < numElements; k++)
-            {
-                QPair<QVariant, QString> newDataPoint;
-                newDataPoint.first = QVariant(dataUnitD[k]);
-                newDataPoint.second = Units;
-
-                data[varName].push_back(newDataPoint);
-            }
-
-            delete [] dataUnitD;
-
-            break;
-
-        case CDF_EPOCH:
-        case CDF_EPOCH16:
-
-
-            break;
-
-        case CDF_INT1:
-        case CDF_INT2:
-        case CDF_INT4:
-        case CDF_INT8:
-
-            //allocate space
-            dataUnitL = new long[numElements];
-            //get data record
-            status = CDFgetzVarRecordData(id, c, indexOfFound ,dataUnitL);
-
-#ifdef DEBUG
-            std::cout << "================================="  << std::endl;
-            std::cout << "DataUnit[" << indexOfFound << "]: " << dataUnitL[0] << std::endl;
-#endif
-
-            //inserting the data into the cache
-            //we insert each element for the given variable.
-            for(int k=0; k < numElements; k++)
-            {
-                QPair<QVariant, QString> newDataPoint;
-                newDataPoint.first = QVariant::fromValue(dataUnitL[k]);
-                newDataPoint.second = Units;
-
-                data[varName].push_back(newDataPoint);
-            }
-
-            delete [] dataUnitL;
-
-            break;
-
-        default:
-            break;
-
         }
 
-
 #ifdef DEBUG
-        std::cout << "---------------------------------" << std::endl;
+        std::cout << "================================="  << std::endl;
+        std::cout << "DataUnit[" << indexOfFound << "]: " << data[InData.getName()][0].first.toDouble() << std::endl;
 #endif
-
-
-
-
 
     }
 
-    CDFcloseCDF(id);
+
+#ifdef DEBUG
+    std::cout << "---------------------------------" << std::endl;
+#endif
 
     return true;
 }
