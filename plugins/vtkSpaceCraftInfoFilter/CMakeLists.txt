@@ -52,6 +52,9 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 status.cpp
                 DateTime.C
                 filedownloader.cpp
+                timefithandler.cpp
+                BadDataHandler.cpp
+                cdfDataReader.cpp
                 ${outsrcs0}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}

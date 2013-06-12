@@ -58,6 +58,7 @@
 
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
+//=========================================================================================//
 vtkSpaceCraftInfo::vtkSpaceCraftInfo()
 {
     this->NumberOfTimeSteps = 0;
@@ -66,6 +67,7 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     this->tempFilePath = "/tmp/";
 }
 
+//=========================================================================================//
 vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
 {
 
@@ -166,6 +168,7 @@ int vtkSpaceCraftInfo::FillInputPortInformation(int port, vtkInformation *info)
     return 1;
 }
 
+//=========================================================================================//
 int vtkSpaceCraftInfo::FillOutputPortInformation(int port, vtkInformation *info)
 {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
@@ -254,6 +257,7 @@ void vtkSpaceCraftInfo::checkCDFstatus(CDFstatus status)
     }
 }
 
+//=========================================================================================//
 void vtkSpaceCraftInfo::LoadCDFData()
 {
 
@@ -277,6 +281,7 @@ void vtkSpaceCraftInfo::LoadCDFData()
 
 }
 
+//=========================================================================================//
 bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> &vector)
 {
     for(int x = 0; x < dataSize; x++)
@@ -287,6 +292,7 @@ bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> 
     return true;
 }
 
+//=========================================================================================//
 void vtkSpaceCraftInfo::getCDFUnits(CDFstatus status, CDFid id, int VarNum, QString &UnitText)
 {
 
@@ -319,6 +325,7 @@ void vtkSpaceCraftInfo::getCDFUnits(CDFstatus status, CDFid id, int VarNum, QStr
 
 }
 
+//=========================================================================================//
 void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, double *EpochBuffer, long numRecords)
 {
     long year;
@@ -341,6 +348,7 @@ void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileE
     }
 }
 
+//=========================================================================================//
 long vtkSpaceCraftInfo::getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch)
 {
     QVector<DateTime>::ConstIterator i = qLowerBound(convertedFileEpoch.constBegin(), convertedFileEpoch.constEnd(), neededEpoch);
@@ -378,6 +386,7 @@ long vtkSpaceCraftInfo::getNearestLowerIndex(DateTime &neededEpoch, QVector<Date
     return indexOfFound;
 }
 
+//=========================================================================================//
 bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch, epochDataEntry  &data)
 {
 
@@ -775,7 +784,6 @@ void vtkSpaceCraftInfo::SetTimeFitHandler(int handler)
     this->Modified();
 }
 
-
 //=========================================================================================//
 //Bad Data Fit Handler
 void vtkSpaceCraftInfo::SetBadDataHandler(int handler)
@@ -783,9 +791,6 @@ void vtkSpaceCraftInfo::SetBadDataHandler(int handler)
     std::cout << "Selected a New Bad Data Handler" << std::endl;
     this->Modified();
 }
-
-
-
 
 //=========================================================================================//
 //----- other stuff needed ------//
