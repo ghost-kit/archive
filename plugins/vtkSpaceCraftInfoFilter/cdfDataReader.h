@@ -12,6 +12,11 @@
 #include <iostream>
 
 #include "cdf.h"
+#include "BadDataHandler.h"
+#include "timefithandler.h"
+
+class BadDataHandler;
+class timeFitHandler;
 
 class cdfAttributeSet
 {
@@ -74,6 +79,7 @@ class cdfDataReader
 {
 public:
     cdfDataReader(QString FileName);
+    cdfDataReader(QString FileName, BadDataHandler *BDHandler, timeFitHandler *TFHandler);
     ~cdfDataReader();
 
     //Getting Attributes from CDF files
@@ -94,6 +100,9 @@ public:
     cdfDataSet getZVariable(QString variable);
     cdfDataSet getZVariable(int64_t variable);
 
+    cdfDataSet getCorrectedZVariableRecord(QString variable, int64_t record);
+    cdfDataSet getCorrectedZVariableRecord(int64_t variable, int64_t record);
+
     cdfDataSet getZVariableRecord(QString variable, int64_t record);
     cdfDataSet getZVariableRecord(int64_t variable, int64_t record);
 
@@ -102,6 +111,18 @@ public:
 
     QVector<QVariant> getZVariableRecords(QString variable, int64_t startRecord, int64_t stopRecord);
     QVector<QVariant> getZVariableRecords(int64_t variable, int64_t startRecord, int64_t stopRecord);
+
+    BadDataHandler *getBDHandler() const;
+    void setBDHandler(BadDataHandler *value);
+
+    timeFitHandler *getTFHandler() const;
+    void setTFHandler(timeFitHandler *value);
+
+
+    bool cToQVector(void *data, long dataSize, long dataType, QVector<QVariant> &vector);
+
+    CDFid getFileId() const;
+    void setFileId(const CDFid &value);
 
 protected:
     //File pointers
@@ -116,7 +137,15 @@ private:
 
     //Error Handlers
     bool CDFstatusOK(CDFstatus status, bool suppress=false);
-    bool cToQVector(void *data, long dataSize, long dataType, QVector<QVariant> &vector);
+
+    bool containsBadData(QVector<QVariant> data, QVariant badValue);
+
+    //polymorphic handlers
+    BadDataHandler *BDHandler;
+    timeFitHandler *TFHandler;
+
 };
+
+
 
 #endif // CDFDATAREADER_H

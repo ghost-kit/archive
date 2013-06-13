@@ -58,6 +58,10 @@
 
 #include "cdfDataReader.h"
 
+//Data Handlers
+#include "BadDataHandler.h"
+#include "omitBDHandler.h"
+
 vtkStandardNewMacro(vtkSpaceCraftInfo)
 
 //=========================================================================================//
@@ -67,6 +71,11 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     this->processed = false;
 
     this->tempFilePath = "/tmp/";
+
+    //set the generic (non-bound) handlers
+    //handlers must be bound to a reader before use
+    this->BDhandler = new BadDataHandler();
+    this->TFhandler = new timeFitHandler();
 }
 
 //=========================================================================================//
@@ -153,6 +162,7 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
     //if the data still needs to be loaded, load it...
     if(!this->processed)
     {
+        this->DataCache.clear();
         this->LoadCDFData();
     }
 
@@ -193,15 +203,6 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 
     return ret;
 }
-
-//=========================================================================================//
-//------ get actuall space craft data -----//
-bool vtkSpaceCraftInfo::getSCData()
-{
-
-    return true;
-}
-
 
 //=========================================================================================//
 bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
@@ -387,8 +388,12 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
 
     cdfDataReader cdfFile(this->CacheFileName[DataSet]);
 
+    //link the handler and reader to each other
+    this->BDhandler->setReader(&cdfFile);
+    cdfFile.setBDHandler(this->BDhandler);
+
+    //get the Epoch data
     cdfDataSet Epoch = cdfFile.getZVariable("Epoch");
-    cdfDataSet DataForEpochRequested;
 
     //convert to Epoch Times
     this->convertEpochToDateTime(FileEpochsAsDateTime, Epoch);
@@ -405,7 +410,8 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
         QString Units;
         getCDFUnits(cdfFile, varsAvailable[c], Units);
 
-        cdfDataSet InData = cdfFile.getZVariableRecord(c, indexOfFound);
+        //get the corrected value so the selected bad data handler will be applied
+        cdfDataSet InData = cdfFile.getCorrectedZVariableRecord(c, indexOfFound);
         QVector<QVariant> dataSet = InData.getData();
 
         //for now I am only dealing with single dimensional data
@@ -437,6 +443,8 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
 //=========================================================================================//
 void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, const char *list)
 {
+    //mark dirty
+    this->processed = false;
 
     //remove list of previous files
     this->uriList.clear();
@@ -450,8 +458,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
     this->requestedData = dataList.split(";");
     this->group = QString(group);
     this->observatory = QString(observatory);
-
-    this->processed = false;
 
     Status statusBar;
     statusBar.setStatusBarMessage(("Downloading "));
@@ -600,7 +606,6 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
     }
 
-    this->processed = false;
 
     statusBar.setStatus(100);
     statusBar.show();
@@ -623,7 +628,32 @@ void vtkSpaceCraftInfo::SetTimeFitHandler(int handler)
 //Bad Data Fit Handler
 void vtkSpaceCraftInfo::SetBadDataHandler(int handler)
 {
-    std::cout << "Selected a New Bad Data Handler" << std::endl;
+    //mark dirty
+    this->processed = false;
+
+    //set the new handler
+    switch(handler)
+    {
+    case 0:
+        std::cout << "BDHandler: default BadDataHandler" << std::endl;
+        delete [] this->BDhandler;
+        this->BDhandler = new BadDataHandler();
+
+        break;
+    case 1:
+        std::cerr << "Linear Interp not yet implemented. Using last selected." << std::endl;
+        break;
+    case 2:
+        std::cout << "BDHandler: omitBDhandler" << std::endl;
+        delete [] this->BDhandler;
+        this->BDhandler = new omitBDHandler();
+
+        break;
+
+    default:
+        break;
+    }
+
     this->Modified();
 }
 

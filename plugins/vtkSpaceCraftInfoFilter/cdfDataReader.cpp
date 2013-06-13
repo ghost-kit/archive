@@ -17,6 +17,26 @@ cdfDataReader::cdfDataReader(QString FileName)
     //print error message if thre is one
     this->CDFstatusOK(status);
 
+    this->TFHandler = new timeFitHandler(this);
+    this->BDHandler = new BadDataHandler(this);
+
+}
+
+//===============================================================//
+cdfDataReader::cdfDataReader(QString FileName, BadDataHandler *BDHandler, timeFitHandler *TFHandler)
+{
+    CDFstatus status;
+    //record the file name
+    this->FileName = FileName;
+
+    this->openFile();
+    status = CDFgetMajority(this->fileId, &majority);
+
+    //print error message if thre is one
+    this->CDFstatusOK(status);
+
+    this->TFHandler = TFHandler;
+    this->BDHandler = BDHandler;
 }
 
 //===============================================================//
@@ -566,6 +586,7 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
             case CDF_DOUBLE:
                 data = new double[numValues];
                 break;
+            case CDF_BYTE:
             case CDF_INT1:
                 data = new int8_t[numValues];
                 break;
@@ -594,6 +615,7 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
 
             //get data record
             status = CDFgetzVarAllRecordsByVarID(this->fileId, variable, data);
+
             QVector<QVariant> Qdata;
             this->cToQVector(data, numValues, dataType, Qdata);
 
@@ -632,17 +654,33 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
                 if(dataType == CDF_FLOAT)            delete [] (float*)data;
                 else if(dataType == CDF_DOUBLE)      delete [] (double*)data;
                 else if(dataType == CDF_INT1)        delete [] (int8_t*)data;
+                else if(dataType == CDF_BYTE)        delete [] (int8_t*)data;
                 else if(dataType == CDF_INT2)        delete [] (int16_t*)data;
                 else if(dataType == CDF_INT4)        delete [] (int32_t*)data;
                 else if(dataType == CDF_INT8)        delete [] (int64_t*)data;
                 else if(dataType == CDF_FLOAT)       delete [] (char*)data;
                 else if(dataType == CDF_EPOCH)       delete [] (double*)data;
+                else if(dataType == CDF_EPOCH16)       delete [] (double*)data;
+
 
             }
         }
     }
 
     return returnVal;
+}
+
+//===============================================================//
+cdfDataSet cdfDataReader::getCorrectedZVariableRecord(QString variable, int64_t record)
+{
+    long varNum = CDFgetVarNum(this->fileId, variable.toAscii().data());
+    return this->getCorrectedZVariableRecord(varNum, record);
+}
+
+//===============================================================//
+cdfDataSet cdfDataReader::getCorrectedZVariableRecord(int64_t variable, int64_t record)
+{
+    return BDHandler->getGoodDataRecord(variable, record);
 }
 
 //===============================================================//
@@ -690,6 +728,7 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
             data = new double[numValues];
             break;
 
+        case CDF_BYTE:
         case CDF_INT1:
             data = new int8_t[numValues];
             break;
@@ -717,20 +756,24 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
 
         default:
             std::cerr << "Unsuported data type" << std::endl;
+            std::cerr << "Type Recieved: " << dataType << std::endl;
             exit(EXIT_FAILURE);
             break;
         }
 
         //get data record
         status = CDFgetzVarRecordData(this->fileId, variable, record ,data);
-        QVector<QVariant> Qdata;
-        this->cToQVector(data, numValues, dataType, Qdata);
 
         if(dataType == CDF_CHAR)
         {
             char* temp = (char*)data;
             temp[numValues] = '\0';
         }
+
+        QVector<QVariant> Qdata;
+        this->cToQVector(data, numValues, dataType, Qdata);
+
+
         //process the data
         if(CDFstatusOK(status))
         {
@@ -760,11 +803,13 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
             if(dataType == CDF_FLOAT)            delete [] (float*)data;
             else if(dataType == CDF_DOUBLE)      delete [] (double*)data;
             else if(dataType == CDF_INT1)        delete [] (int8_t*)data;
+            else if(dataType == CDF_BYTE)        delete [] (int8_t*)data;
             else if(dataType == CDF_INT2)        delete [] (int16_t*)data;
             else if(dataType == CDF_INT4)        delete [] (int32_t*)data;
             else if(dataType == CDF_INT8)        delete [] (int64_t*)data;
             else if(dataType == CDF_FLOAT)       delete [] (char*)data;
             else if(dataType == CDF_EPOCH)       delete [] (double*)data;
+            else if(dataType == CDF_EPOCH16)     delete [] (double*)data;
         }
     }
 
@@ -865,6 +910,7 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
 
         break;
     }
+    case CDF_BYTE:
     case CDF_INT1:
     {
         int8_t *dataI1 = (int8_t*)data;
@@ -909,6 +955,12 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
     }
 
     return true;
+}
+
+//===============================================================//
+bool cdfDataReader::containsBadData(QVector<QVariant> data, QVariant badValue)
+{
+    return data.contains(badValue);
 }
 
 
@@ -1011,4 +1063,34 @@ QVariant cdfDataSet::getInvalidData() const
 void cdfDataSet::setInvalidData(const QVariant &value)
 {
     invalidData = value;
+}
+
+timeFitHandler *cdfDataReader::getTFHandler() const
+{
+    return TFHandler;
+}
+
+void cdfDataReader::setTFHandler(timeFitHandler *value)
+{
+    TFHandler = value;
+}
+
+BadDataHandler *cdfDataReader::getBDHandler() const
+{
+    return BDHandler;
+}
+
+void cdfDataReader::setBDHandler(BadDataHandler *value)
+{
+    BDHandler = value;
+}
+
+CDFid cdfDataReader::getFileId() const
+{
+    return fileId;
+}
+
+void cdfDataReader::setFileId(const CDFid &value)
+{
+    fileId = value;
 }

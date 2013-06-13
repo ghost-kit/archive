@@ -84,7 +84,6 @@ protected:
   QMap <QString, QMap< double, double* > >  satPositions;
 
   //SpaceCraft Data Collection utilities
-  bool getSCData();
   bool processCDAWeb(vtkTable *output);
 
   //Requested Data
@@ -122,6 +121,10 @@ protected:
   vtkInformation* inInfo;
   vtkInformation* outInfo;
   vtkTable* output;
+
+  //Selected Handlers
+  BadDataHandler *BDhandler;
+  timeFitHandler *TFhandler;
 
 
 private:

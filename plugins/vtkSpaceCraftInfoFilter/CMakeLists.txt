@@ -55,6 +55,7 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 timefithandler.cpp
                 BadDataHandler.cpp
                 cdfDataReader.cpp
+                omitBDHandler.cpp
                 ${outsrcs0}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}

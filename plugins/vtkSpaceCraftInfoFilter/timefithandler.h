@@ -8,10 +8,16 @@
 #include <QPair>
 #include <QStringList>
 
+#include "cdfDataReader.h"
+
+class cdfDataReader;
+class cdfDataSet;
+
 class timeFitHandler
 {
 public:
-    timeFitHandler(QString FileName, QList<double> TimeSteps);
+    timeFitHandler(cdfDataReader *reader);
+    timeFitHandler();
 };
 
 #endif // TIMEFITHANDLER_H
