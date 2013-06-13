@@ -42,7 +42,7 @@ class vtkCallbackCommand;
 class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm, QObject
 {
 
-    typedef QMap<QString, QVector <QPair < QVariant, QString> > >   epochDataEntry;
+    typedef QMap<QString, QVector <QPair < QVariant, QPair<QString, QVariant > > > >   epochDataEntry;
 
 public:
   static vtkSpaceCraftInfo *New();

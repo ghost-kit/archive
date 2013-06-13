@@ -555,6 +555,8 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
             for(int i = 0; i < numDims; ++i) numValues *= dimSizes[i];
             numValues *= numRecs;
 
+            QList<QVector<QVariant> > badData  = this->getZVariableAttribute(CDFgetAttrNum(this->fileId, (char*)"FILLVAL"), variable );
+
             //allocate data
             switch(dataType)
             {
@@ -610,6 +612,7 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
                 returnVal.setDataDims(numDims);
                 returnVal.setDataType(dataType);
                 returnVal.setNumberElements(numElements);
+                returnVal.setInvalidData(badData[0][0]);
 
                 QVector<int> Extents;
                 for(int k = 0; k < numDims; k++)
@@ -670,6 +673,8 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
 
     if(this->CDFstatusOK(status))
     {
+        QList<QVector<QVariant> > badData  = this->getZVariableAttribute(CDFgetAttrNum(this->fileId, (char*)"FILLVAL"), variable );
+
         void *data = NULL;
         //calculte the number of values to be retrieved
         numValues = numElements;
@@ -735,6 +740,7 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
             returnVal.setDataDims(numDims);
             returnVal.setDataType(dataType);
             returnVal.setNumberElements(numElements);
+            returnVal.setInvalidData(badData[0][0]);
 
             QVector<int> Extents;
             for(int k = 0; k < numDims; k++)
@@ -812,13 +818,16 @@ bool cdfDataReader::closeFile()
 bool cdfDataReader::CDFstatusOK(CDFstatus status, bool suppress)
 {
 
-    if(status != CDF_OK)
+    if(status != CDF_OK )
     {
-        char text[CDF_STATUSTEXT_LEN +1];
-        CDFgetStatusText(status, text);
-        if(!suppress)
+        if(status != NO_SUCH_ENTRY)
         {
-            std::cerr << "ERROR: " << text << std::endl;
+            char text[CDF_STATUSTEXT_LEN +1];
+            CDFgetStatusText(status, text);
+            if(!suppress)
+            {
+                std::cerr << "ERROR: " << text << std::endl;
+            }
         }
         //error closing file
         return false;
@@ -992,4 +1001,14 @@ long cdfDataSet::getNumberElements() const
 void cdfDataSet::setNumberElements(long value)
 {
     numberElements = value;
+}
+
+QVariant cdfDataSet::getInvalidData() const
+{
+    return invalidData;
+}
+
+void cdfDataSet::setInvalidData(const QVariant &value)
+{
+    invalidData = value;
 }

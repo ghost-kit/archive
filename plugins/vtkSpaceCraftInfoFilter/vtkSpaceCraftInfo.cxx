@@ -218,8 +218,8 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 
         for(int q=0; q<keys.size(); q++)
         {
-            std::cout << ": DATA[" << time << "][" << keys[q].toAscii().data() << "]: " << this->DataCache[DataSet][time][keys[q]][0].first.toDouble()
-                    << " " << this->DataCache[DataSet][time][keys[q]][0].second.toAscii().data() << std::endl;
+            std::cout << "DATA[" << time << "][" << keys[q].toAscii().data() << "]: " << this->DataCache[DataSet][time][keys[q]][0].first.toDouble()
+                    << " " << this->DataCache[DataSet][time][keys[q]][0].second.first.toAscii().data() <<  " :Bad Data: " <<  this->DataCache[DataSet][time][keys[q]][0].second.second.toDouble() << std::endl;
 
             long numElements = this->DataCache[DataSet][time][keys[q]].size();
 
@@ -231,7 +231,7 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
             for(int a=0; a < numElements; a++)
             {
                 newData[a] = this->DataCache[DataSet][time][keys[q]][a].first.toDouble();
-                newArray->SetComponentName(a, this->DataCache[DataSet][time][keys[q]][a].second.toAscii().data());
+                newArray->SetComponentName(a, this->DataCache[DataSet][time][keys[q]][a].second.first.toAscii().data());
             }
 
             newArray->InsertNextTupleValue(newData);
@@ -278,9 +278,9 @@ void vtkSpaceCraftInfo::LoadCDFData()
             this->getDataForEpoch(DataSet, time, this->DataCache[DataSet][time]);
         }
 
-        this->processed = true;
     }
 
+    this->processed = true;
 }
 
 //=========================================================================================//
@@ -404,10 +404,6 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
         //get the units
         QString Units;
         getCDFUnits(cdfFile, varsAvailable[c], Units);
-#ifdef DEBUG
-        std::cout << "================================="  << std::endl;
-        std::cout << "UNITS[" << varsAvailable[c].toAscii().data() << "]: " << Units.toAscii().data() << std::endl;
-#endif
 
         cdfDataSet InData = cdfFile.getZVariableRecord(c, indexOfFound);
         QVector<QVariant> dataSet = InData.getData();
@@ -423,28 +419,17 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
             {
                 for(int h=0; h < numElements; h++)
                 {
-                    QPair<QVariant,QString> newElem;
+                    QPair<QVariant,QPair<QString, QVariant> > newElem;
                     newElem.first = *iter;
-                    newElem.second = Units;
+                    newElem.second.first = Units;
+                    newElem.second.second = InData.getInvalidData();
 
                     data[InData.getName()].push_back(newElem);
                     ++iter;
                 }
             }
         }
-
-#ifdef DEBUG
-        std::cout << "================================="  << std::endl;
-        std::cout << "DataUnit[" << indexOfFound << "]: " << data[InData.getName()][0].first.toDouble() << std::endl;
-#endif
-
     }
-
-
-#ifdef DEBUG
-    std::cout << "---------------------------------" << std::endl;
-#endif
-
     return true;
 }
 

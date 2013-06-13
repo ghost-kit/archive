@@ -52,6 +52,9 @@ public:
     long getNumberElements() const;
     void setNumberElements(long value);
 
+    QVariant getInvalidData() const;
+    void setInvalidData(const QVariant &value);
+
 protected:
     //data returned from cdf call
     QVector<QVariant> data;
