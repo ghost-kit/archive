@@ -543,6 +543,71 @@ cdfDataSet cdfDataReader::getZVariable(QString variable)
 }
 
 //===============================================================//
+void cdfDataReader::cdfAllocateMemory(long dataType, void* &data, long numValues)
+{
+    switch(dataType)
+    {
+    case CDF_REAL4:
+    case CDF_FLOAT:
+
+        data = new float[numValues];
+        break;
+
+    case CDF_EPOCH:
+    case CDF_REAL8:
+    case CDF_DOUBLE:
+        data = new double[numValues];
+        break;
+
+    case CDF_BYTE:
+    case CDF_INT1:
+        data = new int8_t[numValues];
+        break;
+
+    case CDF_UINT1:
+        data = new u_int8_t[numValues];
+        break;
+
+    case CDF_INT2:
+        data = new int16_t[numValues];
+        break;
+
+    case CDF_UINT2:
+        data = new u_int16_t[numValues];
+        break;
+
+    case CDF_INT4:
+        data = new int32_t[numValues];
+        break;
+
+    case CDF_UINT4:
+        data = new u_int32_t[numValues];
+        break;
+
+    case CDF_TIME_TT2000:
+    case CDF_INT8:
+        data = new int64_t[numValues];
+        break;
+
+    case CDF_CHAR:
+        data = new char[numValues+1];
+        break;
+
+    case CDF_UCHAR:
+        data = new uchar[numValues+1];
+        break;
+
+    case CDF_EPOCH16:
+        data = new double[numValues*2];
+        break;
+
+    default:
+        std::cerr << "INVALID DATA TYPE" << std::endl;
+        exit(EXIT_FAILURE);
+        break;
+    }
+}
+
 cdfDataSet cdfDataReader::getZVariable(int64_t variable)
 {
     cdfDataSet returnVal;
@@ -578,40 +643,7 @@ cdfDataSet cdfDataReader::getZVariable(int64_t variable)
             QList<QVector<QVariant> > badData  = this->getZVariableAttribute(CDFgetAttrNum(this->fileId, (char*)"FILLVAL"), variable );
 
             //allocate data
-            switch(dataType)
-            {
-            case CDF_FLOAT:
-                data = new float[numValues];
-                break;
-            case CDF_DOUBLE:
-                data = new double[numValues];
-                break;
-            case CDF_BYTE:
-            case CDF_INT1:
-                data = new int8_t[numValues];
-                break;
-            case CDF_INT2:
-                data = new int16_t[numValues];
-                break;
-            case CDF_INT4:
-                data = new int32_t[numValues];
-                break;
-            case CDF_INT8:
-                data = new int64_t[numValues];
-                break;
-            case CDF_CHAR:
-                //variables are characters
-                data = new char[numValues+1];
-                break;
-            case CDF_EPOCH:
-            case CDF_EPOCH16:
-                data = new double[numValues];
-                break;
-            default:
-                std::cerr << "INVALID DATA TYPE" << std::endl;
-                exit(EXIT_FAILURE);
-                break;
-            }
+            cdfAllocateMemory(dataType, data, numValues);
 
             //get data record
             status = CDFgetzVarAllRecordsByVarID(this->fileId, variable, data);
@@ -696,6 +728,7 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
 {
     CDFstatus status;
     cdfDataSet returnVal;
+    QVector<QVariant> Qdata;
 
     char varName[CDF_VAR_NAME_LEN256 +1];
     long dataType=0;
@@ -704,7 +737,6 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
     long numDims=0;
     long dimSizes[CDF_MAX_DIMS];
     long dimVarys[CDF_MAX_DIMS];
-    long numValues=1;
 
     status = CDFinquirezVar(this->fileId, variable, varName, &dataType, &numElements, &numDims,
                             dimSizes, &recVary, dimVarys);
@@ -714,69 +746,24 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
         QList<QVector<QVariant> > badData  = this->getZVariableAttribute(CDFgetAttrNum(this->fileId, (char*)"FILLVAL"), variable );
 
         void *data = NULL;
-        //calculte the number of values to be retrieved
-        numValues = numElements;
 
-        switch(dataType)
-        {
-        case CDF_FLOAT:
-
-            data = new float[numValues];
-            break;
-
-        case CDF_DOUBLE:
-            data = new double[numValues];
-            break;
-
-        case CDF_BYTE:
-        case CDF_INT1:
-            data = new int8_t[numValues];
-            break;
-
-        case CDF_INT2:
-            data = new int16_t[numValues];
-            break;
-
-        case CDF_INT4:
-            data = new int32_t[numValues];
-            break;
-
-        case CDF_INT8:
-            data = new int64_t[numValues];
-            break;
-
-        case CDF_CHAR:
-            data = new char[numValues+1];
-            break;
-
-        case CDF_EPOCH:
-        case CDF_EPOCH16:
-            data = new double[numValues];
-            break;
-
-        default:
-            std::cerr << "Unsuported data type" << std::endl;
-            std::cerr << "Type Recieved: " << dataType << std::endl;
-            exit(EXIT_FAILURE);
-            break;
-        }
+        //allocate data
+        cdfAllocateMemory(dataType, data, numElements);
 
         //get data record
         status = CDFgetzVarRecordData(this->fileId, variable, record ,data);
 
-        if(dataType == CDF_CHAR)
-        {
-            char* temp = (char*)data;
-            temp[numValues] = '\0';
-        }
-
-        QVector<QVariant> Qdata;
-        this->cToQVector(data, numValues, dataType, Qdata);
-
-
         //process the data
         if(CDFstatusOK(status))
         {
+            if(dataType == CDF_CHAR)
+            {
+                char* temp = (char*)data;
+                temp[numElements] = '\0';
+            }
+
+            this->cToQVector(data, numElements, dataType, Qdata);
+
             //setup the returnvalues
             returnVal.setVector(Qdata);
             returnVal.setName(varName);
@@ -886,8 +873,10 @@ bool cdfDataReader::CDFstatusOK(CDFstatus status, bool suppress)
 bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector<QVariant> &vector)
 {
 
+    //TOODO: Refactor this to not repeat code (for easier maintanence)
     switch(dataType)
     {
+    case CDF_REAL4:
     case CDF_FLOAT:
     {
         float *dataF = (float*)data;
@@ -899,7 +888,10 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
         break;
     }
     case CDF_EPOCH16:
+        std::cerr << "This conversion is not yet supported.  It requires 2x double for each item" << std::endl;
+        break;
     case CDF_EPOCH:
+    case CDF_REAL8:
     case CDF_DOUBLE:
     {
         double *dataD = (double*)data;
@@ -921,6 +913,16 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
 
         break;
     }
+    case CDF_UCHAR:
+    case CDF_UINT1:
+    {
+        u_int8_t *dataI1 = (u_int8_t*)data;
+        for(int x = 0; x < dataSize; x++)
+        {
+            vector.push_back(QVariant(dataI1[x]));
+        }
+        break;
+    }
     case CDF_INT2:
     {
         int16_t *dataI2 = (int16_t*)data;
@@ -930,9 +932,28 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
         }
         break;
     }
+
+    case CDF_UINT2:
+    {
+        u_int16_t *dataI2 = (u_int16_t*)data;
+        for(int x = 0; x < dataSize; x++)
+        {
+            vector.push_back(QVariant(dataI2[x]));
+        }
+        break;
+    }
     case CDF_INT4:
     {
         int32_t *dataI4 = (int32_t*)data;
+        for(int x = 0; x < dataSize; x++)
+        {
+            vector.push_back(QVariant(dataI4[x]));
+        }
+        break;
+    }
+    case CDF_UINT4:
+    {
+        u_int32_t *dataI4 = (u_int32_t*)data;
         for(int x = 0; x < dataSize; x++)
         {
             vector.push_back(QVariant(dataI4[x]));
@@ -949,8 +970,13 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
         break;
     }
     case CDF_CHAR:
+    {
+        std::cerr << "Have not yet implemented Character Array Converersion" << std::endl;
         break;
+    }
+
     default:
+        std::cerr << "Unknown Type Conversion: " << dataType << std::endl;
         break;
     }
 

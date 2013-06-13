@@ -124,6 +124,7 @@ public:
     CDFid getFileId() const;
     void setFileId(const CDFid &value);
 
+    void cdfAllocateMemory(long dataType, void *&data, long numValues);
 protected:
     //File pointers
     QString FileName;
