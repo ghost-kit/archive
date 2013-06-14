@@ -24,10 +24,8 @@ vtkStandardNewMacro(vtkLFMReader);
 
 //----------------------------------------------------------------
 
-vtkLFMReader::vtkLFMReader()
+vtkLFMReader::vtkLFMReader() : HdfFileName(NULL), GridScaleType(GRID_SCALE::NONE)
 {
-  this->HdfFileName = NULL;
-  
   // print vtkDebugMacro messages by turning debug mode on:
   // NOTE: This will make things VERY SLOW
   //this->DebugOn();
@@ -106,15 +104,15 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   }
 
 
-  if(this->dims.size() == 0){
-    this->dims["x"] = xGrid_info.localDims[2]; // nip1
-    this->dims["y"] = xGrid_info.localDims[1]; // njp1
-    this->dims["z"] = xGrid_info.localDims[0]; // nkp1
+  if(this->globalDims.size() == 0){
+    this->globalDims.push_back( xGrid_info.localDims[2] ); // nip1
+    this->globalDims.push_back( xGrid_info.localDims[1] ); // njp1
+    this->globalDims.push_back( xGrid_info.localDims[0] ); // nkp1
 
     vtkDebugMacro(<< "Dimensions: "
-		  << this->dims["x"] << ", "
-		  << this->dims["y"] << ", "
-		  << this->dims["z"]);
+		  << this->globalDims[0] << ", "
+		  << this->globalDims[1] << ", "
+		  << this->globalDims[2]);
   }
 
   //FIXME:  Cleanup up below here. . . 
@@ -136,16 +134,16 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   f.readMetaData(metaDoubles, metaFloats, metaInts, metaStrings);
   
   //Set Dimension Information in Class
-  if(this->dims.size() == 0)
+  if(this->globalDims.size() == 0)
     {
-      this->dims["x"] = dims[2];
-      this->dims["y"] = dims[1];
-      this->dims["z"] = dims[0];
+      this->globalDims.push_back( dims[2] );
+      this->globalDims.push_back( dims[1] );
+      this->globalDims.push_back( dims[0] );
 
       vtkDebugMacro(<< "Dimensions: "
-		    << this->dims["x"] << ", "
-		    << this->dims["y"] << ", "
-		    << this->dims["z"]);
+		    << this->globalDims[0] << ", "
+		    << this->globalDims[1] << ", "
+		    << this->globalDims[2]);
     }
   //local dims no longer needed
   delete [] dims;
@@ -183,15 +181,9 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   // Set WHOLE_EXTENT
   /********************************************************************/
   //Navigation helpers
-  const int nip1 = this->dims["x"];
-  const int ni = nip1-1;
-  const int nim1 = ni-1;
-  const int njp1 = this->dims["y"];
-  const int njp2 = njp1+1;
-  const int nj = njp1-1;
-  const int nkp1 = this->dims["z"];
-  const int nkp2 = nkp1+1;
-  const int nk = nkp1-1;
+  const int nim1 = this->globalDims[0]-2;
+  const int njp1 = this->globalDims[1];
+  const int nk   = this->globalDims[2]-1;
   
   int extent[6] = {0, nim1,
 		   0, njp1,
@@ -257,13 +249,13 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   // Set sub extents
   ///////////////////
     
-  const int nip1 = this->dims["x"];
+  const int nip1 = this->globalDims[0];
   const int ni = nip1-1;
   const int nim1 = ni-1;
-  const int njp1 = this->dims["y"];
+  const int njp1 = this->globalDims[1];
   const int njp2 = njp1+1;
   const int nj = njp1-1;
-  const int nkp1 = this->dims["z"];
+  const int nkp1 = this->globalDims[2];
   const int nkp2 = nkp1+1;
   const int nk = nkp1-1;
   
@@ -644,13 +636,13 @@ vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1
 	ojk     = index3to1(i,   j+1,  k+1, nip1, njp1);
 	oijk    = index3to1(i+1, j+1,  k+1, nip1, njp1);
         
-        xyz[0] = cell8PointAverage(X_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
+        xyz[0] = calcCellCenter(X_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
         xyz[0] /= GRID_SCALE::ScaleFactor[GridScaleType];
         
-        xyz[1] = cell8PointAverage(Y_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
+        xyz[1] = calcCellCenter(Y_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
         xyz[1] /= GRID_SCALE::ScaleFactor[GridScaleType];
         
-        xyz[2] = cell8PointAverage(Z_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
+        xyz[2] = calcCellCenter(Z_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
         xyz[2] /= GRID_SCALE::ScaleFactor[GridScaleType];
         
         
@@ -845,27 +837,27 @@ void vtkLFMReader::calculateElectricField(const int &nip1, const int &njp1, cons
 	oijk    = index3to1(i+1, j+1,  k+1, nip1, njp1);
 	
 	// X_grid Cell edge vector
-	cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-	cx[1] = cell_AxisAverage(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-	cx[2] = cell_AxisAverage(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
+	cx[0] = calcCellWidth(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
+	cx[1] = calcCellWidth(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
+	cx[2] = calcCellWidth(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
 
 	// Y_grid Cell edge vector       
-	cy[0] = cell_AxisAverage(Y_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-	cy[1] = cell_AxisAverage(Y_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-	cy[2] = cell_AxisAverage(Y_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
+	cy[0] = calcCellWidth(Y_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
+	cy[1] = calcCellWidth(Y_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
+	cy[2] = calcCellWidth(Y_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
         
 	// Z_grid Cell edge vector
-	cz[0] = cell_AxisAverage(Z_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-	cz[1] = cell_AxisAverage(Z_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-	cz[2] = cell_AxisAverage(Z_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
+	cz[0] = calcCellWidth(Z_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
+	cz[1] = calcCellWidth(Z_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
+	cz[2] = calcCellWidth(Z_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
                           
 	// Now calculate electric field through cell center
           
 	// <ei,ej,ek> = electric field along edge of cells
 	// et =  face-centered electric field
-	et[0] = cellWallAverage(ei, offset, ok, oj, ojk);
-	et[1] = cellWallAverage(ej, offset, ok, oi, oik);
-	et[2] = cellWallAverage(ek, offset, oi, oj, oij);
+	et[0] = calcFaceCenter(ei, offset, ok, oj, ojk);
+	et[1] = calcFaceCenter(ej, offset, ok, oi, oik);
+	et[2] = calcFaceCenter(ek, offset, oi, oj, oij);
           
 	//FIXME:  Is this Stoke's Theorem or Green's Theorem at work?
 	det = 1.e-6/p3d_triple(cx, cy, cz);

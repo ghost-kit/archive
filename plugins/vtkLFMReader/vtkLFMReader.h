@@ -16,14 +16,14 @@ namespace GRID_SCALE
 {
   enum ScaleType{
     NONE   = 0,
-    REARTH = 1,
-    RSOLAR = 2,
-    AU     = 3   
+    REARTH = 1, // Earth Radius
+    RSOLAR = 2, // Solar Radius
+    AU     = 3  // Astronomical Unit
   };
-  static const float ScaleFactor[4] = { 1.0,
-    6.38e8,
-    6.955e10,
-    1.5e13 };
+  static const float ScaleFactor[4] = { 1.0,      // NONE
+					6.38e8,   // REARTH
+					6.955e10, // RSOLAR
+					1.5e13 }; // AU
 }
 
 class VTK_EXPORT vtkLFMReader : public vtkStructuredGridReader
@@ -56,7 +56,8 @@ public:
    */
   static int CanReadFile(const char *filename);
     
-  /** Methods to keep track of which arrays the user has set ParaView to read.
+  /** The following methods keep track of which arrays the user has
+   * set ParaView to read.
    *
    * Calls to these routines are only valid after HdfFileName is set & UpdateInformation has been called.
    */
@@ -100,16 +101,6 @@ protected:
   vtkLFMReader();
   ~vtkLFMReader();
   
-  char *HdfFileName;
-  /// \see GRID_SCALE::ScaleType
-  int GridScaleType;
-
-  /// TimeStepValues must match property in vtkLFMReader.xml
-  std::vector<double> TimeStepValues;
-    
-  //keep track of the master dimensions of the arrays.
-  std::map<std::string, int> dims;
- 
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
@@ -140,19 +131,16 @@ protected:
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
        
 private:  
-  vtkLFMReader(const vtkLFMReader&); // Not implemented
-  void operator=(const vtkLFMReader&); // Not implemented
+  char *HdfFileName;
+  /// \see GRID_SCALE::ScaleType
+  int GridScaleType;
 
-  /** Add variable to list of available variables in the data set.
-   * 
-   * Sets describeVariable, CellArrayName, CellArrayStatus   
-   */
-  //@{
-  void addScalarInformation(const std::string &scalarName, const std::string &scalarDescription);
-  void addVectorInformation(const std::string &x, const std::string &y, const std::string &z,
-			    const std::string &vectorDescription);
-  //@}
-
+  /// TimeStepValues must match property in vtkLFMReader.xml
+  std::vector<double> TimeStepValues;
+    
+  //keep track of the master dimensions of the arrays.
+  std::vector<int> globalDims;
+ 
   /** Map short variable name to something more descriptive 
    * For example:
    *    describeVariable["vx_"]  == "Velocity Vector"
@@ -178,6 +166,19 @@ private:
    */
   std::map<std::string,int> CellArrayStatus;
   std::map<std::string,int> PointArrayStatus;
+
+  vtkLFMReader(const vtkLFMReader&); // Not implemented
+  void operator=(const vtkLFMReader&); // Not implemented
+
+  /** Add variable to list of available variables in the data set.
+   * 
+   * Sets describeVariable, CellArrayName, CellArrayStatus   
+   */
+  //@{
+  void addScalarInformation(const std::string &scalarName, const std::string &scalarDescription);
+  void addVectorInformation(const std::string &x, const std::string &y, const std::string &z,
+			    const std::string &vectorDescription);
+  //@}
 
   /**
    * The following must be surrouned by //BTX ... //ETX because it
@@ -254,36 +255,50 @@ private:
     return p3d_dot(x,dum);
   }
   
-  /// Average array values at 8 different indicies.
-  inline float cell8PointAverage(const float *const array, 
-				 const int &o1, const int &o2, const int &o3, const int &o4, const int &o5, const int &o6, const int &o7, const int &o8) 
+  /** Returns average value of hexahedron cell from 8 corner points.
+   * o[1-8] are indices to 1-d array representing 8 corners of a cell.
+   */
+  inline float calcCellCenter(const float *const array, 
+			      const int &o1, const int &o2, const int &o3, const int &o4, 
+			      const int &o5, const int &o6, const int &o7, const int &o8) 
   {
   return ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  +
            array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0);
   }
  
-  /// Average array values at 4 different indices
-  inline float cellWallAverage(const float *const array, const int &o1, const int &o2, const int &o3, const int &o4)
+  /** Returns average value of array at four corners of a cell
+   *  o1,o2,o3,o4 = index to 1d array representing four edges of a
+   *  cell face.
+   */
+  inline float calcFaceCenter(const float *const array, 
+			      const int &o1, const int &o2, const int &o3, const int &o4)
   {
   return ((array[o1] + array[o2] + array[o3] + array[o4]))/4.0;
   }
   
-  inline float cell_AxisAverage(const float *const array, const int &o1,const int &o2, const int &o3, const int &o4, const int &m1, const int &m2, const int &m3, const int &m4)
+  /** Returns vector component through cell center that stores the
+   *  width of hexahedron cell between opposite faces.
+   *
+   * o1,o2,o3,o4: four indices that make up face on cell
+   * m1,m2,m3,m4: four indices that make up opposite face on cell
+   */
+  inline float calcCellWidth(const float *const array, 
+			     const int &o1,const int &o2, const int &o3, const int &o4, 
+			     const int &m1, const int &m2, const int &m3, const int &m4)
   {
   return ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - 
           (array[m1]  +  array[m2] +  array[m3] + array[m4]))/4.0;
   }
 
   /**
-   * \brief Given an (i,j,k) index, calculate the offset to an unrolled 1d array.
-   * Assumes 3d ni x nj x nk array has i index moving fastest.
+   * Given an (i,j,k) index, calculate the offset to an unrolled 1d
+   * array.  Assumes 3d ni x nj x nk array has i index moving fastest.
    */  
   inline int index3to1(const int &i, const int &j, const int &k,
 		       const int &ni, const int &nj)
   {
     return ( i + j*ni + k*ni*nj );
   }
-
   ///@}
 };
 
