@@ -45,12 +45,8 @@ public:
   vtkGetMacro(GridScaleType, int);
     
   /// routines for Cell Array Info
-  vtkGetMacro(NumberOfPointArrays, int);
-  vtkSetMacro(NumberOfPointArrays, int);
-  
-  vtkGetMacro(NumberOfCellArrays, int);
-  vtkSetMacro(NumberOfCellArrays, int);
-  
+  int GetNumberOfPointArrays() { return PointArrayName.size(); }
+  int GetNumberOfCellArrays() { return CellArrayName.size(); }  
   
   /**
    * The purpose of this method is to determine whether
@@ -74,46 +70,59 @@ public:
   const char* GetCellArrayName(int index);
   
   
-  
-  /** Get/Set whether the point or cell array with the given name is
-   *  to be read.
+
+  /** Methods to keep track of which arrays the user has set ParaView to read.
+   *
+   * \note these function names must match properties in vtkLFMReader.xml!
    */
-  int GetPointArrayStatus(const char* name);
+  // @{
   int GetCellArrayStatus(const char* name);
-  void SetPointArrayStatus(const char* name, int status);  
   void SetCellArrayStatus(const char* name, int status);  
-    
+
+  int GetPointArrayStatus(const char* name);
+  void SetPointArrayStatus(const char* name, int status);  
+  // @}
   
 protected:
   vtkLFMReader();
   ~vtkLFMReader();
   
   char *HdfFileName;
+  /// \see GRID_SCALE::ScaleType
   int GridScaleType;
 
   /// TimeStepValues must match property in vtkLFMReader.xml
   std::vector<double> TimeStepValues;
-
-  //Map of variable name to Description String
-  std::map<std::string, std::string> ArrayNameLookup;
   
-    //Point and Cell Array Status Information
+  /** Map short variable name to something more descriptive 
+   * For example:
+   *    describeVariable["vx_"]  == "Velocity Vector"
+   *    describeVariable["vy_"]  == "Velocity Vector"
+   *    describeVariable["vz_"]  == "Velocity Vector"
+   *    describeVariable["rho_"] == "Plasma Density"
+   */
+  std::map<std::string, std::string> describeVariable;
+
+  /** Stores names of all variables that can be read into
+   *  ParaView. These values are displayed on the GUI for variable
+   *  name & on colorbar
+   *
+   * eg. "Plasma Density", "Velocity Vectory", etc.
+   */
   std::vector<std::string> CellArrayName;
   std::vector<std::string> PointArrayName;
   
+  /** bit to decide whether or not variable is enabled & should be read into ParaView.
+   *   == 0: Variable disabled. Skip.
+   *   == 1: Variable enabled. Load into ParaView
+   */
   std::map<std::string,int> CellArrayStatus;
   std::map<std::string,int> PointArrayStatus;
   
-    // The number of point/cell data arrays in the output.  Valid after
-    // SetupOutputData has been called.
-  int NumberOfPointArrays;
-  int NumberOfCellArrays; 
-  
-    // helper values to clean up code
-    //BTX
-    //keep track of the master dimensions of the arrays.
+  // helper values to clean up code
+  //keep track of the master dimensions of the arrays.
   std::map<std::string, int> dims;
-  
+ 
   /**
    * This method is invoked by the superclass's ProcessRequest
    * implementation when it receives a REQUEST_INFORMATION request. In
@@ -150,7 +159,6 @@ protected:
    *    This Method does NOTHING if the variable does not exist.
    */
   
-    //BTX
     //These methods will add an ARRAY to the available list if the its associated
     //  variables exist within the file.
     //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
@@ -158,15 +166,20 @@ protected:
     //  if existence query fails, NOTHING happens
   void SetIfExists(DeprecatedHdf4 &filePointer, std::string VarName, std::string VarDescription);
   void SetIfExists(DeprecatedHdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription);
-    
-  std::string GetDesc(std::string varName)
-  { return this->ArrayNameLookup[varName];}
-  
+     
 private:  
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
 
-  //ETX    
+  /**
+   * The following must be surrouned by //BTX ... //ETX because it
+   * references vtk data types.  If these tags are omitted, building
+   * the plugin will fail with an error message like the following: ***
+   * SYNTAX ERROR found in parsing the header file <something>.h before
+   * line <line number> ***
+   */
+  //BTX
+  //@{
   vtkPoints *point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
 				    const float *const X_grid, const float *const Y_grid, const float *const Z_grid);
 
@@ -176,6 +189,7 @@ private:
 
   vtkFloatArray *point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
 				    const float *const xData, const float *const yData, const float *const zData);
+  //}@
   //ETX
 
   /// Methods to calculate electric field.

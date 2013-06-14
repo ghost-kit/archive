@@ -27,9 +27,6 @@ vtkStandardNewMacro(vtkLFMReader);
 vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
-
-  this->NumberOfPointArrays = 0;
-  this->NumberOfCellArrays = 0;
   
   // print vtkDebugMacro messages by turning debug mode on:
   // NOTE: This will make things VERY SLOW
@@ -157,9 +154,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   
   /**
    *  This section will check to see if possible variables exist, and if they do, set them
-   *    up for readability.  This includes incrementing the number of arrays available (NumberOfCellArrays), 
-   *    adding the array name to the Array Name list (CellArrayName), and setting an entry in the 
-   *    Status Dictionary (CellArrayStatus)
+   *    up for readability
    */
   
   //TODO #297: Also, lets do a little caching, and keep around the arrays that we are using 
@@ -167,23 +162,21 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   //      object.  This way, if we time-step over the objects, we don't have to read everything from 
   //      disk every time.
   
-  if(NumberOfCellArrays == 0){
-    //Set the Variables needed to selectively set Arrays (Scalar)
-    SetIfExists(f, "rho_", "Plasma Density");
-    SetIfExists(f, "c_", "Sound Speed");
-    
-    //Set the Variables needed to selectively set Arrays (Vector)
-    SetIfExists(f, "vx_", "vy_", "vz_", "Velocity Vector");
-    SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field Vector");
-    SetIfExists(f, "avgBx", "avgBy", "avgBz", "Magnetic Field Vector (avg)");
-    
-    //Set the Variables needed to selectively set Arrays (Derived)
-    SetIfExists(f, "ei_", "ej_", "ek_", "Electric Field Vector");
-    SetIfExists(f, "avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)");
-    
-    // placeholder for calculating the Current vector.  See Pjcalc2.F from CISM_DX reader.
-    //SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");    
-  }
+  //Set the Variables needed to selectively set Arrays (Scalar)
+  SetIfExists(f, "rho_", "Plasma Density");
+  SetIfExists(f, "c_", "Sound Speed");
+  
+  //Set the Variables needed to selectively set Arrays (Vector)
+  SetIfExists(f, "vx_", "vy_", "vz_", "Velocity Vector");
+  SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field Vector");
+  SetIfExists(f, "avgBx", "avgBy", "avgBz", "Magnetic Field Vector (avg)");
+  
+  //Set the Variables needed to selectively set Arrays (Derived)
+  SetIfExists(f, "ei_", "ej_", "ek_", "Electric Field Vector");
+  SetIfExists(f, "avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)");
+  
+  // placeholder for calculating the Current vector.  See Pjcalc2.F from CISM_DX reader.
+  //SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");    
   
   f.close();
   
@@ -338,15 +331,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
    ****************************************************************************/
 
   //Density Selective Read
-  if(this->CellArrayStatus[GetDesc("rho_")]){
-    vtkDebugMacro(<<"Plasma Desnity Selected");
+  if(this->CellArrayStatus[describeVariable["rho_"]]){
+    vtkDebugMacro(<<"Plasma Density Selected");
     float *rho = NULL;
     f.readVariable("rho_",   rho,    rank, dims);  delete []dims;   
     
     if(rho != NULL){
       vtkFloatArray *cellScalar_rho = NULL;
       cellScalar_rho = point2CellCenteredScalar(nip1,njp1,nkp1, rho);
-      cellScalar_rho->SetName(GetDesc("rho_").c_str());
+      cellScalar_rho->SetName(describeVariable["rho_"].c_str());
       output->GetPointData()->AddArray(cellScalar_rho);
       cellScalar_rho->Delete();
 
@@ -356,14 +349,14 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   }
   
   //Sound Speed Selective Read
-  if(this->CellArrayStatus[GetDesc("c_")]){
+  if(this->CellArrayStatus[describeVariable["c_"]]){
     vtkDebugMacro(<< "Sound Speed Selected");
     float *c = NULL;
     f.readVariable("c_",     c,      rank, dims);  delete []dims;    
     if(c != NULL){
       vtkFloatArray *cellScalar_c = NULL;
       cellScalar_c = point2CellCenteredScalar(nip1,njp1,nkp1, c);
-      cellScalar_c->SetName(GetDesc("c_").c_str());
+      cellScalar_c->SetName(describeVariable["c_"].c_str());
       output->GetPointData()->AddArray(cellScalar_c);
       cellScalar_c->Delete();
 
@@ -377,7 +370,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
    ****************************************************************************/
   // Velocity
   //Velocity Selective Read
-  if(this->CellArrayStatus[GetDesc("vx_")]){
+  if(this->CellArrayStatus[describeVariable["vx_"]]){
     vtkDebugMacro(<< "Velocity Selected");    
     float *vx = NULL;
     float *vy = NULL;
@@ -389,7 +382,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     if(vx != NULL && vy != NULL && vz != NULL){
       vtkFloatArray *cellVector_v = NULL;
       cellVector_v = point2CellCenteredVector(nip1,njp1,nkp1, vx,vy,vz);
-      cellVector_v->SetName(GetDesc("vx_").c_str());
+      cellVector_v->SetName(describeVariable["vx_"].c_str());
       output->GetPointData()->AddArray(cellVector_v);
       cellVector_v->Delete();
 
@@ -403,7 +396,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   }
 
   //Magnetic Field Selective Read
-  if(this->CellArrayStatus[GetDesc("bx_")]){
+  if(this->CellArrayStatus[describeVariable["bx_"]]){
     vtkDebugMacro(<< "Magnetic Field Vector Selected");    
     float *bx = NULL;
     float *by = NULL;
@@ -415,7 +408,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     if(bx != NULL && by != NULL && bz != NULL){
       vtkFloatArray *cellVector_b = NULL;
       cellVector_b = point2CellCenteredVector(nip1,njp1,nkp1, bx,by,bz);
-      cellVector_b->SetName(GetDesc("bx_").c_str());
+      cellVector_b->SetName(describeVariable["bx_"].c_str());
       output->GetPointData()->AddArray(cellVector_b);
       cellVector_b->Delete();
       delete [] bx;
@@ -428,7 +421,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   }
   
   //Averaged Magnetic Field Selective Read
-  if(this->CellArrayStatus[GetDesc("avgBx")]){
+  if(this->CellArrayStatus[describeVariable["avgBx"]]){
     vtkDebugMacro(<< "Averaged Magnetic Field Vector Selected");     
     float *avgbz = NULL;
     float *avgby = NULL;
@@ -439,7 +432,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     if(avgbx != NULL && avgby != NULL && avgbz != NULL){
       vtkFloatArray *cellVector_avgb = NULL;
       cellVector_avgb = point2CellCenteredVector(nip1,njp1,nkp1, avgbx, avgby, avgbz);
-      cellVector_avgb->SetName(GetDesc("avgBx").c_str());
+      cellVector_avgb->SetName(describeVariable["avgBx"].c_str());
       output->GetPointData()->AddArray(cellVector_avgb);
       cellVector_avgb->Delete();
       delete [] avgbx;
@@ -452,7 +445,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   }
 
   //Electric Field Selective Read
-  if(this->CellArrayStatus[GetDesc("ei_")]){
+  if(this->CellArrayStatus[describeVariable["ei_"]]){
     vtkDebugMacro(<< "Electric Field vector Selected");
     float *ei = NULL;
     float *ej = NULL;
@@ -484,7 +477,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       ey=NULL;
       delete[] ez;
       ez=NULL;
-      cellVector_e->SetName(GetDesc("ei_").c_str());
+      cellVector_e->SetName(describeVariable["ei_"].c_str());
       output->GetPointData()->AddArray(cellVector_e);
       cellVector_e->Delete();
     }
@@ -492,7 +485,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
 
     
   //Averaged E(ijk) Fields
-  if(this->CellArrayStatus[GetDesc("avgEi")]){
+  if(this->CellArrayStatus[describeVariable["avgEi"]]){
     vtkDebugMacro(<< "Averaged Electric Field Vector Selected");
   
     float *avgei = NULL;
@@ -525,7 +518,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       avgEy=NULL;
       delete[] avgEz;
       avgEz=NULL;
-      cellVector_avge->SetName(GetDesc("avgEi_").c_str());
+      cellVector_avge->SetName(describeVariable["avgEi_"].c_str());
       output->GetPointData()->AddArray(cellVector_avge);
       cellVector_avge->Delete();
     }
@@ -594,11 +587,9 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string VarName, std::string VarDescription)
 {
   if(f.hasVariable(VarName)){
-    //Set Variable->description map
-    this->ArrayNameLookup[VarName] = VarDescription;
+
+    this->describeVariable[VarName] = VarDescription;
     
-    //Set other Array Variables
-    this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
     this->CellArrayStatus[VarDescription] = 1;
   }
@@ -611,13 +602,10 @@ void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string VarName, std::stri
 void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
 {
   if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
-    //Set variable->desciption map
-    this->ArrayNameLookup[xVar] = VarDescription;
-    this->ArrayNameLookup[yVar] = VarDescription;
-    this->ArrayNameLookup[zVar] = VarDescription;
+    this->describeVariable[xVar] = VarDescription;
+    this->describeVariable[yVar] = VarDescription;
+    this->describeVariable[zVar] = VarDescription;
     
-    //Set other Array Variables
-    this->NumberOfCellArrays++;
     this->CellArrayName.push_back(VarDescription);
     this->CellArrayStatus[VarDescription] = 1;
   }
