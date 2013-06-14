@@ -1,7 +1,6 @@
 #include "vtkLFMReader.h"
 
-//#include "Io.hpp"
-//#include "Hdf.hpp"
+#include "io/Io.hpp"
 
 #include "DeprecatedHdf4.h"
 
@@ -52,44 +51,37 @@ vtkLFMReader::~vtkLFMReader()
 
 //----------------------------------------------------------------
 
+bool isStrInList(const list<string> &listOfStrings, const string &searchString){
+  list<string>::const_iterator it;
+  it = find(listOfStrings.begin(), listOfStrings.end(), searchString);
+  if (it != listOfStrings.end() )
+    return true;
+  else
+    return false;
+}
+
+//----------------------------------------------------------------
+
 int vtkLFMReader::CanReadFile(const char *filename)
 {
-//  Io *io = new Hdf(0);
-//  io->openRead(string(filename));
+  Io *io = Io::extensionSelector("hdf");
+  io->openRead(string(filename));
 
-//  double mjd;
-//  io->readAttribute(mjd, "mjd");
-//  io->close();
-//  delete io;
-//  io = NULL;
-
-  DeprecatedHdf4 f;
-  f.open(string(filename), IO::READ);
-  
-  map<string, double> metaDoubles;
-  map<string, float> metaFloats;
-  map<string, int> metaInts;
-  map<string, string> metaStrings;
-  f.readMetaData(metaDoubles, metaFloats, metaInts, metaStrings);
-  
-  f.close();
-  
-  // Make sure all the relevant metadata exists
-  if ( //(metaDoubles.count(string("mjd")) == 0) ||
-      (metaInts.count(string("time_step")) == 0) || 
-      (metaFloats.count(string("time")) == 0) ||
-      (metaFloats.count(string("tilt_angle")) == 0) ||
-      //(metaStrings.count(string("I/O Revision")) == 0) ||
-      //(metaStrings.count(string("Repository Revision")) == 0) ||
-      (metaStrings.count(string("file_contents")) == 0) ||
-      (metaStrings.count(string("dipole_moment")) == 0) ||
-      (metaStrings.count(string("written_by")) == 0) ){
-    
-    return 0;
+  list<string> attributeNames = io->getAttributeNames();
+  if( //(isStrInList(attributeNames, "mjd")) &&
+      (isStrInList(attributeNames, "time_step")) &&
+      (isStrInList(attributeNames, "time")) &&
+      (isStrInList(attributeNames, "tilt_angle")) &&
+      //(isStrInList("I/O Revision")) &&
+      //(isStrInList("Repository Revision")) &&
+      (isStrInList(attributeNames, "file_contents")) &&
+      (isStrInList(attributeNames, "dipole_moment")) &&
+      (isStrInList(attributeNames, "written_by")) ){
+    return 1;
   }
 
-  // If we've made it this far, assume it's a valid file.
-  return 1;
+  //if we made it this far, assume attribute is not in list.
+  return 0;
 }
 
 //----------------------------------------------------------------
@@ -101,6 +93,10 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 { 
   // Read entire extents from Hdf4 file.  This requires reading an
   // entire variable.  Let's arbitrarily choose X_grid:
+  //Io *io = Io::extensionSelector("hdf");
+  //io->openRead(this->GetFileName());
+  //array_info_t xGrid_info = io->getArrayInfo("X_grid");  
+
   DeprecatedHdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
   
