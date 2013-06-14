@@ -12,38 +12,6 @@
 #include <vtksys/stl/map>
 #include "DeprecatedHdf4.h"
 
-  //simple macros to point to dimensions
-#define NI this->dims["x"]-1
-#define NJ this->dims["y"]-1
-#define NK this->dims["z"]-1
-
-  //Calculates the FORTRAN offset a grid
-  //WARNING: the Variable ni and nj MUST be defined in the local domain to
-  //    use this macro
-#define gridOffset(i,j,k) i + (j)*(ni+1) + (k)*(ni+1)*(nj+1)
-
-  //Calculates the corrent VTK Array offset
-  //WARNING: the Variable ni and nj MUST be defined in the local domain to
-  //    use this macro
-#define ArrayOffset(i,j,k) (i) + (j)*(ni) + (k)*(ni)*(nj+2)
-
-
-
-
-  //This Macro sets the values of offset, oi, oj, ok, oij, oik, ojk, oijk
-  //  for when you need access to the points at the corners of the cell.
-  //  The Above Mentioned variables MUST exist before calling this macro.
-  //  THIS IS FOR FORTRAN OFFSETS IN C/C++ Code ONLY
-#define setFortranCellGridPointOffsetMacro         \
-offset  = gridOffset(i,   j,    k);   \
-oi      = gridOffset(i+1, j,    k);   \
-oj      = gridOffset(i,   j+1,  k);   \
-ok      = gridOffset(i,   j,    k+1); \
-oij     = gridOffset(i+1, j+1,  k);   \
-oik     = gridOffset(i+1, j,    k+1); \
-ojk     = gridOffset(i,   j+1,  k+1); \
-oijk    = gridOffset(i+1, j+1,  k+1); 
-
 namespace GRID_SCALE
 {
   enum ScaleType{
@@ -240,7 +208,7 @@ private:
   return ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  +
            array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0);
   }
-
+ 
   /// Average array values at 4 different indices
   inline float cellWallAverage(const float *const array, const int &o1, const int &o2, const int &o3, const int &o4)
   {
@@ -252,6 +220,17 @@ private:
   return ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - 
           (array[m1]  +  array[m2] +  array[m3] + array[m4]))/4.0;
   }
+
+  /**
+   * \brief Given an (i,j,k) index, calculate the offset to an unrolled 1d array.
+   * Assumes 3d ni x nj x nk array has i index moving fastest.
+   */  
+  inline int index3to1(const int &i, const int &j, const int &k,
+		       const int &ni, const int &nj)
+  {
+    return ( i + j*ni + k*ni*nj );
+  }
+
   ///@}
 };
 

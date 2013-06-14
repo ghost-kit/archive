@@ -110,9 +110,9 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 
 
   if(this->dims.size() == 0){
-    this->dims["x"] = xGrid_info.localDims[2];
-    this->dims["y"] = xGrid_info.localDims[1];
-    this->dims["z"] = xGrid_info.localDims[0];
+    this->dims["x"] = xGrid_info.localDims[2]; // nip1
+    this->dims["y"] = xGrid_info.localDims[1]; // njp1
+    this->dims["z"] = xGrid_info.localDims[0]; // nkp1
 
     vtkDebugMacro(<< "Dimensions: "
 		  << this->dims["x"] << ", "
@@ -188,13 +188,13 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   f.close();
   
   //Navigation helpers
-  const int nip1 = NI+1;
+  const int nip1 = this->dims["x"];
   const int ni = nip1-1;
   const int nim1 = ni-1;
-  const int njp1 = NJ+1;
+  const int njp1 = this->dims["y"];
   const int njp2 = njp1+1;
   const int nj = njp1-1;
-  const int nkp1 = NK+1;
+  const int nkp1 = this->dims["z"];
   const int nkp2 = nkp1+1;
   const int nk = nkp1-1;
   
@@ -258,13 +258,13 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   // Set sub extents
   ///////////////////
     
-  const int nip1 = NI+1;
+  const int nip1 = this->dims["x"];
   const int ni = nip1-1;
   const int nim1 = ni-1;
-  const int njp1 = NJ+1;
+  const int njp1 = this->dims["y"];
   const int njp2 = njp1+1;
   const int nj = njp1-1;
-  const int nkp1 = NK+1;
+  const int nkp1 = this->dims["z"];
   const int nkp2 = nkp1+1;
   const int nk = nkp1-1;
   
@@ -662,13 +662,14 @@ vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1
   for (int k=0; k < nk; k++){
     for (int j=0; j < nj; j++){
       for (int i=0; i < ni; i++){
-        
-	//For speed efficiency, we calculate offsets once per loop.
-	//
-	//This Macro sets the values of offset, oi, oj, ok, oij, oik, ojk, oijk
-	//  for when you need access to the points at the corners of the cell.
-	//  The Above Mentioned variables MUST exist before calling this macro.
-        setFortranCellGridPointOffsetMacro;
+	offset  = index3to1(i,   j,    k,   nip1, njp1);
+	oi      = index3to1(i+1, j,    k,   nip1, njp1);
+	oj      = index3to1(i,   j+1,  k,   nip1, njp1);
+	ok      = index3to1(i,   j,    k+1, nip1, njp1);
+	oij     = index3to1(i+1, j+1,  k,   nip1, njp1);
+	oik     = index3to1(i+1, j,    k+1, nip1, njp1);
+	ojk     = index3to1(i,   j+1,  k+1, nip1, njp1);
+	oijk    = index3to1(i+1, j+1,  k+1, nip1, njp1);
         
         xyz[0] = cell8PointAverage(X_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
         xyz[0] /= GRID_SCALE::ScaleFactor[GridScaleType];
@@ -682,7 +683,7 @@ vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1
         
 	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
 	//        offset = i + (j+1)*ni + k*ni*njp2;
-        points->SetPoint(ArrayOffset(i, j+1, k), xyz);
+        points->SetPoint(index3to1(i, j+1, k, ni,njp2), xyz);
       }
     }
   }
@@ -699,12 +700,12 @@ vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1
     for (int i=0; i < ni; i++){
       xyz[0] = 0.0;
       for (int k=0; k < nk; k++){	 
-	points->GetPoint(ArrayOffset(i, jAxis, k), axisCoord);
+	points->GetPoint(index3to1(i, jAxis, k,  ni,njp2), axisCoord);
 	xyz[0] += (float) axisCoord[0];
       }
       xyz[0] /= float( nk );
       for (int k=0; k < nk; k++){
-        points->SetPoint(ArrayOffset(i,j,k), xyz);
+        points->SetPoint(index3to1(i,j,k,  ni,njp2), xyz);
       }
     }
   }
@@ -861,8 +862,14 @@ void vtkLFMReader::calculateElectricField(const int &nip1, const int &njp1, cons
   for (int k=0; k < nk; k++){
     for (int j=0; j < nj; j++){
       for (int i=0; i < ni; i++){          
-	//Store Electric Field Data
-        setFortranCellGridPointOffsetMacro;
+	offset  = index3to1(i,   j,    k,   nip1, njp1);
+	oi      = index3to1(i+1, j,    k,   nip1, njp1);
+	oj      = index3to1(i,   j+1,  k,   nip1, njp1);
+	ok      = index3to1(i,   j,    k+1, nip1, njp1);
+	oij     = index3to1(i+1, j+1,  k,   nip1, njp1);
+	oik     = index3to1(i+1, j,    k+1, nip1, njp1);
+	ojk     = index3to1(i,   j+1,  k+1, nip1, njp1);
+	oijk    = index3to1(i+1, j+1,  k+1, nip1, njp1);
 	
 	// X_grid Cell edge vector
 	cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
