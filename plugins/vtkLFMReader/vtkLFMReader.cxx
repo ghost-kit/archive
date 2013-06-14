@@ -149,37 +149,39 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
     }
   //local dims no longer needed
   delete [] dims;
-    
-  //BEGIN CellArrayInfo
+
+  /********************************************************************/
+  // Determine which variables are available to the GUI
+  /********************************************************************/
+
+  // Scalars
+  if (f.hasVariable("rho_"))
+    addScalarInformation("rho_", "Plasma Density");
+  if (f.hasVariable("c_"))
+    addScalarInformation("c_", "Sound Speed");
   
-  /**
-   *  This section will check to see if possible variables exist, and if they do, set them
-   *    up for readability
-   */
-  
-  //TODO #297: Also, lets do a little caching, and keep around the arrays that we are using 
-  //      (if it doesn't use too much memory)  I would say keep the most recent reads in the 
-  //      object.  This way, if we time-step over the objects, we don't have to read everything from 
-  //      disk every time.
-  
-  //Set the Variables needed to selectively set Arrays (Scalar)
-  SetIfExists(f, "rho_", "Plasma Density");
-  SetIfExists(f, "c_", "Sound Speed");
-  
-  //Set the Variables needed to selectively set Arrays (Vector)
-  SetIfExists(f, "vx_", "vy_", "vz_", "Velocity Vector");
-  SetIfExists(f, "bx_", "by_", "bz_", "Magnetic Field Vector");
-  SetIfExists(f, "avgBx", "avgBy", "avgBz", "Magnetic Field Vector (avg)");
-  
-  //Set the Variables needed to selectively set Arrays (Derived)
-  SetIfExists(f, "ei_", "ej_", "ek_", "Electric Field Vector");
-  SetIfExists(f, "avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)");
-  
+  // Vectors
+  if (f.hasVariable("vx_") && f.hasVariable("vy_") && f.hasVariable("vz_"))
+    addVectorInformation("vx_", "vy_", "vz_", "Velocity Vector");
+  if (f.hasVariable("bx_") && f.hasVariable("by_") && f.hasVariable("bz_"))
+    addVectorInformation("bx_", "by_", "bz_", "Magnetic Field Vector");
+  if (f.hasVariable("avgBx") && f.hasVariable("avgBy") && f.hasVariable("avgBz"))
+    addVectorInformation("avgBx", "avgBy", "avgBz", "Magnetic Field Vector (avg)");
+
+  // Derived Quantities
+  if (f.hasVariable("ei_") && f.hasVariable("ej_") && f.hasVariable("ek_"))
+    addVectorInformation("ei_", "ej_", "ek_", "Electric Field Vector");
+  if (f.hasVariable("avgEi") && f.hasVariable("avgEj") && f.hasVariable("avgEk"))
+    addVectorInformation("avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)"); 
   // placeholder for calculating the Current vector.  See Pjcalc2.F from CISM_DX reader.
-  //SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");    
+  //if (f.hasVariable("bi_") && f.hasVariable("bj_") && f.hasVariable("bk_"))
+  //  addVectorInformation("bi_", "bj_", "bk_", "Current Vector");
   
   f.close();
   
+  /********************************************************************/
+  // Set WHOLE_EXTENT
+  /********************************************************************/
   //Navigation helpers
   const int nip1 = this->dims["x"];
   const int ni = nip1-1;
@@ -204,6 +206,10 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   vtkInformation* outInfo = outputVector->GetInformationObject(0); 
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
+
+  /********************************************************************/
+  // Set Time information
+  /********************************************************************/
 
   // Currently 1 time step per file.  Append to a vector in case we want to extend this in the future.
   if (metaDoubles.count(string("mjd")) != 0){
@@ -537,19 +543,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
 
 //----------------------------------------------------------------
 
-const char * vtkLFMReader::GetCellArrayName(int index)
-{
-  const char* name;
-  int nameSize;
-  
-  nameSize = this->CellArrayName[index].size();
-  name = this->CellArrayName[index].c_str();
-  
-  return name;
-}
-
-//----------------------------------------------------------------
-
 //Cell Array Status Retrieval
 int vtkLFMReader::GetCellArrayStatus(const char *CellArray)
 {
@@ -583,34 +576,26 @@ void vtkLFMReader::SetPointArrayStatus(const char* PointArray, int status)
 }
 
 //----------------------------------------------------------------
-//This version of SetIfExists is for scalars
-void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string VarName, std::string VarDescription)
+void vtkLFMReader::addScalarInformation(const std::string &scalarName, const std::string &scalarDescription)
 {
-  if(f.hasVariable(VarName)){
-
-    this->describeVariable[VarName] = VarDescription;
-    
-    this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 1;
-  }
+  this->describeVariable[scalarName] = scalarDescription;
   
-  vtkDebugMacro(<< VarName << ": " << VarDescription);
+  this->CellArrayName.push_back(scalarDescription);
+  this->CellArrayStatus[scalarDescription] = 1;
+  vtkDebugMacro(<< scalarName << ": " << scalarDescription);
 }
 
 //----------------------------------------------------------------
-//This Version of SetIfExists is for Vectors (3D)
-void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription)
+void vtkLFMReader::addVectorInformation(const std::string &x, const std::string &y, const std::string &z,
+					const std::string &vectorDescription)
 {
-  if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
-    this->describeVariable[xVar] = VarDescription;
-    this->describeVariable[yVar] = VarDescription;
-    this->describeVariable[zVar] = VarDescription;
-    
-    this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 1;
-  }
+  this->describeVariable[x] = vectorDescription;
+  this->describeVariable[y] = vectorDescription;
+  this->describeVariable[z] = vectorDescription;
   
-  vtkDebugMacro(<< xVar << "," << yVar << "," << zVar << ": " << VarDescription);
+  this->CellArrayName.push_back(vectorDescription);
+  this->CellArrayStatus[vectorDescription] = 1;
+  vtkDebugMacro(<< x << "," << y << "," << z << ": " << vectorDescription);
 }
 //----------------------------------------------------------------
 void vtkLFMReader::PrintSelf(ostream &os, vtkIndent indent)

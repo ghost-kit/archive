@@ -32,7 +32,6 @@ public:
   static vtkLFMReader *New();
   vtkTypeMacro(vtkLFMReader, vtkStructuredGridReader);
   void PrintSelf(ostream& os, vtkIndent indent);
-
   
   vtkSetStringMacro(HdfFileName);
   /// SetFileName must match property in vtkLFMReader.xml
@@ -43,11 +42,7 @@ public:
   /// SetGridScaleType must match property in vtkLFMReader.xml
   vtkSetMacro(GridScaleType, int);
   vtkGetMacro(GridScaleType, int);
-    
-  /// routines for Cell Array Info
-  int GetNumberOfPointArrays() { return PointArrayName.size(); }
-  int GetNumberOfCellArrays() { return CellArrayName.size(); }  
-  
+      
   /**
    * The purpose of this method is to determine whether
    * this reader can read a specified data file. Its input parameter
@@ -60,27 +55,45 @@ public:
    * ParaView will make use of it if it exists.
    */
   static int CanReadFile(const char *filename);
-  
-  /**
-   * Get information about cell-based arrays.  As is typical with
-   * readers this in only valid after the filename is set and
-   * UpdateInformation() has been called.
-   */
-    //    int GetNumberOfCellArrays();
-  const char* GetCellArrayName(int index);
-  
-  
-
+    
   /** Methods to keep track of which arrays the user has set ParaView to read.
    *
-   * \note these function names must match properties in vtkLFMReader.xml!
+   * Calls to these routines are only valid after HdfFileName is set & UpdateInformation has been called.
    */
-  // @{
+  // @{  
+
+  /** For a given cell-centered variable (ie. "Velocity Vector",
+   *  "Plasma Density", etc), return whether it should be read (1) or
+   *  not (0).
+   *
+   * \note must match properties in vtkLFMReader.xml
+   */
+  //@{
   int GetCellArrayStatus(const char* name);
   void SetCellArrayStatus(const char* name, int status);  
+  //@}
 
+  /** For a given point-centered variable, return whether it should be
+   *  read (1) or not (0).
+   *
+   * \note must match properties in vtkLFMReader.xml
+   */
+  //@{
   int GetPointArrayStatus(const char* name);
   void SetPointArrayStatus(const char* name, int status);  
+  //@}
+
+  ///  How many point & cell-centered arrays are in the file?
+  //@{
+  int GetNumberOfCellArrays() { return CellArrayName.size(); }  
+  int GetNumberOfPointArrays() { return PointArrayName.size(); }
+  //@}
+
+  /** Returns the name of variable at index (ie. GetCellArrayName(0) == "Plasma Density")
+   * 
+   * \FIXME: What if index is invalid?
+   */
+  const char* GetCellArrayName(int index) { return this->CellArrayName[index].c_str(); }
   // @}
   
 protected:
@@ -93,33 +106,7 @@ protected:
 
   /// TimeStepValues must match property in vtkLFMReader.xml
   std::vector<double> TimeStepValues;
-  
-  /** Map short variable name to something more descriptive 
-   * For example:
-   *    describeVariable["vx_"]  == "Velocity Vector"
-   *    describeVariable["vy_"]  == "Velocity Vector"
-   *    describeVariable["vz_"]  == "Velocity Vector"
-   *    describeVariable["rho_"] == "Plasma Density"
-   */
-  std::map<std::string, std::string> describeVariable;
-
-  /** Stores names of all variables that can be read into
-   *  ParaView. These values are displayed on the GUI for variable
-   *  name & on colorbar
-   *
-   * eg. "Plasma Density", "Velocity Vectory", etc.
-   */
-  std::vector<std::string> CellArrayName;
-  std::vector<std::string> PointArrayName;
-  
-  /** bit to decide whether or not variable is enabled & should be read into ParaView.
-   *   == 0: Variable disabled. Skip.
-   *   == 1: Variable enabled. Load into ParaView
-   */
-  std::map<std::string,int> CellArrayStatus;
-  std::map<std::string,int> PointArrayStatus;
-  
-  // helper values to clean up code
+    
   //keep track of the master dimensions of the arrays.
   std::map<std::string, int> dims;
  
@@ -151,25 +138,46 @@ protected:
    * class. It should return 1 for success and 0 for failure.
    */
   int RequestData(vtkInformation*,vtkInformationVector**,vtkInformationVector* outVec);
-  
-  /**
-   *  This function will check to see if the variable (VarName) exists, and if it does, set
-   *    associated variables to correct values.
-   *    
-   *    This Method does NOTHING if the variable does not exist.
-   */
-  
-    //These methods will add an ARRAY to the available list if the its associated
-    //  variables exist within the file.
-    //  VarDescription will be indexed on VarName or (xVar & yVar & zVar)
-    //  Can only be used to add existing variables in the file.
-    //  if existence query fails, NOTHING happens
-  void SetIfExists(DeprecatedHdf4 &filePointer, std::string VarName, std::string VarDescription);
-  void SetIfExists(DeprecatedHdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription);
-     
+       
 private:  
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
+
+  /** Add variable to list of available variables in the data set.
+   * 
+   * Sets describeVariable, CellArrayName, CellArrayStatus   
+   */
+  //@{
+  void addScalarInformation(const std::string &scalarName, const std::string &scalarDescription);
+  void addVectorInformation(const std::string &x, const std::string &y, const std::string &z,
+			    const std::string &vectorDescription);
+  //@}
+
+  /** Map short variable name to something more descriptive 
+   * For example:
+   *    describeVariable["vx_"]  == "Velocity Vector"
+   *    describeVariable["vy_"]  == "Velocity Vector"
+   *    describeVariable["vz_"]  == "Velocity Vector"
+   *    describeVariable["rho_"] == "Plasma Density"
+   *    ...
+   */
+  std::map<std::string, std::string> describeVariable;
+
+  /** Stores names of all variables that can be read into
+   *  ParaView. These values are displayed on the GUI for variable
+   *  name & on colorbar
+   *
+   * eg. "Plasma Density", "Velocity Vectory", etc.
+   */
+  std::vector<std::string> CellArrayName;
+  std::vector<std::string> PointArrayName;
+  
+  /** bit to decide whether or not variable is enabled & should be read into ParaView.
+   *   == 0: Variable disabled. Skip.
+   *   == 1: Variable enabled. Load into ParaView
+   */
+  std::map<std::string,int> CellArrayStatus;
+  std::map<std::string,int> PointArrayStatus;
 
   /**
    * The following must be surrouned by //BTX ... //ETX because it
@@ -180,13 +188,38 @@ private:
    */
   //BTX
   //@{
+  /** Given native (x,y,z) grid points at cell edges, calculate
+   * cell-centers.
+   *  
+   * Grid points for the LFM grid are at cell edges, while data is
+   * stored at cell centers.  It has been determined that
+   * visualization packages like ParaView generate the best images
+   * when we visualize data as point-centered on cell centered grid.
+   * 
+   * This creates a singularities in the grid:
+   *   - on the x-axis 
+   *   - at j=0 in the nose and j=nj+2 in the tail
+   *   - periodic point for k-index
+   * Because of this, the grid returned is dimensioned (ni, nj+2, nk+1)
+   */
   vtkPoints *point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
 				    const float *const X_grid, const float *const Y_grid, const float *const Z_grid);
 
-
+  /**
+   * Returns scalar on grid at cell centers.  This will become a
+   * point-centered grid.
+   *
+   * See point2CellCenteredGrid for dimensioning information.
+   */
   vtkFloatArray *point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float *const data);
 
 
+  /**
+   * Returns scalar on grid at cell centers.  This will become a
+   * point-centered grid.
+   *
+   * See point2CellCenteredGrid for dimensioning information.
+   */
   vtkFloatArray *point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
 				    const float *const xData, const float *const yData, const float *const zData);
   //}@
@@ -194,14 +227,20 @@ private:
 
   /// Methods to calculate electric field.
   //@{
+  /**
+   * Calculate cell-centered electric field.
+   *
+   * ei,ej,ek = electric field on cell edges
+   * ex,ey,ez = electric field on cell centers
+   */
   void calculateElectricField(const int &nip1, const int &njp1, const int &nkp1,
 			      const float *const X_grid, const float *const Y_grid, const float *const Z_grid,
 			      const float *const ei, const float *const ej, const float *const ek,
 			      float *ex, float *ey, float *ez);
 
-
   /// \returns dot product (x.y) for 3d vectors x & y.
   float p3d_dot(const float *const x, const float *const y)  {return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];}
+
   /// z = cross(x,y) cross prodcut for 3d vectors x & y.
   void p3d_cross(const float *const x, const float *const y, float *const z){
     z[0] = x[1]*y[2] - x[2]*y[1];
