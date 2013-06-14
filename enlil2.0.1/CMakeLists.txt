@@ -6,11 +6,11 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 #SET(ParaView_DIR /Volumes/Data/Development/SwFT/superbuild/paraview/src/paraview-build)
 SET(ParaView_SuperBuild_DIR /Volumes/Data/Development/SwFt/ParaViewSuperbuild/)
 
-ADD_SUBDIRECTORY(cxform-0.71)
+#ADD_SUBDIRECTORY(cxform-0.71)
 
 #Find_Library(cxform REQUIRED)
 
-include_directories(cxform-0.71)
+#include_directories(cxform-0.71)
 
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
@@ -22,7 +22,7 @@ ADD_PARAVIEW_PLUGIN(vtkEnlilReader "2.0.1"
   SOURCES DateTime.C readerCache.cpp readerCacheManager.cpp
   GUI_RESOURCE_FILES vtkEnlilGUI.xml)
 
-SET(KIT_LIBS cxform vtkNetCDF_cxx )
+SET(KIT_LIBS  vtkNetCDF_cxx )
 
 Target_LINK_LIBRARIES(vtkEnlilReader  ${ParaView_LIBRARIES} ${KIT_LIBS})
 
