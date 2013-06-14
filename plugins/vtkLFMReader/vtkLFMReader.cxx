@@ -67,21 +67,29 @@ int vtkLFMReader::CanReadFile(const char *filename)
   Io *io = Io::extensionSelector("hdf");
   io->openRead(string(filename));
 
+  bool isValidFile = false;
+
   list<string> attributeNames = io->getAttributeNames();
   if( //(isStrInList(attributeNames, "mjd")) &&
       (isStrInList(attributeNames, "time_step")) &&
       (isStrInList(attributeNames, "time")) &&
-      (isStrInList(attributeNames, "tilt_angle")) &&
+      //(isStrInList(attributeNames, "tilt_angle")) &&
       //(isStrInList("I/O Revision")) &&
       //(isStrInList("Repository Revision")) &&
-      (isStrInList(attributeNames, "file_contents")) &&
+      //(isStrInList(attributeNames, "file_contents")) &&
       (isStrInList(attributeNames, "dipole_moment")) &&
       (isStrInList(attributeNames, "written_by")) ){
-    return 1;
+    isValidFile = true;
+  }
+
+  io->close();
+  if (io){
+    delete io;
+    io = NULL;
   }
 
   //if we made it this far, assume attribute is not in list.
-  return 0;
+  return isValidFile;
 }
 
 //----------------------------------------------------------------
@@ -91,11 +99,30 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
                                       vtkInformationVector** inputVector,
                                       vtkInformationVector* outputVector)
 { 
-  // Read entire extents from Hdf4 file.  This requires reading an
-  // entire variable.  Let's arbitrarily choose X_grid:
-  //Io *io = Io::extensionSelector("hdf");
-  //io->openRead(this->GetFileName());
-  //array_info_t xGrid_info = io->getArrayInfo("X_grid");  
+  Io *io = Io::extensionSelector("hdf");
+  io->openRead(this->GetFileName());
+  array_info_t xGrid_info = io->getArrayInfo("X_grid");  
+  list<string> variables = io->getVariableNames();
+  list<string> attributes = io->getAttributeNames();
+  io->close();
+  if (io){
+    delete io;
+    io = NULL;
+  }
+
+
+  if(this->dims.size() == 0){
+    this->dims["x"] = xGrid_info.localDims[2];
+    this->dims["y"] = xGrid_info.localDims[1];
+    this->dims["z"] = xGrid_info.localDims[0];
+
+    vtkDebugMacro(<< "Dimensions: "
+		  << this->dims["x"] << ", "
+		  << this->dims["y"] << ", "
+		  << this->dims["z"]);
+  }
+
+  //FIXME:  Cleanup up below here. . . 
 
   DeprecatedHdf4 f;
   f.open(string(this->GetFileName()), IO::READ);
