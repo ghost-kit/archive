@@ -458,9 +458,50 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_avgb->Delete();
   }
 
+  //Read Electric Field
+  vtkFloatArray *cellVector_e = NULL;  
+  if(ei != NULL && ej != NULL && ek != NULL){
+    float *ex = new float[nip1*njp1*nkp1];
+    float *ey = new float[nip1*njp1*nkp1];
+    float *ez = new float[nip1*njp1*nkp1];
+    calculateElectricField(nip1,njp1,nkp1,
+			   X_grid,Y_grid,Z_grid,
+			   ei,ej,ek,
+			   ex,ey,ez);
+    cellVector_e = point2CellCenteredVector(nip1,njp1,nkp1, ex,ey,ez);
+    delete[] ex;
+    ex=NULL;
+    delete[] ey;
+    ey=NULL;
+    delete[] ez;
+    ez=NULL;
+    cellVector_e->SetName(GetDesc("ei_").c_str());
+    output->GetPointData()->AddArray(cellVector_e);
+    cellVector_e->Delete();
+  }
+    
+  //Reading Averaged Electric Field
   vtkFloatArray *cellVector_avge = NULL;
+  if(avgei != NULL && avgej != NULL && avgek != NULL){
+    float *avgEx = new float[nip1*njp1*nkp1];
+    float *avgEy = new float[nip1*njp1*nkp1];
+    float *avgEz = new float[nip1*njp1*nkp1];
+    calculateElectricField(nip1,njp1,nkp1,
+			   X_grid,Y_grid,Z_grid,
+			   avgei,avgej,avgek,
+			   avgEx,avgEy,avgEz);
+    cellVector_avge = point2CellCenteredVector(nip1,njp1,nkp1, avgEx,avgEy,avgEz);
+    delete[] avgEx;
+    avgEx=NULL;
+    delete[] avgEy;
+    avgEy=NULL;
+    delete[] avgEz;
+    avgEz=NULL;
+    cellVector_avge->SetName(GetDesc("avgEi_").c_str());
+    output->GetPointData()->AddArray(cellVector_avge);
+    cellVector_avge->Delete();
+  }
   
-  vtkFloatArray *cellVector_e = NULL;
   vtkFloatArray *cellVector_be = NULL;
   //Read Bijk Magnetic Field
   if(bi != NULL && bj != NULL && bk != NULL){
@@ -469,97 +510,20 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_be->SetNumberOfComponents(3);
     cellVector_be->SetNumberOfTuples(ni*njp2*nkp1);
   }
-  
-  //Read Electric Field
-  if(ei != NULL && ej != NULL && ek != NULL){
-    cellVector_e = vtkFloatArray::New();
-    cellVector_e->SetName(GetDesc("ei_").c_str());
-    cellVector_e->SetNumberOfComponents(3);
-    cellVector_e->SetNumberOfTuples(ni*njp2*nkp1);   
-  }
-    
-  //Reading Averaged Electric Field
-  if(avgei != NULL && avgej != NULL && avgek != NULL){
-    cellVector_avge = vtkFloatArray::New();
-    cellVector_avge->SetName(GetDesc("avgEi").c_str());
-    cellVector_avge->SetNumberOfComponents(3);
-    cellVector_avge->SetNumberOfTuples(ni*njp2*nkp1);
-  }
-  
+
   
   // Store values in VTK objects:
-  
-  float cx[3]={0,0,0}, cy[3]={0,0,0}, cz[3]={0,0,0}, et[3]={0,0,0};
-  float x_ijk[3]={0,0,0}, y_ijk[3]={0,0,0}, z_ijk[3]={0,0,0}, e_ijk[3]={0,0,0};
-  float det=0;
-  int cSet=0;
   
   int offsetData, offsetCell;
   float tuple[3];
   
   for (int k=0; k < nk; k++){
     for (int j=0; j < nj; j++){
-      for (int i=0; i < ni; i++){
-        
+      for (int i=0; i < ni; i++){        
         offsetData = i + j*nip1 + k*nip1*njp1;
         
 	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
         offsetCell = i + (j+1)*ni   + k*ni*njp2;
-                                               
-	//--
-	float xyz[3]={0.0, 0.0, 0.0};
-	
-	int offset = 0;
-	int oi = 0, oij = 0, oik = 0;
-	int oj = 0, ojk = 0, oijk = 0;
-	int ok = 0;
-  
-        
-	//Store Electric Field Data
-	//TODO: Implement Derived Quantities
-        if(ei != NULL && ej != NULL && ek != NULL){          
-          setFortranCellGridPointOffsetMacro;
-          
-	  // Get cell center positions
-	  // FIXME: query cell center positions from existing
-	  // vtkStructuredGrid::GetPoints(...) array.
-          // output->GetPoints()->GetPoint(offsetCell);
-          cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-          cx[1] = cell_AxisAverage(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-          cx[2] = cell_AxisAverage(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-          
-          cy[0] = cell_AxisAverage(Y_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-          cy[1] = cell_AxisAverage(Y_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-          cy[2] = cell_AxisAverage(Y_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-          
-          cz[0] = cell_AxisAverage(Z_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-          cz[1] = cell_AxisAverage(Z_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-          cz[2] = cell_AxisAverage(Z_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-          
-          
-	  // Calculate Cell Volume. Use parallelpiped vector identity:
-	  // Volume of parallelpiped determined by vectors A,B,C is
-	  // the magnitude of triple scalar product |a.(bxc)|
-          tuple[0] = fabs(p_tripple(cx, cy, cz));
-          
-	  // Now calculate electric field through cell centre
-          
-	  // <ei,ej,ek> = electric field along edge of cells
-	  // et =  face-centered electric field
-          et[0] = cellWallAverage(ei, offset, ok, oj, ojk);
-          et[1] = cellWallAverage(ej, offset, ok, oi, oik);
-          et[2] = cellWallAverage(ek, offset, oi, oj, oij);
-          
-	  //FIXME:  Is this Stoke's Theorem or Green's Theorem at work?
-          det = 1.e-6/p_tripple(cx, cy, cz);
-          tuple[0] = p_tripple(et,cy,cz)*det;
-          tuple[1] = p_tripple(cx,et,cz)*det;
-          tuple[2] = p_tripple(cx,cy,et)*det;
-          
-          cellVector_e->SetTupleValue(offsetCell, tuple);
-	}
-        
-	//--
         
 	//Store Bijk Data
 	//TODO: Implement Derived Quantities
@@ -569,53 +533,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           tuple[2] = bk[offsetData];
           cellVector_be->SetTupleValue(offsetCell, tuple);
 	}       
-
-	//--
-        
-	//Store Averaged Electric Field Data
-	//TODO: Implement Derived Quantities
-        if(avgei != NULL && avgej != NULL && avgek != NULL){
-          
-          setFortranCellGridPointOffsetMacro;
-          
-	  // Get cell center positions
-	  // FIXME: query cell center positions from existing
-	  // vtkStructuredGrid::GetPoints(...) array.
-          
-          cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-          cx[1] = cell_AxisAverage(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-          cx[2] = cell_AxisAverage(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-          
-          cy[0] = cell_AxisAverage(Y_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-          cy[1] = cell_AxisAverage(Y_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-          cy[2] = cell_AxisAverage(Y_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-          
-          cz[0] = cell_AxisAverage(Z_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
-          cz[1] = cell_AxisAverage(Z_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
-          cz[2] = cell_AxisAverage(Z_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
-          
-          
-	  // Calculate Cell Volume. Use parallelpiped vector identity:
-	  // Volume of parallelpiped determined by vectors A,B,C is
-	  // the magnitude of triple scalar product |a.(bxc)|
-          tuple[0] = fabs(p_tripple(cx, cy, cz));
-          
-	  // Now calculate electric field through cell centre
-          
-	  // <ei,ej,ek> = electric field along edge of cells
-	  // et =  face-centered electric field
-          et[0] = cellWallAverage(avgei, offset, ok, oj, ojk);
-          et[1] = cellWallAverage(avgej, offset, ok, oi, oik);
-          et[2] = cellWallAverage(avgek, offset, oi, oj, oij);
-          
-	  //FIXME:  Is this Stoke's Theorem or Green's Theorem at work?
-          det = 1.e-6/p_tripple(cx, cy, cz);
-          tuple[0] = p_tripple(et,cy,cz)*det;
-          tuple[1] = p_tripple(cx,et,cz)*det;
-          tuple[2] = p_tripple(cx,cy,et)*det;
-          
-          cellVector_avge->SetTupleValue(offsetCell, tuple);
-	}
       }
     }
   }
@@ -628,33 +545,12 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   int jAxis;
   for (int j=0; j < njp2; j+=njp1){
     jAxis = max(1, min(nj, j));
-    for (int i=0; i < ni; i++){
-      rhoValue = 0.0;
-      cValue = 0.0;
-      volumeValue = 0.0;
-      avgEVvalue = 0.0;
-      
+    for (int i=0; i < ni; i++){      
       beValue[0] = 0.0;
       beValue[1] = 0.0;
       beValue[2] = 0.0;
-      
-      eValue[0] = 0.0;
-      eValue[1] = 0.0;
-      eValue[2] = 0.0;
-      
-      avgEvalue[0] = 0.0;
-      avgEvalue[1] = 0.0;
-      avgEvalue[2] = 0.0;
                   
       for (int k=0; k < nk; k++){        
-	//Fix Electric Field
-        if(ei != NULL && ej != NULL && ek != NULL){
-          cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-          eValue[0] += (float) tupleDbl[0];
-          eValue[1] += (float) tupleDbl[1];
-          eValue[2] += (float) tupleDbl[2];
-	}
-        
 	//Fix Bijk Field
         if(bi != NULL && bj != NULL && bk != NULL){
           cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
@@ -662,78 +558,18 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           beValue[1] += (float) tupleDbl[1];
           beValue[2] += (float) tupleDbl[2];
 	}
-                       
-	//Fix Average Electric Field
-        if(avgei != NULL && avgej != NULL && avgek != NULL){
-          cellVector_avge->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
-          avgEvalue[0] += (float) tupleDbl[0];
-          avgEvalue[1] += (float) tupleDbl[1];
-          avgEvalue[2] += (float) tupleDbl[2];                    
-	}
-      }
-      
-      //Adjust Density
-      if(rho != NULL)
-        rhoValue /= float(nk);
-      
-      //Adjust Sound Speed
-      if(c != NULL)
-        cValue /= float(nk);
-                  
-      //adjust Electric Field
-      if(ei != NULL && ej != NULL && ek != NULL){
-        eValue[0] /= float(nk);
-        eValue[1] /= float(nk);
-        eValue[2] /= float(nk);
-        
-        volumeValue /= float(nk);
-      }
-            
-      //Adjust Averaged Electric Field
-      if(avgei != NULL && avgej != NULL && avgek != NULL){
-        avgEvalue[0] /= float(nk);
-        avgEvalue[1] /= float(nk);
-        avgEvalue[2] /= float(nk);
-        
-        avgEVvalue /= float(nk);
-      }
-      
+      }            
       for (int k=0; k < nk; k++){
 	//Commit Fixes
-	//Scalars
-        if(avgei != NULL && avgej != NULL && avgek != NULL){
-          cellVector_avge->SetTupleValue(i + j*ni + k*ni*njp2, avgEvalue);
-	}
-        if(ei != NULL && ej != NULL && ek != NULL){
-          cellVector_e->SetTupleValue(i + j*ni + k*ni*njp2, eValue);
-        }
         if(bi != NULL && bj != NULL && bk != NULL)
-          cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);          
-        
-        
+          cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);                          
       }
     }
   }
   
   for (int j=0; j < njp2; j++){
     for (int i=0; i < ni; i++){
-      // Close off the grid      
-      if(avgei != NULL && avgej != NULL && avgek != NULL){
-        cellVector_avge->GetTuple(i + j*ni, tupleDbl);
-        avgEvalue[0] = (float) tupleDbl[0];
-        avgEvalue[1] = (float) tupleDbl[1];
-        avgEvalue[2] = (float) tupleDbl[2];
-        cellVector_avge->SetTupleValue(i + j*ni + nk*ni*njp2, avgEvalue);                
-      }
-      
-      if(ei != NULL && ej != NULL && ek != NULL){
-        cellVector_e->GetTuple(i + j*ni, tupleDbl);
-        eValue[0] = (float) tupleDbl[0];
-        eValue[1] = (float) tupleDbl[1];
-        eValue[2] = (float) tupleDbl[2];
-        cellVector_e->SetTupleValue(i + j*ni +   nk*ni*njp2, eValue);
-      }
-      
+      // Close off the grid           
       if(bi != NULL && bj!= NULL && bk != NULL){
         cellVector_be->GetTuple(i + j*ni, tupleDbl);
         beValue[0] = (float) tupleDbl[0];
@@ -742,31 +578,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         cellVector_be->SetTupleValue(i + j*ni +   nk*ni*njp2, beValue);
       }
     }
-  }  
-  //Commit Averaged Electric Field
-  if(avgei != NULL && avgej != NULL && avgek != NULL){
-    output->GetPointData()->AddArray(cellVector_avge);
-    cellVector_avge->Delete();    
-    
-    //    if(cellScalar_volume)
-    //      {
-    //      output ->GetPointData()->AddArray(cellScalar_volume);
-    //      cellScalar_volume->Delete();
-    //      }
-  }
-  
-  //Commit Electric Field Data
-  if(ei != NULL && ej != NULL && ek != NULL){
-    output->GetPointData()->AddArray(cellVector_e);
-    cellVector_e->Delete();
-    
-    //    if(cellScalar_volume)
-    //      {
-    //      output->GetPointData()->AddArray(cellScalar_volume);
-    //      cellScalar_volume->Delete();
-    //      }
-  }
-  
+  }    
   //Commit Bijk Field Data
   if(bi != NULL && bj != NULL && bk != NULL){
     output->GetPointData()->AddArray(cellVector_be);
@@ -1134,3 +946,69 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
 
   return data;
 }
+
+//--------------------------------------------------------------------
+
+void vtkLFMReader::calculateElectricField(const int &nip1, const int &njp1, const int &nkp1,
+					  const float const *X_grid, const float const *Y_grid, const float const *Z_grid,
+					  const float const *ei, const float const *ej, const float const *ek,
+					  float *ex, float *ey, float *ez)
+{
+  const int ni = nip1-1;
+  const int nj = njp1-1;
+  const int nk = nkp1-1;
+
+  float cx[3]={0,0,0}, cy[3]={0,0,0}, cz[3]={0,0,0}, et[3]={0,0,0};
+  float det=0; 
+
+  int offset = 0;
+  int oi = 0, oij = 0, oik = 0;
+  int oj = 0, ojk = 0, oijk = 0;
+  int ok = 0;  
+  
+  for (int k=0; k < nk; k++){
+    for (int j=0; j < nj; j++){
+      for (int i=0; i < ni; i++){          
+	//Store Electric Field Data
+        setFortranCellGridPointOffsetMacro;
+	
+	// X_grid Cell edge vector
+	cx[0] = cell_AxisAverage(X_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
+	cx[1] = cell_AxisAverage(X_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
+	cx[2] = cell_AxisAverage(X_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
+
+	// Y_grid Cell edge vector       
+	cy[0] = cell_AxisAverage(Y_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
+	cy[1] = cell_AxisAverage(Y_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
+	cy[2] = cell_AxisAverage(Y_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
+        
+	// Z_grid Cell edge vector
+	cz[0] = cell_AxisAverage(Z_grid, oi, oij, oik, oijk, offset, oj, ok, ojk);
+	cz[1] = cell_AxisAverage(Z_grid, oj, oij, ojk, oijk, offset, oi, ok, oik);
+	cz[2] = cell_AxisAverage(Z_grid, ok, oik, ojk, oijk, offset, oj, oi, oij);
+                          
+	// Now calculate electric field through cell center
+          
+	// <ei,ej,ek> = electric field along edge of cells
+	// et =  face-centered electric field
+	et[0] = cellWallAverage(ei, offset, ok, oj, ojk);
+	et[1] = cellWallAverage(ej, offset, ok, oi, oik);
+	et[2] = cellWallAverage(ek, offset, oi, oj, oij);
+          
+	//FIXME:  Is this Stoke's Theorem or Green's Theorem at work?
+	det = 1.e-6/p3d_triple(cx, cy, cz);
+	ex[offset] = p3d_triple(et,cy,cz)*det;
+	ey[offset] = p3d_triple(cx,et,cz)*det;
+	ez[offset] = p3d_triple(cx,cy,et)*det;
+
+	// Here's how you would calculate volume of cell. Use
+	// parallelpiped vector identity: Volume of parallelpiped
+	// determined by vectors A,B,C is the magnitude of triple
+	// scalar product |a.(bxc)|
+	//float volume = fabs(p3d_triple(cx, cy, cz));
+      }       
+    }
+  }
+}
+
+//--------------------------------------------------------------------

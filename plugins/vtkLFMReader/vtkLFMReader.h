@@ -156,8 +156,6 @@ protected:
   
   std::map<std::string,int> CellArrayStatus;
   std::map<std::string,int> PointArrayStatus;
-    //ETX
-  
   
     // The number of point/cell data arrays in the output.  Valid after
     // SetupOutputData has been called.
@@ -168,7 +166,6 @@ protected:
     //BTX
     //keep track of the master dimensions of the arrays.
   std::map<std::string, int> dims;
-    //ETX
   
   /**
    * This method is invoked by the superclass's ProcessRequest
@@ -225,68 +222,65 @@ protected:
   std::string GetDesc(std::string varName)
   { return this->ArrayNameLookup[varName];}
   
-    //ETX
-  
-    //Helper Functions  
-    //--------------------------------------------------------------------
-  
-  float p_dot(float *x, float *y)  {return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];}
-  
-    //--------------------------------------------------------------------
-  
-  void p_cross3(float *x, float *y, float *z){
+private:  
+  vtkLFMReader(const vtkLFMReader&); // Not implemented
+  void operator=(const vtkLFMReader&); // Not implemented
+
+  //ETX    
+  vtkPoints *point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
+				    const float *const X_grid, const float *const Y_grid, const float *const Z_grid);
+
+
+  vtkFloatArray *point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float *const data);
+
+
+  vtkFloatArray *point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
+				    const float *const xData, const float *const yData, const float *const zData);
+  //ETX
+
+  /// Methods to calculate electric field.
+  //@{
+  void calculateElectricField(const int &nip1, const int &njp1, const int &nkp1,
+			      const float *const X_grid, const float *const Y_grid, const float *const Z_grid,
+			      const float *const ei, const float *const ej, const float *const ek,
+			      float *ex, float *ey, float *ez);
+
+
+  /// \returns dot product (x.y) for 3d vectors x & y.
+  float p3d_dot(const float *const x, const float *const y)  {return x[0]*y[0] + x[1]*y[1] + x[2]*y[2];}
+  /// z = cross(x,y) cross prodcut for 3d vectors x & y.
+  void p3d_cross(const float *const x, const float *const y, float *const z){
     z[0] = x[1]*y[2] - x[2]*y[1];
     z[1] = x[2]*y[0] - x[0]*y[2];
     z[2] = x[0]*y[1] - x[1]*y[0];
   }
-  
-    //--------------------------------------------------------------------
-  
-  float p_tripple(float *x, float *y, float *z){
+  /// Scalar triple product: (x . (y x z)) in 3d.
+  float p3d_triple(float *x, float *y, float *z){
     float dum[3];
-    p_cross3(y,z,dum);
-    return p_dot(x,dum);
+    p3d_cross(y,z,dum);
+    return p3d_dot(x,dum);
   }
   
-    //--------------------------------------------------------------------
-  
-  
-    //This method calculates the cell centered value for the 8 points at the corners
-    //  This macro works with, but does not require the setCellGridPointOffsetMacro.
-    //  Use the offset macro if you are using Fortran Arrays in C/C++
-  inline float cell8PointAverage(const float const *array, 
+  /// Average array values at 8 different indicies.
+  inline float cell8PointAverage(const float *const array, 
 				 const int &o1, const int &o2, const int &o3, const int &o4, const int &o5, const int &o6, const int &o7, const int &o8) 
   {
   return ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  +
            array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0);
   }
-  
-    //Electric Field methods
-  inline float cellWallAverage(float *array, int o1, int o2, int o3, int o4)
+
+  /// Average array values at 4 different indices
+  inline float cellWallAverage(const float *const array, const int &o1, const int &o2, const int &o3, const int &o4)
   {
   return ((array[o1] + array[o2] + array[o3] + array[o4]))/4.0;
   }
   
-  inline float cell_AxisAverage(float *array, int o1,int o2, int o3, int o4, int m1, int m2, int m3, int m4)
+  inline float cell_AxisAverage(const float *const array, const int &o1,const int &o2, const int &o3, const int &o4, const int &m1, const int &m2, const int &m3, const int &m4)
   {
   return ((array[o1]  +  array[o2] +  array[o3] + array[o4]) - 
           (array[m1]  +  array[m2] +  array[m3] + array[m4]))/4.0;
   }
-  
-  
-private:
-  vtkLFMReader(const vtkLFMReader&); // Not implemented
-  void operator=(const vtkLFMReader&); // Not implemented
-
-  vtkPoints *point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
-				    const float const *X_grid, const float const *Y_grid, const float const *Z_grid);
-
-
-  vtkFloatArray *point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float const *data);
-
-
-  vtkFloatArray *point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
-				    const float const *xData, const float const *yData, const float const *zData);
+  ///@}
 };
 
 #endif
