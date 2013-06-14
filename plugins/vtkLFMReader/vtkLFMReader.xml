@@ -1,19 +1,31 @@
 <ServerManagerConfiguration>
   
-  <!-- This proxy group is for the actual reader.  If this wasn't a time series capable reader, this all you would need, but the proxy group name would have to be "sources" -->
+  <!-- This proxy group is for the actual reader.  If this wasn't a
+  time series capable reader, this all you would need, but the proxy
+  group name would have to be "sources" -->
   
   <ProxyGroup name="internal_sources">
     <SourceProxy 
       name="vtkLFMReader"
       class="vtkLFMReader">
+
+      <!-- basic info about the reader. -->
       <StringVectorProperty
         name="FileName"
         animateable="0"
+
         command="SetFileName"
         number_of_elements="1">
         <FileListDomain name="files"/>
       </StringVectorProperty>
-      
+      <Hints>
+        <ReaderFactory
+        extensions="hdf"
+        file_description="LFM Data File"/>
+      </Hints>
+
+
+      <!-- Provide GUI to set the grid scale -->
       <IntVectorProperty
         name="GridScaleFactor"
         command="SetGridScaleType"
@@ -31,17 +43,17 @@
         </Documentation>
       </IntVectorProperty>
       
-      <!-- Selective Read Attributes -->
+      <!-- Provide GUI check boxes to read zero or more arrays.
+      Technically this supports both Cell & Point-centered data.
+      However, the LFM only has cell-centered data available. -->
       
       <StringVectorProperty
         name="CellArrayInfo"
         information_only="1">
-        <ArraySelectionInformationHelper attribute_name="Cell"/>
-        
+        <ArraySelectionInformationHelper attribute_name="Cell"/>        
         <Documentation>
-          This is the Cell Array Selectors.
+          These are the cell-centered array selectors.
         </Documentation>
-        
       </StringVectorProperty>
       
       <StringVectorProperty
@@ -61,25 +73,26 @@
           </RequiredProperties>
         </ArraySelectionDomain>
         <Documentation>
-          This is the Cell Array Selectors.
+          These are the cell-centered array selectors.
         </Documentation>
         
       </StringVectorProperty>
       
+      <!-- Same as above, but this time for point-cenetered
+      data... again, we dont typically read data in as point-centered
+      for the LFM. -->
       <StringVectorProperty
         name="PointArrayInfo"
         information_only="1">
-        <ArraySelectionInformationHelper attribute_name="Point"/>
-        
+        <ArraySelectionInformationHelper attribute_name="Point"/>        
         <Documentation>
-          This is the Cell Array Selectors.
-        </Documentation>
-        
+          These are the Point-centered Array Selectors.
+        </Documentation>        
       </StringVectorProperty>
       
       <StringVectorProperty
         name="PointArrayStatus"
-        command="SetCellArrayStatus"
+        command="SetPointArrayStatus"
         number_of_elements="0"
         repeat_command="1"
         number_of_elements_per_command="2"
@@ -95,22 +108,16 @@
         </ArraySelectionDomain>
         <Documentation>
           This is the Cell Array Selectors.
-        </Documentation>
-        
-      </StringVectorProperty>
-      
-      
-      <Hints>
-        <ReaderFactory
-        extensions="hdf"
-        file_description="LFM Data File"/>
-      </Hints>
-      
+        </Documentation>        
+      </StringVectorProperty>                 
     </SourceProxy>
     
   </ProxyGroup>
   
-  <!-- This Proxy Group is what makes the time series work.  You must also be exporting your timestep data from your reader code.  Also note that this proxy is set to sources, while we create a new proxy, internal_sources (above) for thea actual reader. -->
+  <!-- This Proxy Group is what makes the time series work.  You must
+  also be exporting your timestep data from your reader code.  Also
+  note that this proxy is set to sources, while we create a new proxy,
+  internal_sources (above) for thea actual reader. -->
   
   <ProxyGroup name="sources">
     <SourceProxy name="vtkLFMReader"
@@ -131,6 +138,7 @@
       <SubProxy>
         <Proxy name="Reader"
         proxygroup="internal_sources" proxyname="vtkLFMReader" />
+        <!-- Expose standard reader properties to time series ProxyGroup-->
         <ExposedProperties>
           <Property name="GridScaleFactor" />
           
@@ -139,8 +147,6 @@
           
           <Property name="PointArrayInfo" />
           <Property name="PointArrayStatus" />
-          
-          
         </ExposedProperties>
       </SubProxy>
       
@@ -163,7 +169,8 @@
         </Documentation>
       </StringVectorProperty>
       
-      <!-- This exposes the Timestep Values to the ParaView UI.  Must be implemented in reader to get the time step values -->
+      <!-- This exposes the Timestep Values to the ParaView UI.  Must
+      be implemented in reader to get the time step values -->
       
       <DoubleVectorProperty name="TimestepValues"
         repeatable="1"
@@ -175,7 +182,4 @@
       </DoubleVectorProperty>
     </SourceProxy>
   </ProxyGroup>
-  
-  
-  
 </ServerManagerConfiguration>

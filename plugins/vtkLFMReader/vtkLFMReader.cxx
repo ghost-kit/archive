@@ -28,8 +28,6 @@ vtkLFMReader::vtkLFMReader()
 {
   this->HdfFileName = NULL;
 
-  this->NumberOfTimeSteps = 1;
-  
   this->NumberOfPointArrays = 0;
   this->NumberOfCellArrays = 0;
   
@@ -181,10 +179,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
     
     //Set the Variables needed to selectively set Arrays (Derived)
     SetIfExists(f, "ei_", "ej_", "ek_", "Electric Field Vector");
-    //    SetNewIfExists(f, "ei_", "ej_", "ek_", "eVolume", "Electric Field Volume");
-    
     SetIfExists(f, "avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)");
-    //    SetNewIfExists(f, "avgEi", "avgEj", "avgEk", "eAvgVolume", "Electric Field Volume (avg)");
     
     // placeholder for calculating the Current vector.  See Pjcalc2.F from CISM_DX reader.
     //SetIfExists(f, "bi_", "bj_", "bk_", "Current Vector");    
@@ -217,15 +212,17 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   outInfo->Set(vtkStreamingDemandDrivenPipeline::WHOLE_EXTENT(),extent,6);
   
 
-  //Set Time step Information
-  this->NumberOfTimeSteps = 1; // 1 step per file
-  this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
+  // Currently 1 time step per file.  Append to a vector in case we want to extend this in the future.
   if (metaDoubles.count(string("mjd")) != 0){
-    this->TimeStepValues[0] = metaDoubles["mjd"];
+    this->TimeStepValues.push_back( metaDoubles["mjd"] );
+  }
+  else if (metaDoubles.count(string("time")) != 0){
+    // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
+    this->TimeStepValues.push_back( metaFloats["time"] );
   }
   else{
-    // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
-    this->TimeStepValues[0] = metaFloats["time"];
+    vtkWarningMacro("Could not find time information in file (attribute \"mjd\" or \"time\")! Defaulting to 0.0");
+    this->TimeStepValues.push_back( 0.0 );
   }
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
 	       &this->TimeStepValues[0],
@@ -239,7 +236,7 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   //Update Pipeline
   outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
   
-  vtkDebugMacro(<< "number of timesteps in file=" << this->NumberOfTimeSteps);
+  vtkDebugMacro(<< "number of timesteps in file=" << this->TimeStepValues.size());
   vtkDebugMacro(<< "Modified julian date in file=" << this->TimeStepValues[0] << endl
                 << "TimeStepValues=" << this->TimeStepValues[0] << " " << this->TimeStepValues[1] << endl
                 << "timeRange[0]=" << timeRange[0] <<" timeRange[1]=" << timeRange[1]);
@@ -627,42 +624,6 @@ void vtkLFMReader::SetIfExists(DeprecatedHdf4 &f, std::string xVar, std::string 
   
   vtkDebugMacro(<< xVar << "," << yVar << "," << zVar << ": " << VarDescription);
 }
-
-//----------------------------------------------------------------
-//This Version adds a new array based on existence of a scalar
-void vtkLFMReader::SetNewIfExists(DeprecatedHdf4 &f, std::string VarName, std::string ArrayIndexName, std::string VarDescription)
-{
-  if(f.hasVariable(VarName)){
-    //Set Variable->description map
-    this->ArrayNameLookup[ArrayIndexName] = VarDescription;
-    
-    //Set other Array Variables
-    this->NumberOfCellArrays++;
-    this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 1;
-  }
-  
-  vtkDebugMacro(<< ArrayIndexName << ": " << VarDescription);
-}
-
-//----------------------------------------------------------------
-// This version adds a new Array based on existence of a vector
-void vtkLFMReader::SetNewIfExists(DeprecatedHdf4 &f, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription)
-{
-  if (f.hasVariable(xVar) && f.hasVariable(yVar) && f.hasVariable(zVar)){
-    //Set variable->desciption map
-    this->ArrayNameLookup[ArrayIndexName] = VarDescription;
-    
-    //Set other Array Variables
-    this->NumberOfCellArrays++;
-    this->CellArrayName.push_back(VarDescription);
-    this->CellArrayStatus[VarDescription] = 1;
-  }
-  
-  vtkDebugMacro(<< ArrayIndexName << ":  " << VarDescription);
-  
-}
-
 //----------------------------------------------------------------
 void vtkLFMReader::PrintSelf(ostream &os, vtkIndent indent)
 {

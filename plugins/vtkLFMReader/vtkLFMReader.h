@@ -64,38 +64,19 @@ public:
   static vtkLFMReader *New();
   vtkTypeMacro(vtkLFMReader, vtkStructuredGridReader);
   void PrintSelf(ostream& os, vtkIndent indent);
+
   
-  /**
-   * This method allows you to specify the name of the data file to be
-   * loaded by your reader. The method is not required to have this
-   * exact name, but a method with this functionality must be
-   * implemented. The easiest way to implement SetFileName is with a
-   * vtkSetStringMacro in the header file for this class. (There is
-   * also an associated vtkGetStringMacro for implementing
-   * GetFileName.) This method handles allocating an array to contain
-   * the file name and lets the reader know that the pipeline should
-   * be updated when the name is changed.
-   *
-   * vtkSetStringMacro(FileName); When using this macro, you must also
-   * add a FileName instance variable of type char* in the protected
-   * section of this class. In the constructor for your reader, assign
-   * FileName the value NULL before you use SetFileName for the first
-   * time. In the destructor for your reader, call SetFileName(0)to
-   * free the file name storage.
-   */
   vtkSetStringMacro(HdfFileName);
+  /// SetFileName must match property in vtkLFMReader.xml
   virtual void SetFileName(const char *fileName) { this->SetHdfFileName(fileName); }
   vtkGetStringMacro(HdfFileName);
   virtual char *GetFileName() { return this->GetHdfFileName(); }
-  
+
+  /// SetGridScaleType must match property in vtkLFMReader.xml
   vtkSetMacro(GridScaleType, int);
   vtkGetMacro(GridScaleType, int);
-  
-  
-  /*
-   * routines for Cell Array Info
-   */
-  
+    
+  /// routines for Cell Array Info
   vtkGetMacro(NumberOfPointArrays, int);
   vtkSetMacro(NumberOfPointArrays, int);
   
@@ -126,15 +107,14 @@ public:
   
   
   
-    // Description:
-    // Get/Set whether the point or cell array with the given name is to
-    // be read.
+  /** Get/Set whether the point or cell array with the given name is
+   *  to be read.
+   */
   int GetPointArrayStatus(const char* name);
   int GetCellArrayStatus(const char* name);
   void SetPointArrayStatus(const char* name, int status);  
   void SetCellArrayStatus(const char* name, int status);  
-  
-  
+    
   
 protected:
   vtkLFMReader();
@@ -143,11 +123,10 @@ protected:
   char *HdfFileName;
   int GridScaleType;
 
-  int NumberOfTimeSteps; 
+  /// TimeStepValues must match property in vtkLFMReader.xml
   std::vector<double> TimeStepValues;
 
-    
-    //Map of variable name to Description String
+  //Map of variable name to Description String
   std::map<std::string, std::string> ArrayNameLookup;
   
     //Point and Cell Array Status Information
@@ -211,14 +190,7 @@ protected:
     //  if existence query fails, NOTHING happens
   void SetIfExists(DeprecatedHdf4 &filePointer, std::string VarName, std::string VarDescription);
   void SetIfExists(DeprecatedHdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string VarDescription);
-  
-    //these methods will add an ARRAY to the available list indexed at "ArrayIndexName" with the 
-    //  description value of "VarDescription".  This can be used to add dirived quantities to the system.
-    //  
-    //  If existence querry fails, NOTHING happens.
-  void SetNewIfExists(DeprecatedHdf4 &filePointer, std::string VarName, std::string ArrayIndexName, std::string VarDescription);
-  void SetNewIfExists(DeprecatedHdf4 &filePointer, std::string xVar, std::string yVar, std::string zVar, std::string ArrayIndexName,  std::string VarDescription);
-  
+    
   std::string GetDesc(std::string varName)
   { return this->ArrayNameLookup[varName];}
   
