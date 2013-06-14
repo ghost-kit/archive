@@ -2,8 +2,6 @@
 
 #include "io/Io.hpp"
 
-#include "DeprecatedHdf4.h"
-
 #include "vtkPointData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
@@ -44,6 +42,7 @@ vtkLFMReader::~vtkLFMReader()
 
 //----------------------------------------------------------------
 
+/// Returns true if searchString is in listOfStrings
 bool isStrInList(const list<string> &listOfStrings, const string &searchString){
   list<string>::const_iterator it;
   it = find(listOfStrings.begin(), listOfStrings.end(), searchString);
@@ -51,6 +50,26 @@ bool isStrInList(const list<string> &listOfStrings, const string &searchString){
     return true;
   else
     return false;
+}
+
+//----------------------------------------------------------------
+
+/** Returns true if attName is in attributes
+ * FIXME: Add as a member of the Io base class!
+ */
+bool hasAttribute(const list<string> &attributes, const string &attName)
+{
+  return isStrInList(attributes, attName);
+}
+
+//----------------------------------------------------------------
+
+/** Returns true if varName is in variables
+ * FIXME: Add as a member of the Io base class!
+ */
+bool hasVariable(const list<string> &variables, const string &varName)
+{
+  return isStrInList(variables, varName);
 }
 
 //----------------------------------------------------------------
@@ -63,15 +82,15 @@ int vtkLFMReader::CanReadFile(const char *filename)
   bool isValidFile = false;
 
   list<string> attributeNames = io->getAttributeNames();
-  if( //(isStrInList(attributeNames, "mjd")) &&
-      (isStrInList(attributeNames, "time_step")) &&
-      (isStrInList(attributeNames, "time")) &&
-      //(isStrInList(attributeNames, "tilt_angle")) &&
-      //(isStrInList("I/O Revision")) &&
-      //(isStrInList("Repository Revision")) &&
-      //(isStrInList(attributeNames, "file_contents")) &&
-      (isStrInList(attributeNames, "dipole_moment")) &&
-      (isStrInList(attributeNames, "written_by")) ){
+  if( //(hasAttribute(attributeNames, "mjd")) &&
+      (hasAttribute(attributeNames, "time_step")) &&
+      (hasAttribute(attributeNames, "time")) &&
+      //(hasAttribute(attributeNames, "tilt_angle")) &&
+      //(hasAttribute("I/O Revision")) &&
+      //(hasAttribute("Repository Revision")) &&
+      //(hasAttribute(attributeNames, "file_contents")) &&
+      (hasAttribute(attributeNames, "dipole_moment")) &&
+      (hasAttribute(attributeNames, "written_by")) ){
     isValidFile = true;
   }
 
@@ -97,12 +116,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   array_info_t xGrid_info = io->getArrayInfo("X_grid");  
   list<string> variables = io->getVariableNames();
   list<string> attributes = io->getAttributeNames();
-  io->close();
-  if (io){
-    delete io;
-    io = NULL;
-  }
-
 
   if(this->globalDims.size() == 0){
     this->globalDims.push_back( xGrid_info.localDims[2] ); // nip1
@@ -115,67 +128,32 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 		  << this->globalDims[2]);
   }
 
-  //FIXME:  Cleanup up below here. . . 
-
-  DeprecatedHdf4 f;
-  f.open(string(this->GetFileName()), IO::READ);
-  
-  float *X_grid;
-  int rank;
-  int *dims;
-  f.readVariable("X_grid", X_grid, rank, dims);
-  delete [] X_grid;
-  
-  map<string, double> metaDoubles;
-  map<string, float> metaFloats;
-  map<string, int> metaInts;
-  map<string, string> metaStrings;
-  
-  f.readMetaData(metaDoubles, metaFloats, metaInts, metaStrings);
-  
-  //Set Dimension Information in Class
-  if(this->globalDims.size() == 0)
-    {
-      this->globalDims.push_back( dims[2] );
-      this->globalDims.push_back( dims[1] );
-      this->globalDims.push_back( dims[0] );
-
-      vtkDebugMacro(<< "Dimensions: "
-		    << this->globalDims[0] << ", "
-		    << this->globalDims[1] << ", "
-		    << this->globalDims[2]);
-    }
-  //local dims no longer needed
-  delete [] dims;
-
   /********************************************************************/
   // Determine which variables are available to the GUI
   /********************************************************************/
 
   // Scalars
-  if (f.hasVariable("rho_"))
+  if (hasVariable(variables, "rho_"))
     addScalarInformation("rho_", "Plasma Density");
-  if (f.hasVariable("c_"))
+  if (hasVariable(variables, "c_"))
     addScalarInformation("c_", "Sound Speed");
   
   // Vectors
-  if (f.hasVariable("vx_") && f.hasVariable("vy_") && f.hasVariable("vz_"))
+  if (hasVariable(variables, "vx_") && hasVariable(variables, "vy_") && hasVariable(variables, "vz_"))
     addVectorInformation("vx_", "vy_", "vz_", "Velocity Vector");
-  if (f.hasVariable("bx_") && f.hasVariable("by_") && f.hasVariable("bz_"))
+  if (hasVariable(variables, "bx_") && hasVariable(variables, "by_") && hasVariable(variables, "bz_"))
     addVectorInformation("bx_", "by_", "bz_", "Magnetic Field Vector");
-  if (f.hasVariable("avgBx") && f.hasVariable("avgBy") && f.hasVariable("avgBz"))
+  if (hasVariable(variables, "avgBx") && hasVariable(variables, "avgBy") && hasVariable(variables, "avgBz"))
     addVectorInformation("avgBx", "avgBy", "avgBz", "Magnetic Field Vector (avg)");
 
   // Derived Quantities
-  if (f.hasVariable("ei_") && f.hasVariable("ej_") && f.hasVariable("ek_"))
+  if (hasVariable(variables, "ei_") && hasVariable(variables, "ej_") && hasVariable(variables, "ek_"))
     addVectorInformation("ei_", "ej_", "ek_", "Electric Field Vector");
-  if (f.hasVariable("avgEi") && f.hasVariable("avgEj") && f.hasVariable("avgEk"))
+  if (hasVariable(variables, "avgEi") && hasVariable(variables, "avgEj") && hasVariable(variables, "avgEk"))
     addVectorInformation("avgEi", "avgEj", "avgEk", "Electric Field Vector (avg)"); 
   // placeholder for calculating the Current vector.  See Pjcalc2.F from CISM_DX reader.
-  //if (f.hasVariable("bi_") && f.hasVariable("bj_") && f.hasVariable("bk_"))
+  //if (hasVariable(variables, "bi_") && hasVariable(variables, "bj_") && hasVariable(variables, "bk_"))
   //  addVectorInformation("bi_", "bj_", "bk_", "Current Vector");
-  
-  f.close();
   
   /********************************************************************/
   // Set WHOLE_EXTENT
@@ -204,14 +182,22 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   /********************************************************************/
 
   // Currently 1 time step per file.  Append to a vector in case we want to extend this in the future.
-  if (metaDoubles.count(string("mjd")) != 0){
-    this->TimeStepValues.push_back( metaDoubles["mjd"] );
+  if (hasAttribute(attributes, "mjd")){
+    // modified julian date
+    double mjd;
+    io->readAttribute("mjd", mjd);      
+    this->TimeStepValues.push_back( mjd );
   }
-  else if (metaDoubles.count(string("time")) != 0){
+  else if (hasAttribute(attributes, "time")){
+    cout << "has time!!" << endl;
     // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
-    this->TimeStepValues.push_back( metaFloats["time"] );
+    //time = number of seconds since beginning of simluation    
+    float time;
+    io->readAttribute("time", time);
+    this->TimeStepValues.push_back( time );
   }
   else{
+    cout << "gulp. has nothing." << endl;
     vtkWarningMacro("Could not find time information in file (attribute \"mjd\" or \"time\")! Defaulting to 0.0");
     this->TimeStepValues.push_back( 0.0 );
   }
@@ -232,6 +218,12 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
                 << "TimeStepValues=" << this->TimeStepValues[0] << " " << this->TimeStepValues[1] << endl
                 << "timeRange[0]=" << timeRange[0] <<" timeRange[1]=" << timeRange[1]);
   
+  io->close();
+  if (io){
+    delete io;
+    io = NULL;
+  }
+
   return 1; 
 }
 
@@ -300,22 +292,24 @@ int vtkLFMReader::RequestData(vtkInformation* request,
    * http://www.paraview.org/pipermail/paraview/2009-July/012750.html
    */
   output->SetDimensions(ni, njp2, nkp1);
-  
-  DeprecatedHdf4 f;
-  f.open(string(this->GetFileName()), IO::READ);
+
+
+  Io *io = Io::extensionSelector("hdf");
+  io->openRead(string( this->GetFileName() ));
+  array_info_t lfmGridInfo = io->getArrayInfo("X_grid");  
+
+  const int nPoints = lfmGridInfo.globalDims[0] * lfmGridInfo.globalDims[1] * lfmGridInfo.globalDims[2];
 
   /*******************
    * Set grid points *
    ****************************************************************************/
-  
-  int rank;
-  int *dims = NULL;  
-  float *X_grid = NULL;    
-  f.readVariable("X_grid", X_grid, rank, dims);   delete []dims;
-  float *Y_grid = NULL;
-  f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
-  float *Z_grid = NULL;
-  f.readVariable("Z_grid", Z_grid, rank, dims);   delete []dims;        
+    
+  float *X_grid = new float [nPoints];
+  io->readVariable("X_grid", "", lfmGridInfo, X_grid);
+  float *Y_grid = new float [nPoints];
+  io->readVariable("Y_grid", "", lfmGridInfo, Y_grid);
+  float *Z_grid = new float [nPoints];
+  io->readVariable("Z_grid", "", lfmGridInfo, Z_grid);
 
   vtkPoints *points = point2CellCenteredGrid(nip1,njp1,nkp1,  X_grid,Y_grid,Z_grid);
   output->SetPoints(points);
@@ -331,8 +325,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   //Density Selective Read
   if(this->CellArrayStatus[describeVariable["rho_"]]){
     vtkDebugMacro(<<"Plasma Density Selected");
-    float *rho = NULL;
-    f.readVariable("rho_",   rho,    rank, dims);  delete []dims;   
+    float *rho = new float [nPoints];
+    io->readVariable("rho_", "", lfmGridInfo, rho);
     
     if(rho != NULL){
       vtkFloatArray *cellScalar_rho = NULL;
@@ -349,8 +343,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   //Sound Speed Selective Read
   if(this->CellArrayStatus[describeVariable["c_"]]){
     vtkDebugMacro(<< "Sound Speed Selected");
-    float *c = NULL;
-    f.readVariable("c_",     c,      rank, dims);  delete []dims;    
+    float *c = new float [nPoints];
+    io->readVariable("c_", "", lfmGridInfo, c);
     if(c != NULL){
       vtkFloatArray *cellScalar_c = NULL;
       cellScalar_c = point2CellCenteredScalar(nip1,njp1,nkp1, c);
@@ -370,12 +364,12 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   //Velocity Selective Read
   if(this->CellArrayStatus[describeVariable["vx_"]]){
     vtkDebugMacro(<< "Velocity Selected");    
-    float *vx = NULL;
-    float *vy = NULL;
-    float *vz = NULL;    
-    f.readVariable("vx_",    vx,     rank, dims);   delete []dims;
-    f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
-    f.readVariable("vz_",    vz,     rank, dims);   delete []dims;
+    float *vx = new float [nPoints];
+    float *vy = new float [nPoints];
+    float *vz = new float [nPoints];
+    io->readVariable("vx_", "", lfmGridInfo, vx);
+    io->readVariable("vy_", "", lfmGridInfo, vy);
+    io->readVariable("vz_", "", lfmGridInfo, vz);
 
     if(vx != NULL && vy != NULL && vz != NULL){
       vtkFloatArray *cellVector_v = NULL;
@@ -396,12 +390,12 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   //Magnetic Field Selective Read
   if(this->CellArrayStatus[describeVariable["bx_"]]){
     vtkDebugMacro(<< "Magnetic Field Vector Selected");    
-    float *bx = NULL;
-    float *by = NULL;
-    float *bz = NULL;
-    f.readVariable("bx_",    bx,     rank, dims);   delete []dims;
-    f.readVariable("by_",    by,     rank, dims);   delete []dims;
-    f.readVariable("bz_",    bz,     rank, dims);   delete []dims;
+    float *bx = new float [nPoints];
+    float *by = new float [nPoints];
+    float *bz = new float [nPoints];
+    io->readVariable("bx_", "", lfmGridInfo, bx);
+    io->readVariable("by_", "", lfmGridInfo, by);
+    io->readVariable("bz_", "", lfmGridInfo, bz);
     // Magnetic Field      
     if(bx != NULL && by != NULL && bz != NULL){
       vtkFloatArray *cellVector_b = NULL;
@@ -421,12 +415,13 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   //Averaged Magnetic Field Selective Read
   if(this->CellArrayStatus[describeVariable["avgBx"]]){
     vtkDebugMacro(<< "Averaged Magnetic Field Vector Selected");     
-    float *avgbz = NULL;
-    float *avgby = NULL;
-    float *avgbx = NULL;
-      f.readVariable("avgBx",    avgbx,     rank, dims);   delete []dims;
-    f.readVariable("avgBy",    avgby,     rank, dims);   delete []dims;
-    f.readVariable("avgBz",    avgbz,     rank, dims);   delete []dims;
+    float *avgbz = new float [nPoints];
+    float *avgby = new float [nPoints];
+    float *avgbx = new float [nPoints];
+    io->readVariable("avgBx", "", lfmGridInfo, avgbx);
+    io->readVariable("avgBy", "", lfmGridInfo, avgby);
+    io->readVariable("avgBz", "", lfmGridInfo, avgbz);
+
     if(avgbx != NULL && avgby != NULL && avgbz != NULL){
       vtkFloatArray *cellVector_avgb = NULL;
       cellVector_avgb = point2CellCenteredVector(nip1,njp1,nkp1, avgbx, avgby, avgbz);
@@ -445,19 +440,19 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   //Electric Field Selective Read
   if(this->CellArrayStatus[describeVariable["ei_"]]){
     vtkDebugMacro(<< "Electric Field vector Selected");
-    float *ei = NULL;
-    float *ej = NULL;
-    float *ek = NULL;
-    f.readVariable("ei_",   ei,   rank, dims);    delete []dims;
-    f.readVariable("ej_",   ej,   rank, dims);    delete []dims;
-    f.readVariable("ek_",   ek,   rank, dims);    delete []dims;    
+    float *ei = new float [nPoints];
+    float *ej = new float [nPoints];
+    float *ek = new float [nPoints];
+    io->readVariable("ei_", "", lfmGridInfo, ei);
+    io->readVariable("ej_", "", lfmGridInfo, ej);
+    io->readVariable("ek_", "", lfmGridInfo, ek);
 
     //Read Electric Field
     if(ei != NULL && ej != NULL && ek != NULL){
       vtkFloatArray *cellVector_e = NULL;  
-      float *ex = new float[nip1*njp1*nkp1];
-      float *ey = new float[nip1*njp1*nkp1];
-      float *ez = new float[nip1*njp1*nkp1];
+      float *ex = new float [nip1*njp1*nkp1];
+      float *ey = new float [nip1*njp1*nkp1];
+      float *ez = new float [nip1*njp1*nkp1];
       calculateElectricField(nip1,njp1,nkp1,
 			     X_grid,Y_grid,Z_grid,
 			     ei,ej,ek,
@@ -486,19 +481,18 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   if(this->CellArrayStatus[describeVariable["avgEi"]]){
     vtkDebugMacro(<< "Averaged Electric Field Vector Selected");
   
-    float *avgei = NULL;
-    float *avgej = NULL;
-    float *avgek = NULL;
-    
-    f.readVariable("avgEi",   avgei,      rank, dims);  delete []dims;
-    f.readVariable("avgEj",   avgej,      rank, dims);  delete []dims;
-    f.readVariable("avgEk",   avgek,      rank, dims);  delete []dims;
+    float *avgei = new float [nPoints];
+    float *avgej = new float [nPoints];
+    float *avgek = new float [nPoints];
+    io->readVariable("avgEi", "", lfmGridInfo, avgei);
+    io->readVariable("avgEj", "", lfmGridInfo, avgej);
+    io->readVariable("avgEk", "", lfmGridInfo, avgek);
     //Reading Averaged Electric Field
     if(avgei != NULL && avgej != NULL && avgek != NULL){
       vtkFloatArray *cellVector_avge = NULL;
-      float *avgEx = new float[nip1*njp1*nkp1];
-      float *avgEy = new float[nip1*njp1*nkp1];
-      float *avgEz = new float[nip1*njp1*nkp1];
+      float *avgEx = new float [nip1*njp1*nkp1];
+      float *avgEy = new float [nip1*njp1*nkp1];
+      float *avgEz = new float [nip1*njp1*nkp1];
       calculateElectricField(nip1,njp1,nkp1,
 			     X_grid,Y_grid,Z_grid,
 			     avgei,avgej,avgek,
@@ -527,8 +521,11 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   if (Y_grid){    delete [] Y_grid;    Y_grid = NULL;  }
   if (Z_grid){    delete [] Z_grid;    Z_grid = NULL;  }
     
-  dims = NULL;
-  f.close();
+  io->close();
+  if (io){
+    delete io;
+    io = NULL;
+  }
   
   return 1;
 }

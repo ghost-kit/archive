@@ -40,7 +40,6 @@ INCLUDE(${PARAVIEW_USE_FILE})
 ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
   SERVER_MANAGER_XML vtkLFMReader.xml
   SERVER_MANAGER_SOURCES vtkLFMReader.cxx 
-  SOURCES DeprecatedIo.h DeprecatedHdf4.h DeprecatedHdf4.C
   GUI_RESOURCE_FILES vtkLFMGUI.xml)
 
 Target_LINK_LIBRARIES(vtkLFMReader 

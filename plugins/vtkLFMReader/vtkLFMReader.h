@@ -10,7 +10,6 @@
 #include <vtksys/stl/string>
 #include <vtksys/stl/vector>
 #include <vtksys/stl/map>
-#include "DeprecatedHdf4.h"
 
 namespace GRID_SCALE
 {
