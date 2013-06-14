@@ -28,53 +28,66 @@ class cdfAttributeElement
 
 };
 
+//variable information
+class cdfVarInfo
+{
+public:
+    long dataType;
+    long varNum;
+    long numberElements;
+    long numDims;
+    long recVary;
+    long numRecords;
+    QString Name;
+    QVector<int> dimSizes;
+    QVector<int> dimVarys;
+};
+
+//variable dataset
 class cdfDataSet
 {
 public:
     cdfDataSet();
 
     QVector<QVariant> getData();
-    void addElement(QVariant item);
+    void addNextElement(QVariant item);
     void setVector(QVector<QVariant> vector);
 
     void clean();
 
     int getDataType() const;
-    void setDataType(int value);
 
     QString getName() const;
-    void setName(const QString &value);
 
     int getDataDims() const;
-    void setDataDims(int value);
+
+    long getNumberElements() const;
 
     QVector<int> getExtents() const;
-    void setExtents(const QVector<int> &value);
 
     int getMajority() const;
     void setMajority(int value);
 
-    long getNumberElements() const;
-    void setNumberElements(long value);
-
     QVariant getInvalidData() const;
     void setInvalidData(const QVariant &value);
+
+
+    cdfVarInfo getVarInfo() const;
+    void setVarInfo(const cdfVarInfo &value);
 
 protected:
     //data returned from cdf call
     QVector<QVariant> data;
-    int dataType;
-    QString Name;
-    int dataDims;
-    QVector<int> Extents;
-    int majority;
-    long numberElements;
-    QVariant invalidData;
+    cdfVarInfo varInfo;
 
+    long majority;
+    QVariant invalidData;
 
 private:
 };
 
+
+//data reader
 class cdfDataReader
 {
 public:
@@ -112,6 +125,11 @@ public:
     QVector<QVariant> getZVariableRecords(QString variable, int64_t startRecord, int64_t stopRecord);
     QVector<QVariant> getZVariableRecords(int64_t variable, int64_t startRecord, int64_t stopRecord);
 
+    cdfVarInfo getZVariableInformation(QString variable);
+    cdfVarInfo getZVariableInformation(int64_t variable);
+
+
+    //Handlers
     BadDataHandler *getBDHandler() const;
     void setBDHandler(BadDataHandler *value);
 
@@ -119,12 +137,12 @@ public:
     void setTFHandler(timeFitHandler *value);
 
 
+    //Helpers
     bool cToQVector(void *data, long dataSize, long dataType, QVector<QVariant> &vector);
 
     CDFid getFileId() const;
     void setFileId(const CDFid &value);
 
-    void cdfAllocateMemory(long dataType, void *&data, long numValues);
 protected:
     //File pointers
     QString FileName;
@@ -140,6 +158,8 @@ private:
     bool CDFstatusOK(CDFstatus status, bool suppress=false);
 
     bool containsBadData(QVector<QVariant> data, QVariant badValue);
+
+    void cdfAllocateMemory(long dataType, void *&data, long numValues);
 
     //polymorphic handlers
     BadDataHandler *BDHandler;

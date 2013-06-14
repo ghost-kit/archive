@@ -17,6 +17,25 @@
 
        </InputProperty>
 
+      <DoubleVectorProperty information_only="1"
+                            name="TimestepValues"
+                            repeatable="1">
+        <TimeStepsInformationHelper />
+        <Documentation>Available timestep values.</Documentation>
+      </DoubleVectorProperty>
+
+<!--            <DoubleVectorProperty command="getTimeRange"
+                                  name="TimeRangeInfo"
+                                  information_only="1"
+                                  number_of_elements="2"
+                                  repeatable="1">
+
+                <Documentation>
+                    Information on Time Range to Property panel
+                </Documentation>
+
+            </DoubleVectorProperty>-->
+
             <IntVectorProperty name="TimeFitHandler"
                                 command="SetTimeFitHandler"
                                 number_of_elements_per_command="1"
@@ -68,6 +87,7 @@
                                 number_of_elements = "3"
                                 panel_widget="SpaceCraftInfoProperties"
                                 label = ""
+                                information_property="TimeStepValues"
                                 panel_visibility = "default">
 
                 <Documentation>

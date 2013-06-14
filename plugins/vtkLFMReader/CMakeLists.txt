@@ -45,6 +45,7 @@ ADD_PARAVIEW_PLUGIN(vtkLFMReader "1.0"
 
 Target_LINK_LIBRARIES(vtkLFMReader 
   io
+  vtkhdf5
   ${IO_LIBRARIES}
 )
 

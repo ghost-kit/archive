@@ -43,7 +43,7 @@ class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm, 
 {
 
     typedef QMap<QString, QVector <QPair < QVariant, QPair<QString, QVariant > > > >   epochDataEntry;
-
+    typedef QMap< double, epochDataEntry > varDataEntry;
 public:
   static vtkSpaceCraftInfo *New();
   vtkTypeMacro(vtkSpaceCraftInfo,vtkTableAlgorithm)
@@ -56,6 +56,7 @@ public:
   void SetTimeFitHandler(int handler);
   void SetBadDataHandler(int handler);
   long getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch);
+  bool findEpochVar(cdfDataReader &cdfFile, QStringList &varsAvailable, QString &EpochVar);
 protected:
   vtkSpaceCraftInfo();
   ~vtkSpaceCraftInfo();
@@ -109,7 +110,7 @@ protected:
   //IN: DataSet IN: Epoch OUT: data OUT: bool success
   //NOTE: method will ADD TO the data list provided, not replace.
   bool getDataForEpoch(QString &DataSet, double Epoch, epochDataEntry  &data);
-
+  bool getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data);
 
   //------ gui attributes pannel ------//
 

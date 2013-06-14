@@ -264,20 +264,21 @@ void vtkSpaceCraftInfo::checkCDFstatus(CDFstatus status)
 void vtkSpaceCraftInfo::LoadCDFData()
 {
 
+    QVector<double> timeSteps;
+
     QMap<QString, QString>::Iterator iter;
     for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
     {
         std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
                   << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
 
-        //if not EPOCH, load the data THAT WE NEED
         for(int x =0; x < this->timeSteps.size(); x++)
         {
-            QString DataSet = this->CacheFileName.key(*iter);
-            double time = this->timeSteps[x];
-            //get the data
-            this->getDataForEpoch(DataSet, time, this->DataCache[DataSet][time]);
+            timeSteps.push_back(this->timeSteps[x]);
         }
+
+        QString DataSet = this->CacheFileName.key(*iter);
+        this->getDataForEpochList(DataSet, timeSteps, this->DataCache[DataSet]);
 
     }
 
@@ -342,7 +343,7 @@ void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileE
 //=========================================================================================//
 long vtkSpaceCraftInfo::getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch)
 {
-    QVector<DateTime>::ConstIterator i = qLowerBound(convertedFileEpoch.constBegin(), convertedFileEpoch.constEnd(), neededEpoch);
+    QVector<DateTime>::Iterator i = qLowerBound(convertedFileEpoch.begin(), convertedFileEpoch.end(), neededEpoch);
 
     //assign the values
     long indexOfFound;
@@ -378,33 +379,80 @@ long vtkSpaceCraftInfo::getNearestLowerIndex(DateTime &neededEpoch, QVector<Date
 }
 
 //=========================================================================================//
+bool vtkSpaceCraftInfo::findEpochVar(cdfDataReader &cdfFile, QStringList &varsAvailable, QString &EpochVar)
+{
+    //iterators
+    QStringList::Iterator SLiter;
+    bool found = false;
+
+    for(SLiter = varsAvailable.begin(); SLiter != varsAvailable.end(); ++SLiter)
+    {
+        cdfVarInfo variableInformation = cdfFile.getZVariableInformation(*SLiter);
+
+        if(variableInformation.dataType == CDF_EPOCH)
+        {
+            EpochVar = *SLiter;
+            found = true;
+
+            std::cerr << "FOUND EPOCH VARIABLE: " << EpochVar.toAscii().data() << std::endl;
+            break;
+        }
+
+    }
+
+    if(found == false)
+    {
+        std::cerr << "Could not find an EPOCH variable in Data Set" << std::endl;
+
+    }
+
+    return found;
+}
+
 bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch, epochDataEntry  &data)
 {
 
     //A Whole Mess of needed Variables...
     QVector<DateTime> FileEpochsAsDateTime;
     DateTime neededEpoch(requestedEpoch);
-    long indexOfFound;
+    long indexOfFound=1;
+    QString EpochVar;
 
+    //Data File
     cdfDataReader cdfFile(this->CacheFileName[DataSet]);
 
-    //link the handler and reader to each other
+    //link the handler and reader to each other (Required)
     this->BDhandler->setReader(&cdfFile);
     cdfFile.setBDHandler(this->BDhandler);
 
-    //get the Epoch data
-    cdfDataSet Epoch = cdfFile.getZVariable("Epoch");
-
-    //convert to Epoch Times
-    this->convertEpochToDateTime(FileEpochsAsDateTime, Epoch);
-
-    // get the next lowest time
-    indexOfFound = getNearestLowerIndex(neededEpoch, FileEpochsAsDateTime);
-
+    //get list of variables
     QStringList varsAvailable = cdfFile.getZVariableList();
+
+    //Find Epoch Variable
+    if(findEpochVar(cdfFile, varsAvailable, EpochVar))
+    {
+        //get the Epoch data
+        cdfDataSet Epoch = cdfFile.getZVariable(EpochVar.toAscii().data());
+
+        //convert to Epoch Times
+        this->convertEpochToDateTime(FileEpochsAsDateTime, Epoch);
+
+        // get the next lowest time
+        indexOfFound = getNearestLowerIndex(neededEpoch, FileEpochsAsDateTime);
+    }
+    else
+    {
+        std::cerr << "Could not find Epoch Var. Setting Index Found to 1" << std::endl;
+
+    }
 
     for(int c = 0; c < varsAvailable.size(); c++)
     {
+
+        cdfVarInfo varinfo = cdfFile.getZVariableInformation(varsAvailable[c]);
+
+        //skip the variable if it doesn't have the correct index.
+        if(varinfo.numRecords < indexOfFound) continue;
 
         //get the units
         QString Units;
@@ -414,28 +462,126 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
         cdfDataSet InData = cdfFile.getCorrectedZVariableRecord(c, indexOfFound);
         QVector<QVariant> dataSet = InData.getData();
 
-        //for now I am only dealing with single dimensional data
-        if(dataSet.size() <= 1)
+        QVector<QVariant>::Iterator iter;
+
+        //cycle through the items
+        for(iter = dataSet.begin(); iter != dataSet.end();)
         {
-            long numElements = InData.getNumberElements();
+            QPair<QVariant,QPair<QString, QVariant> > newElem;
+            newElem.first = *iter;
+            newElem.second.first = Units;
+            newElem.second.second = InData.getInvalidData();
+
+            data[InData.getName()].push_back(newElem);
+            ++iter;
+        }
+
+    }
+    return true;
+}
+
+//=========================================================================================//
+bool vtkSpaceCraftInfo::getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data)
+{
+    //we want to process an entire list of epochs at a time instead of just one
+
+    //A Whole Mess of needed Variables...
+    QVector<DateTime> FileEpochsAsDateTime;
+    QVector<long> indexListOfFound;
+    QString EpochVar;
+
+    //Data File
+    cdfDataReader cdfFile(this->CacheFileName[DataSet]);
+
+    //link the handler and reader to each other (Required)
+    this->BDhandler->setReader(&cdfFile);
+    cdfFile.setBDHandler(this->BDhandler);
+
+    //get list of variables
+    QStringList varsAvailable = cdfFile.getZVariableList();
+
+    //Find Epoch Variable
+    if(findEpochVar(cdfFile, varsAvailable, EpochVar))
+    {
+        //get the Epoch data
+        cdfDataSet Epoch = cdfFile.getZVariable(EpochVar.toAscii().data());
+
+        //convert to Epoch Times
+        this->convertEpochToDateTime(FileEpochsAsDateTime, Epoch);
+
+        // get the next lowest time for all epochs
+        for(int a =0; a < EpochList.size(); a++)
+        {
+            std:: cout << "EpochListEntry: " << EpochList[a] << std::endl;
+
+            DateTime neededEpoch(EpochList[a]);
+
+            indexListOfFound.push_back(getNearestLowerIndex(neededEpoch, FileEpochsAsDateTime));
+        }
+    }
+    else
+    {
+        std::cerr << "Could not find Epoch Var. Setting Index Found to 1" << std::endl;
+    }
+
+    QVector<long>::Iterator timeIter;
+
+    //get the data
+    for(int c = 0; c < varsAvailable.size(); c++)
+    {
+
+        cdfVarInfo varinfo = cdfFile.getZVariableInformation(varsAvailable[c]);
+
+        for(int v = 0; v < indexListOfFound.size(); v++)
+        {
+            //skip the variable if it doesn't have the correct index.
+            std::cout << "Time Iterator: " << indexListOfFound[v] << " numRecords: " << varinfo.numRecords << std::endl;
+            if(varinfo.numRecords < (indexListOfFound[v]))
+            {
+                std::cerr << "Failure..." << std::endl;
+                break;
+            }
+
+            //get the units
+            QString Units;
+            getCDFUnits(cdfFile, varsAvailable[c], Units);
+
+            //get the corrected value so the selected bad data handler will be applied
+            cdfDataSet InData = cdfFile.getCorrectedZVariableRecord(varsAvailable[c], indexListOfFound[v]);
+
+            std::cout << "Getting Variable: " << varsAvailable[c].toAscii().data() << " :index: " << indexListOfFound[v] << std::endl;
+
+            QVector<QVariant> dataSet = InData.getData();
+
             QVector<QVariant>::Iterator iter;
 
             //cycle through the items
-            for(iter = dataSet.begin(); iter != dataSet.end();)
-            {
-                for(int h=0; h < numElements; h++)
-                {
-                    QPair<QVariant,QPair<QString, QVariant> > newElem;
-                    newElem.first = *iter;
-                    newElem.second.first = Units;
-                    newElem.second.second = InData.getInvalidData();
 
-                    data[InData.getName()].push_back(newElem);
-                    ++iter;
+            for(int p =0; p < dataSet.size(); p++)
+            {
+                QPair<QVariant, QPair<QString, QVariant> >  newData;
+
+                newData.first = dataSet[p];
+                newData.second.first = Units;
+                newData.second.second = InData.getInvalidData();
+
+                QString varNameTmp = InData.getName();
+                if(dataSet.size() > 1)
+                {
+                    varNameTmp = varNameTmp + "_" + QVariant(p).toString();
+                    std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
                 }
+
+                data[EpochList[v]][varNameTmp].push_back(newData);
+                std::cout << "Inserting into " << DateTime(EpochList[v]).getDateTimeString() << std::endl;
+
+                ++iter;
             }
         }
+
     }
+
+
     return true;
 }
 

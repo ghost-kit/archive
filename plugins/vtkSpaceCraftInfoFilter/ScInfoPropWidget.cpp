@@ -32,7 +32,6 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
         return;
     }
 
-
     //URLs for CDAWeb
     this->baseURL = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1");
     this->dataViewSpacePhys = QString("/dataviews/sp_phys/");
