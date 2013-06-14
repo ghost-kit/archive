@@ -403,82 +403,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   //////////////////////
   // Point-centered data
-  vtkPoints *points = vtkPoints::New();
-  // Fix x-axis caps (nj++ in nose, nj++ in tail)
-  // close off grid (nk++)
-  points->SetNumberOfPoints(ni*njp2*nkp1);
-  
-  float xyz[3]={0.0, 0.0, 0.0};
-  
-  int offset = 0;
-  int oi = 0, oij = 0, oik = 0;
-  int oj = 0, ojk = 0, oijk = 0;
-  int ok = 0;
-  
-  
-  for (int k=0; k < nk; k++){
-    for (int j=0; j < nj; j++){
-      for (int i=0; i < ni; i++){
-        
-	//For speed efficiency, we calculate offsets once per loop.
-	//
-	//This Macro sets the values of offset, oi, oj, ok, oij, oik, ojk, oijk
-	//  for when you need access to the points at the corners of the cell.
-	//  The Above Mentioned variables MUST exist before calling this macro.
-        setFortranCellGridPointOffsetMacro;
-        
-        xyz[0] = cell8PointAverage(X_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
-        xyz[0] /= GRID_SCALE::ScaleFactor[GridScaleType];
-        
-        xyz[1] = cell8PointAverage(Y_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
-        xyz[1] /= GRID_SCALE::ScaleFactor[GridScaleType];
-        
-        xyz[2] = cell8PointAverage(Z_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
-        xyz[2] /= GRID_SCALE::ScaleFactor[GridScaleType];
-        
-        
-	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
-	//        offset = i + (j+1)*ni + k*ni*njp2;
-        points->SetPoint(ArrayOffset(i, j+1, k), xyz);
-      }
-    }
-  }
-  
-  vtkDebugMacro(<< "NumberOfPoints after mesh read: " << points->GetNumberOfPoints());
-  
-  // Fix x-axis singularity at j=0 and j=nj+1
-  int jAxis = 0;
-  double axisCoord[3] = {0.0, 0.0, 0.0};
-  xyz[1] = 0.0;
-  xyz[2] = 0.0;
-  for (int j=0; j < njp2; j+=njp1){
-    jAxis = max(1, min(nj, j));
-    for (int i=0; i < ni; i++){
-      xyz[0] = 0.0;
-      for (int k=0; k < nk; k++){	 
-	points->GetPoint(ArrayOffset(i, jAxis, k), axisCoord);
-	xyz[0] += (float) axisCoord[0];
-      }
-      xyz[0] /= float( nk );
-      for (int k=0; k < nk; k++){
-        points->SetPoint(ArrayOffset(i,j,k), xyz);
-      }
-    }
-  }
-  
-  for (int j=0; j < njp2; j++){
-    for (int i=0; i < ni; i++){
-      // Close off the grid.
-      points->SetPoint(i+ j*ni + nk*ni*njp2, points->GetPoint(i+j*ni));
-      
-      // Set periodic boundary
-      //points->SetPoint(i + j*ni + nkp1*ni*njp2, points->GetPoint(i + j*ni + 1*ni*njp2) );
-    }
-  }
-  
-  vtkDebugMacro(<< "NumberOfPoints after closing grid & setting periodic boundary: "
-                << points->GetNumberOfPoints());
-  
+  vtkPoints *points = point2CellCenteredGrid(nip1,njp1,nkp1,  X_grid,Y_grid,Z_grid);
   output->SetPoints(points);
   points->Delete();
 
@@ -512,30 +437,37 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   /*****************************
    * Cell-centered Vector data *
    ****************************************************************************/
+  // Velocity
   vtkFloatArray *cellVector_v = NULL;
+  if(vx != NULL && vy != NULL && vz != NULL){
+    cellVector_v = point2CellCenteredVector(nip1,njp1,nkp1, vx,vy,vz);
+    cellVector_v->SetName(GetDesc("vx_").c_str());
+    output->GetPointData()->AddArray(cellVector_v);
+    cellVector_v->Delete();
+  }
+
+  // Magnetic Field      
   vtkFloatArray *cellVector_b = NULL;
-  vtkFloatArray *cellVector_e = NULL;
-  vtkFloatArray *cellVector_be = NULL;
+  if(bx != NULL && by != NULL && bz != NULL){
+    cellVector_b = point2CellCenteredVector(nip1,njp1,nkp1, bx,by,bz);
+    cellVector_b->SetName(GetDesc("bx_").c_str());
+    output->GetPointData()->AddArray(cellVector_b);
+    cellVector_b->Delete();
+  }
+
+  // Time-Averaged Magnetic Field
   vtkFloatArray *cellVector_avgb = NULL;
+  if(avgbx != NULL && avgby != NULL && avgbz != NULL){
+    cellVector_avgb = point2CellCenteredVector(nip1,njp1,nkp1, avgbx, avgby, avgbz);
+    cellVector_avgb->SetName(GetDesc("avgBx").c_str());
+    output->GetPointData()->AddArray(cellVector_avgb);
+    cellVector_avgb->Delete();
+  }
+
   vtkFloatArray *cellVector_avge = NULL;
   
-  
-  //Read Velocity
-  if(vx != NULL && vy != NULL && vz != NULL){
-    cellVector_v = vtkFloatArray::New();
-    cellVector_v->SetName(GetDesc("vx_").c_str());
-    cellVector_v->SetNumberOfComponents(3);
-    cellVector_v->SetNumberOfTuples(ni*njp2*nkp1);
-  }
-  
-  //Read Magnetic Field
-  if(bx != NULL && by != NULL && bz != NULL){
-    cellVector_b = vtkFloatArray::New();
-    cellVector_b->SetName(GetDesc("bx_").c_str());
-    cellVector_b->SetNumberOfComponents(3);
-    cellVector_b->SetNumberOfTuples(ni*njp2*nkp1);
-  }
-  
+  vtkFloatArray *cellVector_e = NULL;
+  vtkFloatArray *cellVector_be = NULL;
   //Read Bijk Magnetic Field
   if(bi != NULL && bj != NULL && bk != NULL){
     cellVector_be = vtkFloatArray::New();
@@ -556,16 +488,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     //    cellScalar_volume->SetNumberOfComponents(1);
     //    cellScalar_volume->SetNumberOfTuples(ni*njp2*nkp1);        
   }
-  
-  
-  //Reading Averaged Magnetic Field
-  if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-    cellVector_avgb = vtkFloatArray::New();
-    cellVector_avgb->SetName(GetDesc("avgBx").c_str());
-    cellVector_avgb->SetNumberOfComponents(3);
-    cellVector_avgb->SetNumberOfTuples(ni*njp2*nkp1);
-  }
-  
+    
   //Reading Averaged Electric Field
   if(avgei != NULL && avgej != NULL && avgek != NULL){
     cellVector_avge = vtkFloatArray::New();
@@ -613,28 +536,15 @@ int vtkLFMReader::RequestData(vtkInformation* request,
 	//Store sound speed data
         if(c != NULL)
           cellScalar_c->SetTupleValue(offsetCell, &c[offsetData]);
-        
+                               
 	//--
-        
-	//Store Velocity Data
-        if(vx != NULL && vy != NULL && vz != NULL){
-          tuple[0] = vx[offsetData];
-          tuple[1] = vy[offsetData];
-          tuple[2] = vz[offsetData];
-          cellVector_v->SetTupleValue(offsetCell, tuple);
-	}
-        
-	//--
-        
-	//Store Magnetic Field data
-        if(bx != NULL && by != NULL && bz != NULL){
-          tuple[0] = bx[offsetData];
-          tuple[1] = by[offsetData];
-          tuple[2] = bz[offsetData];
-          cellVector_b->SetTupleValue(offsetCell, tuple);
-	}
-        
-	//--
+	float xyz[3]={0.0, 0.0, 0.0};
+	
+	int offset = 0;
+	int oi = 0, oij = 0, oik = 0;
+	int oj = 0, ojk = 0, oijk = 0;
+	int ok = 0;
+  
         
 	//Store Electric Field Data
 	//TODO: Implement Derived Quantities
@@ -692,17 +602,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           tuple[2] = bk[offsetData];
           cellVector_be->SetTupleValue(offsetCell, tuple);
 	}       
-        
-	//--
-        
-	//Store Averaged Magnetic Field Data
-        if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-          tuple[0] = avgbx[offsetData];
-          tuple[1] = avgby[offsetData];
-          tuple[2] = avgbz[offsetData];
-          cellVector_avgb->SetTupleValue(offsetCell, tuple);
-	}
-        
+
 	//--
         
 	//Store Averaged Electric Field Data
@@ -759,8 +659,9 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   // Fix x-axis singularity at j=0 and j=nj+1
   double tupleDbl[3];
   float rhoValue, cValue, volumeValue, avgEVvalue;
-  float vValue[3], bValue[3], eValue[3], beValue[3], avgBvalue[3], avgEvalue[3];
-  
+  float eValue[3], beValue[3], avgEvalue[3];
+
+  int jAxis;
   for (int j=0; j < njp2; j+=njp1){
     jAxis = max(1, min(nj, j));
     for (int i=0; i < ni; i++){
@@ -769,14 +670,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       volumeValue = 0.0;
       avgEVvalue = 0.0;
       
-      vValue[0] = 0.0;
-      vValue[1] = 0.0;
-      vValue[2] = 0.0;
-      
-      bValue[0] = 0.0;
-      bValue[1] = 0.0;
-      bValue[2] = 0.0;
-      
       beValue[0] = 0.0;
       beValue[1] = 0.0;
       beValue[2] = 0.0;
@@ -784,10 +677,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       eValue[0] = 0.0;
       eValue[1] = 0.0;
       eValue[2] = 0.0;
-      
-      avgBvalue[0] = 0.0;
-      avgBvalue[1] = 0.0;
-      avgBvalue[2] = 0.0;
       
       avgEvalue[0] = 0.0;
       avgEvalue[1] = 0.0;
@@ -805,24 +694,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cellScalar_c->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
           cValue += (float) tupleDbl[0];
 	}
-        
-        
-	//Fix Velocity
-        if(vx != NULL && vy != NULL && vz != NULL){
-          cellVector_v->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
-          vValue[0] += (float) tupleDbl[0];
-          vValue[1] += (float) tupleDbl[1];
-          vValue[2] += (float) tupleDbl[2];
-	}
-        
-	//Fix Magnetic Field
-        if(bx != NULL && by != NULL && bz != NULL){
-          cellVector_b->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
-          bValue[0] += (float) tupleDbl[0];
-          bValue[1] += (float) tupleDbl[1];
-          bValue[2] += (float) tupleDbl[2];
-	}
-        
+                
 	//Fix Electric Field
         if(ei != NULL && ej != NULL && ek != NULL){
           cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
@@ -841,15 +713,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           beValue[1] += (float) tupleDbl[1];
           beValue[2] += (float) tupleDbl[2];
 	}
-               
-	//Fix Average Magnetic Field
-        if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-          cellVector_avgb->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
-          avgBvalue[0] += (float) tupleDbl[0];
-          avgBvalue[1] += (float) tupleDbl[1];
-          avgBvalue[2] += (float) tupleDbl[2];
-	}
-        
+                       
 	//Fix Average Electric Field
         if(avgei != NULL && avgej != NULL && avgek != NULL){
           cellVector_avge->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
@@ -870,21 +734,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       //Adjust Sound Speed
       if(c != NULL)
         cValue /= float(nk);
-            
-      //Adjust Velocity
-      if(vx != NULL && vy != NULL && vz != NULL){
-        vValue[0] /= float(nk);
-        vValue[1] /= float(nk);
-        vValue[2] /= float(nk);
-      }
-      
-      //Adjust Magnetic Field
-      if(bx != NULL && by != NULL && bz != NULL){
-        bValue[0] /= float(nk);
-        bValue[1] /= float(nk);
-        bValue[2] /= float(nk);
-      }
-      
+                  
       //adjust Electric Field
       if(ei != NULL && ej != NULL && ek != NULL){
         eValue[0] /= float(nk);
@@ -893,14 +743,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         
         volumeValue /= float(nk);
       }
-      
-      //Adjust Averaged Magnetic Field
-      if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-        avgBvalue[0] /= float(nk);
-        avgBvalue[1] /= float(nk);
-        avgBvalue[2] /= float(nk);
-      }
-      
+            
       //Adjust Averaged Electric Field
       if(avgei != NULL && avgej != NULL && avgek != NULL){
         avgEvalue[0] /= float(nk);
@@ -918,17 +761,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         
         if(c != NULL)
           cellScalar_c->SetTupleValue(i + j*ni + k*ni*njp2, &cValue);
-        
-	//Vectors
-        if(vx != NULL && vy != NULL && vz != NULL)
-          cellVector_v->SetTupleValue(i + j*ni + k*ni*njp2, vValue);
-        
-        if(bx != NULL && by != NULL && bz != NULL)
-          cellVector_b->SetTupleValue(i + j*ni + k*ni*njp2, bValue);
-        
-        if(avgbx != NULL && avgby != NULL && avgbz != NULL)
-          cellVector_avgb->SetTupleValue(i + j*ni + k*ni*njp2, avgBvalue);
-        
+                                
         if(avgei != NULL && avgej != NULL && avgek != NULL){
           cellVector_avge->SetTupleValue(i + j*ni + k*ni*njp2, avgEvalue);
 	  //          cellScalar_volume->SetTupleValue(i + j*ni + k*ni*njp2, &avgEVvalue);
@@ -960,31 +793,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         cValue = (float) tupleDbl[0];
         cellScalar_c->SetTupleValue(i + j*ni +   nk*ni*njp2, &cValue);
       }
-      
-      
-      if(vx != NULL && vy != NULL && vz != NULL){
-        cellVector_v->GetTuple(i + j*ni, tupleDbl);
-        vValue[0] = (float) tupleDbl[0];
-        vValue[1] = (float) tupleDbl[1];
-        vValue[2] = (float) tupleDbl[2];
-        cellVector_v->SetTupleValue(i + j*ni +   nk*ni*njp2, vValue);
-      }
-      
-      if(bx != NULL && by != NULL && bz != NULL){
-        cellVector_b->GetTuple(i + j*ni, tupleDbl);
-        bValue[0] = (float) tupleDbl[0];
-        bValue[1] = (float) tupleDbl[1];
-        bValue[2] = (float) tupleDbl[2];
-        cellVector_b->SetTupleValue(i + j*ni +   nk*ni*njp2, bValue);
-      }
-      
-      if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-        cellVector_avgb->GetTuple(i + j*ni, tupleDbl);
-        avgBvalue[0] = (float) tupleDbl[0];
-        avgBvalue[1] = (float) tupleDbl[1];
-        avgBvalue[2] = (float) tupleDbl[2];
-        cellVector_avgb->SetTupleValue(i + j*ni + nk*ni*njp2, avgBvalue);
-      }            
       
       if(avgei != NULL && avgej != NULL && avgek != NULL){
         cellVector_avge->GetTuple(i + j*ni, tupleDbl);
@@ -1025,18 +833,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       //cellScalar_c->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
       //cValue = (float) tupleDbl[0];
       //cellScalar_c->SetTupleValue(i + j*ni + nkp1*ni*njp2, &cValue);
-      //
-      //cellVector_v->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //vValue[0] = (float) tupleDbl[0];
-      //vValue[1] = (float) tupleDbl[1];
-      //vValue[2] = (float) tupleDbl[2];
-      //cellVector_v->SetTupleValue(i + j*ni + nkp1*ni*njp2, vValue);
-      //
-      //cellVector_b->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //bValue[0] = (float) tupleDbl[0];
-      //bValue[1] = (float) tupleDbl[1];
-      //bValue[2] = (float) tupleDbl[2];
-      //cellVector_b->SetTupleValue(i + j*ni + nkp1*ni*njp2, bValue);
     }
   }  
   
@@ -1051,25 +847,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     output->GetPointData()->AddArray(cellScalar_c);
     cellScalar_c->Delete();
   }
-  
-  //Commit Velocity
-  if(vx != NULL && vy != NULL && vz != NULL){
-    output->GetPointData()->AddArray(cellVector_v);
-    cellVector_v->Delete();
-  }
-  
-  //Commit Magnetic Field
-  if(bx != NULL && by != NULL && bz != NULL){
-    output->GetPointData()->AddArray(cellVector_b);
-    cellVector_b->Delete();
-  }
-  
-  //Commit Averaged Magnetic Field
-  if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-    output->GetPointData()->AddArray(cellVector_avgb);
-    cellVector_avgb->Delete();
-  }
-  
+        
   //Commit Averaged Electric Field
   if(avgei != NULL && avgej != NULL && avgek != NULL){
     output->GetPointData()->AddArray(cellVector_avge);
@@ -1251,4 +1029,186 @@ void vtkLFMReader::PrintSelf(ostream &os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os, indent);
   os << indent << "vtkLFMReader says \"Hello, World!\" " << "\n";
+}
+
+//----------------------------------------------------------------
+
+vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
+						const float const *X_grid, const float const *Y_grid, const float const *Z_grid)
+{
+  const int ni = nip1-1;
+  const int nim1 = ni-1;
+
+  const int njp2 = njp1+1;
+  const int nj = njp1-1;
+
+  const int nkp2 = nkp1+1;
+  const int nk = nkp1-1;
+
+  vtkPoints *points = vtkPoints::New();
+
+  // Fix x-axis caps (nj++ in nose, nj++ in tail)
+  // close off grid (nk++)
+  points->SetNumberOfPoints(ni*njp2*nkp1);
+  
+  float xyz[3]={0.0, 0.0, 0.0};
+  
+  int offset = 0;
+  int oi = 0, oij = 0, oik = 0;
+  int oj = 0, ojk = 0, oijk = 0;
+  int ok = 0;
+  
+  
+  for (int k=0; k < nk; k++){
+    for (int j=0; j < nj; j++){
+      for (int i=0; i < ni; i++){
+        
+	//For speed efficiency, we calculate offsets once per loop.
+	//
+	//This Macro sets the values of offset, oi, oj, ok, oij, oik, ojk, oijk
+	//  for when you need access to the points at the corners of the cell.
+	//  The Above Mentioned variables MUST exist before calling this macro.
+        setFortranCellGridPointOffsetMacro;
+        
+        xyz[0] = cell8PointAverage(X_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
+        xyz[0] /= GRID_SCALE::ScaleFactor[GridScaleType];
+        
+        xyz[1] = cell8PointAverage(Y_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
+        xyz[1] /= GRID_SCALE::ScaleFactor[GridScaleType];
+        
+        xyz[2] = cell8PointAverage(Z_grid, offset, oi, oj, ok, oij, ojk, oik, oijk);
+        xyz[2] /= GRID_SCALE::ScaleFactor[GridScaleType];
+        
+        
+	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
+	//        offset = i + (j+1)*ni + k*ni*njp2;
+        points->SetPoint(ArrayOffset(i, j+1, k), xyz);
+      }
+    }
+  }
+  
+  vtkDebugMacro(<< "NumberOfPoints after mesh read: " << points->GetNumberOfPoints());
+  
+  // Fix x-axis singularity at j=0 and j=nj+1
+  int jAxis = 0;
+  double axisCoord[3] = {0.0, 0.0, 0.0};
+  xyz[1] = 0.0;
+  xyz[2] = 0.0;
+  for (int j=0; j < njp2; j+=njp1){
+    jAxis = max(1, min(nj, j));
+    for (int i=0; i < ni; i++){
+      xyz[0] = 0.0;
+      for (int k=0; k < nk; k++){	 
+	points->GetPoint(ArrayOffset(i, jAxis, k), axisCoord);
+	xyz[0] += (float) axisCoord[0];
+      }
+      xyz[0] /= float( nk );
+      for (int k=0; k < nk; k++){
+        points->SetPoint(ArrayOffset(i,j,k), xyz);
+      }
+    }
+  }
+  
+  for (int j=0; j < njp2; j++){
+    for (int i=0; i < ni; i++){
+      // Close off the grid.
+      points->SetPoint(i+ j*ni + nk*ni*njp2, points->GetPoint(i+j*ni));
+      
+      // Set periodic boundary
+      //points->SetPoint(i + j*ni + nkp1*ni*njp2, points->GetPoint(i + j*ni + 1*ni*njp2) );
+    }
+  }
+  
+  vtkDebugMacro(<< "NumberOfPoints after closing grid & setting periodic boundary: "
+                << points->GetNumberOfPoints());
+
+  return points;
+}
+
+//----------------------------------------------------------------
+vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
+						      const float const *xData, const float const *yData, const float const *zData)
+{
+  const int ni = nip1-1;
+  const int nim1 = ni-1;
+
+  const int njp2 = njp1+1;
+  const int nj = njp1-1;
+
+  const int nkp2 = nkp1+1;
+  const int nk = nkp1-1;
+
+  vtkFloatArray *data = vtkFloatArray::New();
+  data->SetNumberOfComponents(3);
+  data->SetNumberOfTuples(ni*njp2*nkp1);
+
+  // Store values in VTK objects:
+  
+  int offsetData, offsetCell;
+  float tuple[3];
+  
+  for (int k=0; k < nk; k++){
+    for (int j=0; j < nj; j++){
+      for (int i=0; i < ni; i++){
+        
+        offsetData = i + j*nip1 + k*nip1*njp1;
+        
+	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
+        offsetCell = i + (j+1)*ni   + k*ni*njp2;
+        
+	//Store Velocity Data
+	tuple[0] = xData[offsetData];
+	tuple[1] = yData[offsetData];
+	tuple[2] = zData[offsetData];
+	data->SetTupleValue(offsetCell, tuple);
+      }
+    }
+  }
+  
+  // Fix x-axis singularity at j=0 and j=nj+1
+  double tupleDbl[3];
+
+  int jAxis;
+  for (int j=0; j < njp2; j+=njp1){
+    jAxis = max(1, min(nj, j));
+    for (int i=0; i < ni; i++){
+      tuple[0] = 0.0;
+      tuple[1] = 0.0;
+      tuple[2] = 0.0;
+
+      for (int k=0; k < nk; k++){        
+	data->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
+	tuple[0] += (float) tupleDbl[0];
+	tuple[1] += (float) tupleDbl[1];
+	tuple[2] += (float) tupleDbl[2];
+      }
+      tuple[0] /= float(nk);
+      tuple[1] /= float(nk);
+      tuple[2] /= float(nk);
+      
+      for (int k=0; k < nk; k++){
+	data->SetTupleValue(i + j*ni + k*ni*njp2, tuple);
+      }
+    }
+  }
+  
+  for (int j=0; j < njp2; j++){
+    for (int i=0; i < ni; i++){
+      // Close off the grid
+      data->GetTuple(i + j*ni, tupleDbl);
+      tuple[0] = (float) tupleDbl[0];
+      tuple[1] = (float) tupleDbl[1];
+      tuple[2] = (float) tupleDbl[2];
+      data->SetTupleValue(i + j*ni +   nk*ni*njp2, tuple);
+      
+      // FIXME: Set periodic cells:
+      //data->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
+      //tuple[0] = (float) tupleDbl[0];
+      //tuple[1] = (float) tupleDbl[1];
+      //tuple[2] = (float) tupleDbl[2];
+      //data->SetTupleValue(i + j*ni + nkp1*ni*njp2, tuple);
+    }
+  }
+
+  return data;
 }

@@ -5,6 +5,8 @@
 #include "vtkDelimitedTextReader.h"
 #include "vtkToolkits.h"
 #include "vtkPolyDataAlgorithm.h"
+#include "vtkFloatArray.h"
+
 #include <vtksys/stl/string>
 #include <vtksys/stl/vector>
 #include <vtksys/stl/map>
@@ -252,7 +254,8 @@ protected:
     //This method calculates the cell centered value for the 8 points at the corners
     //  This macro works with, but does not require the setCellGridPointOffsetMacro.
     //  Use the offset macro if you are using Fortran Arrays in C/C++
-  inline float cell8PointAverage(float *array, int o1, int o2, int o3, int o4, int o5, int o6, int o7, int o8) 
+  inline float cell8PointAverage(const float const *array, 
+				 const int &o1, const int &o2, const int &o3, const int &o4, const int &o5, const int &o6, const int &o7, const int &o8) 
   {
   return ((array[o1]  +  array[o2]  +  array[o3]  +  array[o4]  +
            array[o5]  +  array[o6]  +  array[o7]  +  array[o8])/8.0);
@@ -274,6 +277,13 @@ protected:
 private:
   vtkLFMReader(const vtkLFMReader&); // Not implemented
   void operator=(const vtkLFMReader&); // Not implemented
+
+  vtkPoints *point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
+				    const float const *X_grid, const float const *Y_grid, const float const *Z_grid);
+
+  vtkFloatArray *point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
+				    const float const *xData, const float const *yData, const float const *zData);
+
 };
 
 #endif
