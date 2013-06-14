@@ -281,9 +281,12 @@ private:
   vtkPoints *point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
 				    const float const *X_grid, const float const *Y_grid, const float const *Z_grid);
 
+
+  vtkFloatArray *point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float const *data);
+
+
   vtkFloatArray *point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
 				    const float const *xData, const float const *yData, const float const *zData);
-
 };
 
 #endif

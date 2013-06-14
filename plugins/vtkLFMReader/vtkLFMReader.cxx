@@ -411,27 +411,21 @@ int vtkLFMReader::RequestData(vtkInformation* request,
    * Cell-centered scalar data *
    ****************************************************************************/
   vtkFloatArray *cellScalar_rho = NULL;
-  vtkFloatArray *cellScalar_c = NULL;
-  //  vtkFloatArray *cellScalar_volume = NULL;
-  
-  
-  
-  //If we don't want to read the variables, DON'T allocate the space!
-  
   //Read Desnity
   if(rho != NULL){
-    cellScalar_rho = vtkFloatArray::New();
+    cellScalar_rho = point2CellCenteredScalar(nip1,njp1,nkp1, rho);
     cellScalar_rho->SetName(GetDesc("rho_").c_str());
-    cellScalar_rho->SetNumberOfComponents(1);
-    cellScalar_rho->SetNumberOfTuples(ni*njp2*nkp1);
+    output->GetPointData()->AddArray(cellScalar_rho);
+    cellScalar_rho->Delete();
   }
   
+  vtkFloatArray *cellScalar_c = NULL;
   //Read Sound Speed
   if(c != NULL){
-    cellScalar_c = vtkFloatArray::New();
+    cellScalar_c = point2CellCenteredScalar(nip1,njp1,nkp1, c);
     cellScalar_c->SetName(GetDesc("c_").c_str());
-    cellScalar_c->SetNumberOfComponents(1);
-    cellScalar_c->SetNumberOfTuples(ni*njp2*nkp1);
+    output->GetPointData()->AddArray(cellScalar_c);
+    cellScalar_c->Delete();
   }
   
   /*****************************
@@ -481,12 +475,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_e = vtkFloatArray::New();
     cellVector_e->SetName(GetDesc("ei_").c_str());
     cellVector_e->SetNumberOfComponents(3);
-    cellVector_e->SetNumberOfTuples(ni*njp2*nkp1);
-    
-    //    cellScalar_volume = vtkFloatArray::New();
-    //    cellScalar_volume->SetName("Cell Volume");
-    //    cellScalar_volume->SetNumberOfComponents(1);
-    //    cellScalar_volume->SetNumberOfTuples(ni*njp2*nkp1);        
+    cellVector_e->SetNumberOfTuples(ni*njp2*nkp1);   
   }
     
   //Reading Averaged Electric Field
@@ -495,14 +484,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     cellVector_avge->SetName(GetDesc("avgEi").c_str());
     cellVector_avge->SetNumberOfComponents(3);
     cellVector_avge->SetNumberOfTuples(ni*njp2*nkp1);
-    
-    //    if(!cellScalar_volume)
-    //      {
-    //      cellScalar_volume = vtkFloatArray::New();
-    //      cellScalar_volume->SetName("Electric Field Volume (avg)");
-    //      cellScalar_volume->SetNumberOfComponents(1);
-    //      cellScalar_volume->SetNumberOfTuples(ni*njp2*nkp1);
-    //      }
   }
   
   
@@ -524,19 +505,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         
 	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
         offsetCell = i + (j+1)*ni   + k*ni*njp2;
-        
-	//--
-        
-	//Store Density Data
-        if(rho != NULL)
-          cellScalar_rho->SetTupleValue(offsetCell, &rho[offsetData]);
-        
-	//--
-        
-	//Store sound speed data
-        if(c != NULL)
-          cellScalar_c->SetTupleValue(offsetCell, &c[offsetData]);
-                               
+                                               
 	//--
 	float xyz[3]={0.0, 0.0, 0.0};
 	
@@ -572,8 +541,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
 	  // Volume of parallelpiped determined by vectors A,B,C is
 	  // the magnitude of triple scalar product |a.(bxc)|
           tuple[0] = fabs(p_tripple(cx, cy, cz));
-          
-	  //          cellScalar_volume->SetTupleValue(offsetCell, &tuple[0]);
           
 	  // Now calculate electric field through cell centre
           
@@ -633,9 +600,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
 	  // the magnitude of triple scalar product |a.(bxc)|
           tuple[0] = fabs(p_tripple(cx, cy, cz));
           
-	  //          cellScalar_volume->SetTupleValue(offsetCell, &tuple[0]);
-          
-          
 	  // Now calculate electric field through cell centre
           
 	  // <ei,ej,ek> = electric field along edge of cells
@@ -683,27 +647,12 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       avgEvalue[2] = 0.0;
                   
       for (int k=0; k < nk; k++){        
-	//Fix Density
-        if(rho != NULL){
-	  cellScalar_rho->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-          rhoValue += (float) tupleDbl[0];
-	}
-        
-	//Fix Sound Speed
-        if(c != NULL){
-          cellScalar_c->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-          cValue += (float) tupleDbl[0];
-	}
-                
 	//Fix Electric Field
         if(ei != NULL && ej != NULL && ek != NULL){
           cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
           eValue[0] += (float) tupleDbl[0];
           eValue[1] += (float) tupleDbl[1];
           eValue[2] += (float) tupleDbl[2];
-          
-	  //          cellScalar_volume->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-	  //          volumeValue += (float) tupleDbl[0];
 	}
         
 	//Fix Bijk Field
@@ -719,11 +668,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
           cellVector_avge->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
           avgEvalue[0] += (float) tupleDbl[0];
           avgEvalue[1] += (float) tupleDbl[1];
-          avgEvalue[2] += (float) tupleDbl[2];
-          
-	  //          cellScalar_volume->GetTuple(i+jAxis*ni + k*ni*njp2, tupleDbl);
-	  //          avgEVvalue += (float) tupleDbl[0];
-          
+          avgEvalue[2] += (float) tupleDbl[2];                    
 	}
       }
       
@@ -756,19 +701,11 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       for (int k=0; k < nk; k++){
 	//Commit Fixes
 	//Scalars
-        if(rho != NULL)
-          cellScalar_rho->SetTupleValue(i + j*ni + k*ni*njp2, &rhoValue);
-        
-        if(c != NULL)
-          cellScalar_c->SetTupleValue(i + j*ni + k*ni*njp2, &cValue);
-                                
         if(avgei != NULL && avgej != NULL && avgek != NULL){
           cellVector_avge->SetTupleValue(i + j*ni + k*ni*njp2, avgEvalue);
-	  //          cellScalar_volume->SetTupleValue(i + j*ni + k*ni*njp2, &avgEVvalue);
 	}
         if(ei != NULL && ej != NULL && ek != NULL){
           cellVector_e->SetTupleValue(i + j*ni + k*ni*njp2, eValue);
-	  //          cellScalar_volume->SetTupleValue(i + j*ni + k*ni*njp2, &volumeValue);
         }
         if(bi != NULL && bj != NULL && bk != NULL)
           cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);          
@@ -780,29 +717,13 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   
   for (int j=0; j < njp2; j++){
     for (int i=0; i < ni; i++){
-      // Close off the grid
-      
-      if(rho != NULL){
-        cellScalar_rho->GetTuple(i + j*ni, tupleDbl);
-        rhoValue = (float) tupleDbl[0];
-        cellScalar_rho->SetTupleValue(i + j*ni +   nk*ni*njp2, &rhoValue);
-      }
-      
-      if(c != NULL){
-        cellScalar_c->GetTuple(i + j*ni, tupleDbl);
-        cValue = (float) tupleDbl[0];
-        cellScalar_c->SetTupleValue(i + j*ni +   nk*ni*njp2, &cValue);
-      }
-      
+      // Close off the grid      
       if(avgei != NULL && avgej != NULL && avgek != NULL){
         cellVector_avge->GetTuple(i + j*ni, tupleDbl);
         avgEvalue[0] = (float) tupleDbl[0];
         avgEvalue[1] = (float) tupleDbl[1];
         avgEvalue[2] = (float) tupleDbl[2];
         cellVector_avge->SetTupleValue(i + j*ni + nk*ni*njp2, avgEvalue);                
-	//        cellScalar_volume->GetTuple(i + j*ni, tupleDbl);
-	//        avgEVvalue = (float)tupleDbl[0];
-	//        cellScalar_volume->SetTupleValue(i + j*ni + nk*ni*njp2, &avgEVvalue);
       }
       
       if(ei != NULL && ej != NULL && ek != NULL){
@@ -811,10 +732,6 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         eValue[1] = (float) tupleDbl[1];
         eValue[2] = (float) tupleDbl[2];
         cellVector_e->SetTupleValue(i + j*ni +   nk*ni*njp2, eValue);
-        
-	//        cellScalar_volume->GetTuple(i + j*ni, tupleDbl);
-	//        volumeValue = (float)tupleDbl[0];
-	//        cellScalar_volume->SetTupleValue(i + j*ni + nk*ni*njp2, &volumeValue);
       }
       
       if(bi != NULL && bj!= NULL && bk != NULL){
@@ -824,30 +741,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
         beValue[2] = (float) tupleDbl[2];
         cellVector_be->SetTupleValue(i + j*ni +   nk*ni*njp2, beValue);
       }
-      
-      // FIXME: Set periodic cells:
-      //cellScalar_rho->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //rhoValue = (float) tupleDbl[0];
-      //cellScalar_rho->SetTupleValue(i + j*ni + nkp1*ni*njp2, &rhoValue);
-      //
-      //cellScalar_c->GetTuple(i + j*ni + 1*ni*njp2, tupleDbl);
-      //cValue = (float) tupleDbl[0];
-      //cellScalar_c->SetTupleValue(i + j*ni + nkp1*ni*njp2, &cValue);
     }
   }  
-  
-  //Commit Density
-  if(rho != NULL){
-    output->GetPointData()->AddArray(cellScalar_rho);
-    cellScalar_rho->Delete();
-  }
-  
-  //Commit Sound Speed
-  if(c != NULL){
-    output->GetPointData()->AddArray(cellScalar_c);
-    cellScalar_c->Delete();
-  }
-        
   //Commit Averaged Electric Field
   if(avgei != NULL && avgej != NULL && avgek != NULL){
     output->GetPointData()->AddArray(cellVector_avge);
@@ -1126,6 +1021,15 @@ vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1
 }
 
 //----------------------------------------------------------------
+
+vtkFloatArray *vtkLFMReader::point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float const *data)
+{
+  return point2CellCenteredVector(nip1,njp1,nkp1, data, NULL, NULL);
+}
+
+//----------------------------------------------------------------
+
+
 vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
 						      const float const *xData, const float const *yData, const float const *zData)
 {
@@ -1139,7 +1043,18 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
   const int nk = nkp1-1;
 
   vtkFloatArray *data = vtkFloatArray::New();
-  data->SetNumberOfComponents(3);
+  if (xData && yData && zData){
+    data->SetNumberOfComponents(3);
+    cout << "Found 3 components!" << endl;
+  }
+  //else if ( (xData && yData && not zData) ||
+  //	 (not xData && yData && zData) ||
+  //	 (xData && not yData && zData) ){
+  //  data->SetNumberOfComponents(2);
+  //}
+  else if ( (xData && not yData && not zData) ){
+    data->SetNumberOfComponents(1);
+  }
   data->SetNumberOfTuples(ni*njp2*nkp1);
 
   // Store values in VTK objects:
@@ -1149,8 +1064,7 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
   
   for (int k=0; k < nk; k++){
     for (int j=0; j < nj; j++){
-      for (int i=0; i < ni; i++){
-        
+      for (int i=0; i < ni; i++){        
         offsetData = i + j*nip1 + k*nip1*njp1;
         
 	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
@@ -1158,8 +1072,10 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
         
 	//Store Velocity Data
 	tuple[0] = xData[offsetData];
-	tuple[1] = yData[offsetData];
-	tuple[2] = zData[offsetData];
+	if (yData && zData){
+	  tuple[1] = yData[offsetData];
+	  tuple[2] = zData[offsetData];
+	}
 	data->SetTupleValue(offsetCell, tuple);
       }
     }
@@ -1179,12 +1095,16 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
       for (int k=0; k < nk; k++){        
 	data->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);       
 	tuple[0] += (float) tupleDbl[0];
-	tuple[1] += (float) tupleDbl[1];
-	tuple[2] += (float) tupleDbl[2];
+	if (yData && zData){
+	  tuple[1] += (float) tupleDbl[1];
+	  tuple[2] += (float) tupleDbl[2];
+	}
       }
       tuple[0] /= float(nk);
-      tuple[1] /= float(nk);
-      tuple[2] /= float(nk);
+	if (yData && zData){
+	  tuple[1] /= float(nk);
+	  tuple[2] /= float(nk);
+	}
       
       for (int k=0; k < nk; k++){
 	data->SetTupleValue(i + j*ni + k*ni*njp2, tuple);
@@ -1197,8 +1117,10 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
       // Close off the grid
       data->GetTuple(i + j*ni, tupleDbl);
       tuple[0] = (float) tupleDbl[0];
-      tuple[1] = (float) tupleDbl[1];
-      tuple[2] = (float) tupleDbl[2];
+      if (yData && zData){
+	tuple[1] = (float) tupleDbl[1];
+	tuple[2] = (float) tupleDbl[2];
+      }
       data->SetTupleValue(i + j*ni +   nk*ni*njp2, tuple);
       
       // FIXME: Set periodic cells:
