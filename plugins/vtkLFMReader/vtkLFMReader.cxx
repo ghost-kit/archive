@@ -222,12 +222,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
 
 //----------------------------------------------------------------
 
-/**
- * Note: We do nothing special with the periodic boundary on the grid
- * at z=0 and z=max! This discussion from the ParaView mailing list
- * suggests that there is littl we can do for now:
- * http://www.paraview.org/pipermail/paraview/2009-July/012750.html
- */
 int vtkLFMReader::RequestData(vtkInformation* request,
                               vtkInformationVector** inputVector,
                               vtkInformationVector* outputVector)
@@ -239,122 +233,7 @@ int vtkLFMReader::RequestData(vtkInformation* request,
   ///////////////////
   // Set sub extents
   ///////////////////
-  
-  //TODO: Implement Extent Restricted Read
-  DeprecatedHdf4 f;
-  f.open(string(this->GetFileName()), IO::READ);
-  
-  int rank;
-  int *dims = NULL;
-  
-  //grid points
-  float *X_grid = NULL;
-  float *Y_grid = NULL;
-  float *Z_grid = NULL;
-  
-  //scalar grids
-  float *rho = NULL;
-  float *c = NULL;
-  
-  //Vector Grids
-  float *vx = NULL;
-  float *vy = NULL;
-  float *vz = NULL;
-  
-  float *bx = NULL;
-  float *by = NULL;
-  float *bz = NULL;
-  
-  float *ei = NULL;
-  float *ej = NULL;
-  float *ek = NULL;
-  
-  float *bi = NULL;
-  float *bj = NULL;
-  float *bk = NULL;
-  
-  float *avgbz = NULL;
-  float *avgby = NULL;
-  float *avgbx = NULL;
-  
-  float *avgei = NULL;
-  float *avgej = NULL;
-  float *avgek = NULL;
-  
-  f.readVariable("X_grid", X_grid, rank, dims);   delete []dims;
-  f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
-  f.readVariable("Z_grid", Z_grid, rank, dims);   delete []dims;
-  
-  //Density Selective Read
-  if(this->CellArrayStatus[GetDesc("rho_")]){
-    vtkDebugMacro(<<"Plasma Desnity Selected");
-    f.readVariable("rho_",   rho,    rank, dims);  delete []dims;   
-  }
-  
-  //Sound Speed Selective Read
-  if(this->CellArrayStatus[GetDesc("c_")]){
-    vtkDebugMacro(<< "Sound Speed Selected");
-    f.readVariable("c_",     c,      rank, dims);  delete []dims;    
-  }
-  
-  //Velocity Selective Read
-  if(this->CellArrayStatus[GetDesc("vx_")]){
-    vtkDebugMacro(<< "Velocity Selected");    
-    f.readVariable("vx_",    vx,     rank, dims);   delete []dims;
-    f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
-    f.readVariable("vz_",    vz,     rank, dims);   delete []dims;
-  }
-  
-  //Magnetic Field Selective Read
-  if(this->CellArrayStatus[GetDesc("bx_")]){
-    vtkDebugMacro(<< "Magnetic Field Vector Selected");    
-    f.readVariable("bx_",    bx,     rank, dims);   delete []dims;
-    f.readVariable("by_",    by,     rank, dims);   delete []dims;
-    f.readVariable("bz_",    bz,     rank, dims);   delete []dims;
-  }
-  
-  //Electric Field Selective Read
-  if(this->CellArrayStatus[GetDesc("ei_")]){
-    vtkDebugMacro(<< "Electric Field vector Selected");
-    f.readVariable("ei_",   ei,   rank, dims);    delete []dims;
-    f.readVariable("ej_",   ej,   rank, dims);    delete []dims;
-    f.readVariable("ek_",   ek,   rank, dims);    delete []dims;    
-  }
-  
-  //Bijk
-  if(this->CellArrayStatus[GetDesc("bi_")]){
-    vtkDebugMacro(<<"Magnetic flux through the face vector selected");
-    f.readVariable("bi_",   bi,   rank, dims);    delete []dims;
-    f.readVariable("bj_",   bj,   rank, dims);    delete []dims;
-    f.readVariable("bk_",   bk,   rank, dims);    delete []dims;    
-  }
-  
-  //Averaged Magnetic Field Selective Read
-  if(this->CellArrayStatus[GetDesc("avgBx")]){
-    vtkDebugMacro(<< "Averaged Magnetic Field Vector Selected");    
-    f.readVariable("avgBx",    avgbx,     rank, dims);   delete []dims;
-    f.readVariable("avgBy",    avgby,     rank, dims);   delete []dims;
-    f.readVariable("avgBz",    avgbz,     rank, dims);   delete []dims;
-  }
-  
-  //Averaged E(ijk) Fields
-  if(this->CellArrayStatus[GetDesc("avgEi")]){
-    vtkDebugMacro(<< "Averaged Electric Field Vector Selected");
     
-    f.readVariable("avgEi",   avgei,      rank, dims);  delete []dims;
-    f.readVariable("avgEj",   avgej,      rank, dims);  delete []dims;
-    f.readVariable("avgEk",   avgek,      rank, dims);  delete []dims;
-  }
-  
-  dims = NULL;
-  f.close();
-  
-  
-  /*------------------------------------------*/
-  /*TODO: FIX SUB EXTENTS FOR PROPER READING  */
-  /*VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV*/
-  
-  
   const int nip1 = NI+1;
   const int ni = nip1-1;
   const int nim1 = ni-1;
@@ -374,14 +253,13 @@ int vtkLFMReader::RequestData(vtkInformation* request,
                 << subext[2] << ", " << subext[3] << ", "
                 << subext[4] << ", " << subext[5]); 
   
-  //Start getting file information
-  
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_EXTENT(), subext);
   
-  ///////////////////////////////////////////////////////////////////////////
-  //read that part of the data in from the file and put it in the output data
-  
+
+  /*************************
+   * Setup structured grid *
+   ****************************************************************************/  
   vtkStructuredGrid *output = 
     vtkStructuredGrid::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   
@@ -397,218 +275,245 @@ int vtkLFMReader::RequestData(vtkInformation* request,
     output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTime);
   }
 
-  // Fix x-axis caps (nj++ in nose, nj++ in tail)
-  // close off grid (nk++)
+  /* Note the funny dimensions:
+   *  - Fix x-axis caps (nj++ in nose, nj++ in tail)
+   *  - close off grid (nk++)
+   * 
+   * Note: We do nothing special with the periodic boundary on the
+   * grid at z=0 and z=max! This discussion from the ParaView mailing
+   * list suggests that there is little we can do for now:
+   * http://www.paraview.org/pipermail/paraview/2009-July/012750.html
+   */
   output->SetDimensions(ni, njp2, nkp1);
   
-  //////////////////////
-  // Point-centered data
+  DeprecatedHdf4 f;
+  f.open(string(this->GetFileName()), IO::READ);
+
+  /*******************
+   * Set grid points *
+   ****************************************************************************/
+  
+  int rank;
+  int *dims = NULL;  
+  float *X_grid = NULL;    
+  f.readVariable("X_grid", X_grid, rank, dims);   delete []dims;
+  float *Y_grid = NULL;
+  f.readVariable("Y_grid", Y_grid, rank, dims);   delete []dims;
+  float *Z_grid = NULL;
+  f.readVariable("Z_grid", Z_grid, rank, dims);   delete []dims;        
+
   vtkPoints *points = point2CellCenteredGrid(nip1,njp1,nkp1,  X_grid,Y_grid,Z_grid);
   output->SetPoints(points);
   points->Delete();
 
+  // Do not delete X_grid, Y_grid, Z_grid.  We may need them to
+  // calculate derived quantities (ie. electric field).
+
   /*****************************
    * Cell-centered scalar data *
    ****************************************************************************/
-  vtkFloatArray *cellScalar_rho = NULL;
-  //Read Desnity
-  if(rho != NULL){
-    cellScalar_rho = point2CellCenteredScalar(nip1,njp1,nkp1, rho);
-    cellScalar_rho->SetName(GetDesc("rho_").c_str());
-    output->GetPointData()->AddArray(cellScalar_rho);
-    cellScalar_rho->Delete();
+
+  //Density Selective Read
+  if(this->CellArrayStatus[GetDesc("rho_")]){
+    vtkDebugMacro(<<"Plasma Desnity Selected");
+    float *rho = NULL;
+    f.readVariable("rho_",   rho,    rank, dims);  delete []dims;   
+    
+    if(rho != NULL){
+      vtkFloatArray *cellScalar_rho = NULL;
+      cellScalar_rho = point2CellCenteredScalar(nip1,njp1,nkp1, rho);
+      cellScalar_rho->SetName(GetDesc("rho_").c_str());
+      output->GetPointData()->AddArray(cellScalar_rho);
+      cellScalar_rho->Delete();
+
+      delete [] rho;
+      rho = NULL;
+    }
   }
   
-  vtkFloatArray *cellScalar_c = NULL;
-  //Read Sound Speed
-  if(c != NULL){
-    cellScalar_c = point2CellCenteredScalar(nip1,njp1,nkp1, c);
-    cellScalar_c->SetName(GetDesc("c_").c_str());
-    output->GetPointData()->AddArray(cellScalar_c);
-    cellScalar_c->Delete();
+  //Sound Speed Selective Read
+  if(this->CellArrayStatus[GetDesc("c_")]){
+    vtkDebugMacro(<< "Sound Speed Selected");
+    float *c = NULL;
+    f.readVariable("c_",     c,      rank, dims);  delete []dims;    
+    if(c != NULL){
+      vtkFloatArray *cellScalar_c = NULL;
+      cellScalar_c = point2CellCenteredScalar(nip1,njp1,nkp1, c);
+      cellScalar_c->SetName(GetDesc("c_").c_str());
+      output->GetPointData()->AddArray(cellScalar_c);
+      cellScalar_c->Delete();
+
+      delete [] c;
+      c = NULL;
+    }
   }
   
   /*****************************
    * Cell-centered Vector data *
    ****************************************************************************/
   // Velocity
-  vtkFloatArray *cellVector_v = NULL;
-  if(vx != NULL && vy != NULL && vz != NULL){
-    cellVector_v = point2CellCenteredVector(nip1,njp1,nkp1, vx,vy,vz);
-    cellVector_v->SetName(GetDesc("vx_").c_str());
-    output->GetPointData()->AddArray(cellVector_v);
-    cellVector_v->Delete();
+  //Velocity Selective Read
+  if(this->CellArrayStatus[GetDesc("vx_")]){
+    vtkDebugMacro(<< "Velocity Selected");    
+    float *vx = NULL;
+    float *vy = NULL;
+    float *vz = NULL;    
+    f.readVariable("vx_",    vx,     rank, dims);   delete []dims;
+    f.readVariable("vy_",    vy,     rank, dims);   delete []dims;
+    f.readVariable("vz_",    vz,     rank, dims);   delete []dims;
+
+    if(vx != NULL && vy != NULL && vz != NULL){
+      vtkFloatArray *cellVector_v = NULL;
+      cellVector_v = point2CellCenteredVector(nip1,njp1,nkp1, vx,vy,vz);
+      cellVector_v->SetName(GetDesc("vx_").c_str());
+      output->GetPointData()->AddArray(cellVector_v);
+      cellVector_v->Delete();
+
+      delete [] vx;
+      vx = NULL;
+      delete [] vy;
+      vy = NULL;
+      delete [] vz;
+      vz = NULL;
+    }
   }
 
-  // Magnetic Field      
-  vtkFloatArray *cellVector_b = NULL;
-  if(bx != NULL && by != NULL && bz != NULL){
-    cellVector_b = point2CellCenteredVector(nip1,njp1,nkp1, bx,by,bz);
-    cellVector_b->SetName(GetDesc("bx_").c_str());
-    output->GetPointData()->AddArray(cellVector_b);
-    cellVector_b->Delete();
+  //Magnetic Field Selective Read
+  if(this->CellArrayStatus[GetDesc("bx_")]){
+    vtkDebugMacro(<< "Magnetic Field Vector Selected");    
+    float *bx = NULL;
+    float *by = NULL;
+    float *bz = NULL;
+    f.readVariable("bx_",    bx,     rank, dims);   delete []dims;
+    f.readVariable("by_",    by,     rank, dims);   delete []dims;
+    f.readVariable("bz_",    bz,     rank, dims);   delete []dims;
+    // Magnetic Field      
+    if(bx != NULL && by != NULL && bz != NULL){
+      vtkFloatArray *cellVector_b = NULL;
+      cellVector_b = point2CellCenteredVector(nip1,njp1,nkp1, bx,by,bz);
+      cellVector_b->SetName(GetDesc("bx_").c_str());
+      output->GetPointData()->AddArray(cellVector_b);
+      cellVector_b->Delete();
+      delete [] bx;
+      bx = NULL;
+      delete [] by;
+      by = NULL;
+      delete [] bz;
+      bz = NULL;
+    }
+  }
+  
+  //Averaged Magnetic Field Selective Read
+  if(this->CellArrayStatus[GetDesc("avgBx")]){
+    vtkDebugMacro(<< "Averaged Magnetic Field Vector Selected");     
+    float *avgbz = NULL;
+    float *avgby = NULL;
+    float *avgbx = NULL;
+      f.readVariable("avgBx",    avgbx,     rank, dims);   delete []dims;
+    f.readVariable("avgBy",    avgby,     rank, dims);   delete []dims;
+    f.readVariable("avgBz",    avgbz,     rank, dims);   delete []dims;
+    if(avgbx != NULL && avgby != NULL && avgbz != NULL){
+      vtkFloatArray *cellVector_avgb = NULL;
+      cellVector_avgb = point2CellCenteredVector(nip1,njp1,nkp1, avgbx, avgby, avgbz);
+      cellVector_avgb->SetName(GetDesc("avgBx").c_str());
+      output->GetPointData()->AddArray(cellVector_avgb);
+      cellVector_avgb->Delete();
+      delete [] avgbx;
+      avgbx = NULL;
+      delete [] avgby;
+      avgby = NULL;
+      delete [] avgbz;
+      avgbz = NULL;
+    }
   }
 
-  // Time-Averaged Magnetic Field
-  vtkFloatArray *cellVector_avgb = NULL;
-  if(avgbx != NULL && avgby != NULL && avgbz != NULL){
-    cellVector_avgb = point2CellCenteredVector(nip1,njp1,nkp1, avgbx, avgby, avgbz);
-    cellVector_avgb->SetName(GetDesc("avgBx").c_str());
-    output->GetPointData()->AddArray(cellVector_avgb);
-    cellVector_avgb->Delete();
+  //Electric Field Selective Read
+  if(this->CellArrayStatus[GetDesc("ei_")]){
+    vtkDebugMacro(<< "Electric Field vector Selected");
+    float *ei = NULL;
+    float *ej = NULL;
+    float *ek = NULL;
+    f.readVariable("ei_",   ei,   rank, dims);    delete []dims;
+    f.readVariable("ej_",   ej,   rank, dims);    delete []dims;
+    f.readVariable("ek_",   ek,   rank, dims);    delete []dims;    
+
+    //Read Electric Field
+    if(ei != NULL && ej != NULL && ek != NULL){
+      vtkFloatArray *cellVector_e = NULL;  
+      float *ex = new float[nip1*njp1*nkp1];
+      float *ey = new float[nip1*njp1*nkp1];
+      float *ez = new float[nip1*njp1*nkp1];
+      calculateElectricField(nip1,njp1,nkp1,
+			     X_grid,Y_grid,Z_grid,
+			     ei,ej,ek,
+			     ex,ey,ez);
+      delete [] ei;
+      ei = NULL;
+      delete [] ej;
+      ej = NULL;
+      delete [] ek;
+      ek = NULL;
+      cellVector_e = point2CellCenteredVector(nip1,njp1,nkp1, ex,ey,ez);
+      delete[] ex;
+      ex=NULL;
+      delete[] ey;
+      ey=NULL;
+      delete[] ez;
+      ez=NULL;
+      cellVector_e->SetName(GetDesc("ei_").c_str());
+      output->GetPointData()->AddArray(cellVector_e);
+      cellVector_e->Delete();
+    }
   }
 
-  //Read Electric Field
-  vtkFloatArray *cellVector_e = NULL;  
-  if(ei != NULL && ej != NULL && ek != NULL){
-    float *ex = new float[nip1*njp1*nkp1];
-    float *ey = new float[nip1*njp1*nkp1];
-    float *ez = new float[nip1*njp1*nkp1];
-    calculateElectricField(nip1,njp1,nkp1,
-			   X_grid,Y_grid,Z_grid,
-			   ei,ej,ek,
-			   ex,ey,ez);
-    cellVector_e = point2CellCenteredVector(nip1,njp1,nkp1, ex,ey,ez);
-    delete[] ex;
-    ex=NULL;
-    delete[] ey;
-    ey=NULL;
-    delete[] ez;
-    ez=NULL;
-    cellVector_e->SetName(GetDesc("ei_").c_str());
-    output->GetPointData()->AddArray(cellVector_e);
-    cellVector_e->Delete();
+    
+  //Averaged E(ijk) Fields
+  if(this->CellArrayStatus[GetDesc("avgEi")]){
+    vtkDebugMacro(<< "Averaged Electric Field Vector Selected");
+  
+    float *avgei = NULL;
+    float *avgej = NULL;
+    float *avgek = NULL;
+    
+    f.readVariable("avgEi",   avgei,      rank, dims);  delete []dims;
+    f.readVariable("avgEj",   avgej,      rank, dims);  delete []dims;
+    f.readVariable("avgEk",   avgek,      rank, dims);  delete []dims;
+    //Reading Averaged Electric Field
+    if(avgei != NULL && avgej != NULL && avgek != NULL){
+      vtkFloatArray *cellVector_avge = NULL;
+      float *avgEx = new float[nip1*njp1*nkp1];
+      float *avgEy = new float[nip1*njp1*nkp1];
+      float *avgEz = new float[nip1*njp1*nkp1];
+      calculateElectricField(nip1,njp1,nkp1,
+			     X_grid,Y_grid,Z_grid,
+			     avgei,avgej,avgek,
+			     avgEx,avgEy,avgEz);
+      delete [] avgei;
+      avgei = NULL;
+      delete [] avgej;
+      avgej = NULL;
+      delete [] avgek;
+      avgek = NULL;
+      cellVector_avge = point2CellCenteredVector(nip1,njp1,nkp1, avgEx,avgEy,avgEz);
+      delete[] avgEx;
+      avgEx=NULL;
+      delete[] avgEy;
+      avgEy=NULL;
+      delete[] avgEz;
+      avgEz=NULL;
+      cellVector_avge->SetName(GetDesc("avgEi_").c_str());
+      output->GetPointData()->AddArray(cellVector_avge);
+      cellVector_avge->Delete();
+    }
   }
     
-  //Reading Averaged Electric Field
-  vtkFloatArray *cellVector_avge = NULL;
-  if(avgei != NULL && avgej != NULL && avgek != NULL){
-    float *avgEx = new float[nip1*njp1*nkp1];
-    float *avgEy = new float[nip1*njp1*nkp1];
-    float *avgEz = new float[nip1*njp1*nkp1];
-    calculateElectricField(nip1,njp1,nkp1,
-			   X_grid,Y_grid,Z_grid,
-			   avgei,avgej,avgek,
-			   avgEx,avgEy,avgEz);
-    cellVector_avge = point2CellCenteredVector(nip1,njp1,nkp1, avgEx,avgEy,avgEz);
-    delete[] avgEx;
-    avgEx=NULL;
-    delete[] avgEy;
-    avgEy=NULL;
-    delete[] avgEz;
-    avgEz=NULL;
-    cellVector_avge->SetName(GetDesc("avgEi_").c_str());
-    output->GetPointData()->AddArray(cellVector_avge);
-    cellVector_avge->Delete();
-  }
-  
-  vtkFloatArray *cellVector_be = NULL;
-  //Read Bijk Magnetic Field
-  if(bi != NULL && bj != NULL && bk != NULL){
-    cellVector_be = vtkFloatArray::New();
-    cellVector_be->SetName(GetDesc("bi_").c_str());
-    cellVector_be->SetNumberOfComponents(3);
-    cellVector_be->SetNumberOfTuples(ni*njp2*nkp1);
-  }
-
-  
-  // Store values in VTK objects:
-  
-  int offsetData, offsetCell;
-  float tuple[3];
-  
-  for (int k=0; k < nk; k++){
-    for (int j=0; j < nj; j++){
-      for (int i=0; i < ni; i++){        
-        offsetData = i + j*nip1 + k*nip1*njp1;
-        
-	// j+1 because we set data along j=0 in "Fix x-axis singularity", below.
-        offsetCell = i + (j+1)*ni   + k*ni*njp2;
-        
-	//Store Bijk Data
-	//TODO: Implement Derived Quantities
-        if(bi != NULL && bj != NULL && bk != NULL){
-          tuple[0] = bi[offsetData];
-          tuple[1] = bj[offsetData];
-          tuple[2] = bk[offsetData];
-          cellVector_be->SetTupleValue(offsetCell, tuple);
-	}       
-      }
-    }
-  }
-  
-  // Fix x-axis singularity at j=0 and j=nj+1
-  double tupleDbl[3];
-  float rhoValue, cValue, volumeValue, avgEVvalue;
-  float eValue[3], beValue[3], avgEvalue[3];
-
-  int jAxis;
-  for (int j=0; j < njp2; j+=njp1){
-    jAxis = max(1, min(nj, j));
-    for (int i=0; i < ni; i++){      
-      beValue[0] = 0.0;
-      beValue[1] = 0.0;
-      beValue[2] = 0.0;
-                  
-      for (int k=0; k < nk; k++){        
-	//Fix Bijk Field
-        if(bi != NULL && bj != NULL && bk != NULL){
-          cellVector_e->GetTuple(i + jAxis*ni + k*ni*njp2, tupleDbl);
-          beValue[0] += (float) tupleDbl[0];
-          beValue[1] += (float) tupleDbl[1];
-          beValue[2] += (float) tupleDbl[2];
-	}
-      }            
-      for (int k=0; k < nk; k++){
-	//Commit Fixes
-        if(bi != NULL && bj != NULL && bk != NULL)
-          cellVector_be->SetTupleValue(i + j*ni + k*ni*njp2, beValue);                          
-      }
-    }
-  }
-  
-  for (int j=0; j < njp2; j++){
-    for (int i=0; i < ni; i++){
-      // Close off the grid           
-      if(bi != NULL && bj!= NULL && bk != NULL){
-        cellVector_be->GetTuple(i + j*ni, tupleDbl);
-        beValue[0] = (float) tupleDbl[0];
-        beValue[1] = (float) tupleDbl[1];
-        beValue[2] = (float) tupleDbl[2];
-        cellVector_be->SetTupleValue(i + j*ni +   nk*ni*njp2, beValue);
-      }
-    }
-  }    
-  //Commit Bijk Field Data
-  if(bi != NULL && bj != NULL && bk != NULL){
-    output->GetPointData()->AddArray(cellVector_be);
-    cellVector_be->Delete();
-  }
-  
   //Clean up Memory
   if (X_grid){    delete [] X_grid;    X_grid = NULL;  }
   if (Y_grid){    delete [] Y_grid;    Y_grid = NULL;  }
   if (Z_grid){    delete [] Z_grid;    Z_grid = NULL;  }
-  if (rho){       delete [] rho;       rho = NULL;  }
-  if (c) {        delete [] c;         c = NULL; }
-  if (vx){        delete [] vx;        vx = NULL; }
-  if (vy){        delete [] vy;        vy = NULL; }
-  if (vz){        delete [] vz;        vz = NULL; }
-  if (bx){        delete [] bx;        bx = NULL; }
-  if (by){        delete [] by;        by = NULL; }
-  if (bz){        delete [] bz;        bz = NULL; }
-  if (bi){        delete [] bi;        bi = NULL;}
-  if (bj){        delete [] bj;        bj = NULL;}
-  if (bk){        delete [] bk;        bk = NULL;}
-  if (ei){        delete [] ei;        ei = NULL;}
-  if (ej){        delete [] ej;        ej = NULL;}
-  if (ek){        delete [] ek;        ek = NULL;}
-  if (avgbx){     delete [] avgbx;     avgbx = NULL; }
-  if (avgby){     delete [] avgby;     avgby = NULL; }
-  if (avgbz){     delete [] avgbz;     avgbz = NULL; }
-  if (avgei){     delete [] avgei;     avgei = NULL; }
-  if (avgej){     delete [] avgej;     avgej = NULL; }
-  if (avgek){     delete [] avgek;     avgek = NULL; }
+    
+  dims = NULL;
+  f.close();
   
   return 1;
 }
@@ -857,7 +762,6 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
   vtkFloatArray *data = vtkFloatArray::New();
   if (xData && yData && zData){
     data->SetNumberOfComponents(3);
-    cout << "Found 3 components!" << endl;
   }
   //else if ( (xData && yData && not zData) ||
   //	 (not xData && yData && zData) ||
