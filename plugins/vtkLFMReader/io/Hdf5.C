@@ -93,10 +93,8 @@ void Hdf5::pushError(const string &e, const char *file, const int &line, const c
 array_info_t Hdf5::getArrayInfo( const string& variableName,
 				 const string& group ) 
 {
-  bool hasError = false;
-#ifdef HAS_HDF5
   array_info_t info;
-
+#ifdef HAS_HDF5
   if (rank < superSize){
     if (group=="" || H5Lexists(fileId,group.c_str(),H5P_DEFAULT)) {
       hid_t groupId = (group==""?fileId:H5Oopen(fileId,group.c_str(),H5P_DEFAULT));
@@ -158,11 +156,8 @@ array_info_t Hdf5::getArrayInfo( const string& variableName,
   }
 
   //errorQueue.print(cerr);
-
-  return info;
-#else
-  return NULL;
 #endif
+  return info;
 }
   
 /*----------------------------------------------------------------------------*/
