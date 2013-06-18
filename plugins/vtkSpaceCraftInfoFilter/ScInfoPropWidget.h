@@ -35,6 +35,10 @@ protected:
     vtkSMProperty *smProperty;
     vtkSMStringVectorProperty *svp;
 
+    //Time Settings
+    double startMJD;
+    double endMJD;
+
     //Cached Objects
     filterNetworkList *currentGroupObjects;
     filterNetworkList *currentInstrumentObjects;

@@ -76,6 +76,8 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     //handlers must be bound to a reader before use
     this->BDhandler = new BadDataHandler();
     this->TFhandler = new timeFitHandler();
+    this->TimeRange[0] = 0;
+    this->TimeRange[1] = 0;
 }
 
 //=========================================================================================//
@@ -121,6 +123,8 @@ int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformatio
         {
             this->timeSteps.push_back(timeValues[y]);
         }
+        this->TimeRange[0] = this->timeSteps.first();
+        this->TimeRange[1] = this->timeSteps.last();
     }
     else
     {
@@ -158,6 +162,9 @@ int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector
     {
         this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
     }
+
+
+
 
     //if the data still needs to be loaded, load it...
     if(!this->processed)
@@ -408,6 +415,8 @@ bool vtkSpaceCraftInfo::findEpochVar(cdfDataReader &cdfFile, QStringList &varsAv
 
     return found;
 }
+
+
 
 bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch, epochDataEntry  &data)
 {

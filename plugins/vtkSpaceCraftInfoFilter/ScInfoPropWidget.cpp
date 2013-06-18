@@ -8,6 +8,7 @@
 #include "ScInfoPropWidget.h"
 #include "ui_ScInfoPropWidget.h"
 
+#include "DateTime.h"
 #include "pqPropertiesPanel.h"
 #include "filterNetworkAccessModule.h"
 #include <QListWidgetItem>
@@ -16,6 +17,8 @@
 #include <vtkSMSessionProxyManager.h>
 #include <vtkSMGlobalPropertiesManager.h>
 #include <vtkSMStringVectorProperty.h>
+#include <vtkSMDoubleVectorProperty.h>
+#include <iomanip>
 
 ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject)
     : Superclass(smproxy, parentObject),
@@ -31,6 +34,17 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     {
         return;
     }
+
+    //get properties
+    vtkSMDoubleVectorProperty *timeStartProperties = vtkSMDoubleVectorProperty::SafeDownCast(smproxy->GetProperty("TimeRangeInfoStart"));
+    this->startMJD = timeStartProperties->GetElement(0);
+
+    vtkSMDoubleVectorProperty *timeEndProperties = vtkSMDoubleVectorProperty::SafeDownCast(smproxy->GetProperty("TimeRangeInfoEnd"));
+    this->endMJD = timeEndProperties->GetElement(0);
+
+    std::cout << "Start Time: " << std::setprecision(16)  << DateTime(this->startMJD).getDateTimeString() << std::endl;
+    std::cout << "End Time:   " << DateTime(this->endMJD).getDateTimeString() << std::endl;
+
 
     //URLs for CDAWeb
     this->baseURL = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1");

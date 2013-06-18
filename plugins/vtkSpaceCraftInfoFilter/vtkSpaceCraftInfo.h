@@ -19,6 +19,7 @@
 #include "vtkTableAlgorithm.h"
 #include "vtkSmartPointer.h"
 #include "vtkTable.h"
+#include "vtkSMDoubleVectorProperty.h"
 
 #include "qmap.h"
 #include "qstring.h"
@@ -57,6 +58,19 @@ public:
   void SetBadDataHandler(int handler);
   long getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch);
   bool findEpochVar(cdfDataReader &cdfFile, QStringList &varsAvailable, QString &EpochVar);
+
+  //call for getting time range
+//  vtkGetVector2Macro(TimeRange, double);
+  double getStartTime()
+  {
+      return this->TimeRange[0];
+  }
+
+  double getEndTime()
+  {
+      return this->TimeRange[1];
+  }
+
 protected:
   vtkSpaceCraftInfo();
   ~vtkSpaceCraftInfo();
@@ -79,6 +93,7 @@ protected:
   // This Data Structure yeilds the value of the timestep by integer step
   //    timeSteps[timeStep] = time step value
   QList <double> timeSteps;
+  double TimeRange[2];
 
   // this data structure is as follows
   //    satPositions ["sat Name"] [timeStep] [x|y|z] = position[x|y|z]

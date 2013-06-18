@@ -17,24 +17,40 @@
 
        </InputProperty>
 
-      <DoubleVectorProperty information_only="1"
+<!--      <DoubleVectorProperty information_only="1"
                             name="TimestepValues"
                             repeatable="1">
         <TimeStepsInformationHelper />
         <Documentation>Available timestep values.</Documentation>
-      </DoubleVectorProperty>
+      </DoubleVectorProperty>-->
 
-<!--            <DoubleVectorProperty command="getTimeRange"
-                                  name="TimeRangeInfo"
+            <DoubleVectorProperty name="TimeRangeInfoStart"
+                                  command="getStartTime"
                                   information_only="1"
-                                  number_of_elements="2"
-                                  repeatable="1">
+                                  number_of_elements="1"
+                                  precision="16"
+                                  default_values="1" >
+                <SimpleDoubleInformationHelper/>
 
                 <Documentation>
-                    Information on Time Range to Property panel
+                    Information on Start Time to Property panel
                 </Documentation>
 
-            </DoubleVectorProperty>-->
+            </DoubleVectorProperty>
+
+            <DoubleVectorProperty name="TimeRangeInfoEnd"
+                                  command="getEndTime"
+                                  information_only="1"
+                                  number_of_elements="1"
+                                  precision="16"
+                                  default_values="1" >
+                <SimpleDoubleInformationHelper/>
+
+                <Documentation>
+                    Information on End Time to Property panel
+                </Documentation>
+
+            </DoubleVectorProperty>
 
             <IntVectorProperty name="TimeFitHandler"
                                 command="SetTimeFitHandler"
@@ -87,7 +103,6 @@
                                 number_of_elements = "3"
                                 panel_widget="SpaceCraftInfoProperties"
                                 label = ""
-                                information_property="TimeStepValues"
                                 panel_visibility = "default">
 
                 <Documentation>
