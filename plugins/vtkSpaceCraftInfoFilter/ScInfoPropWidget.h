@@ -13,6 +13,7 @@
 
 #include <QReadWriteLock>
 #include <QTableWidgetItem>
+#include "DateTime.h"
 
 namespace Ui {
 class ScInfoPropWidget;
@@ -102,7 +103,7 @@ protected:
     bool getObservatoryList(QString Group);
     bool loadGroupListToGUI();
 
-    bool getInstrumentList();
+    bool getInstrumentList(double startTimes, double endTime);
     bool getDataSetsList();
 
     void getAllDataSetInfo(QStringList dataSets);
@@ -111,7 +112,7 @@ protected:
     void setupDataSets();
     void setupVariableSets();
 
-
+    DateTime textToDateTime(QString dateString);
 
 
 private:

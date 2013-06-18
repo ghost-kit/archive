@@ -389,7 +389,7 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
     this->currentInstrumentObjects = SCInstrumentManager.getFinalOjects();
 
     //get the required list
-    this->getInstrumentList();
+    this->getInstrumentList(this->startMJD, this->endMJD);
 
     ui->Variables->clear();
     ui->Variables->setDisabled(true);
@@ -407,6 +407,8 @@ void ScInfoPropWidget::selectedObservatory(QString selection)
 
     ui->Instruments->setHorizontalHeaderItem(0, column1);
     ui->Instruments->setHorizontalHeaderItem(1, column2);
+
+    bool empty=true;
 
     for(int x = 0; x < this->InstrumentList.size(); x++)
     {
@@ -515,11 +517,33 @@ void ScInfoPropWidget::setupDataSets()
             QString id = currentMap->operator []("Id");
             obsGroup = currentMap->operator[]("Instrument");
 
-            temp.insert(id,label);
+            QString start = currentMap->operator []("Start");
+            QString end  = currentMap->operator []("End");
+
+            //convert time string into DateTime
+            DateTime startDT = textToDateTime(start);
+            DateTime endDT = textToDateTime(end);
 
             QTreeWidgetItem * child = new QTreeWidgetItem();
-            child->setText(0,label);
-            child->setText(1,id);
+
+            if(startDT <= this->startMJD && endDT >= this->endMJD)
+            {
+                temp.insert(id,label);
+
+                child->setText(0,label);
+                child->setText(1,id);
+                child->setToolTip(0,"Data for " + label + " is available for dates " + QString::fromStdString(startDT.getDateTimeString()) + " to " + QString::fromStdString(endDT.getDateTimeString()) + "." );
+
+            }
+            else
+            {
+                child->setText(0,label +": No Data for your Time Range");
+                child->setText(1,"N/A");
+                child->setToolTip(0, "The dataset " + label + " only has data for the time span " + QString::fromStdString(startDT.getDateTimeString()) + " to " + QString::fromStdString(endDT.getDateTimeString()) + ". Please select a different Data Set");
+                child->setDisabled(true);
+
+
+            }
 
             treelist.push_back(child);
 
@@ -609,6 +633,40 @@ void ScInfoPropWidget::setupVariableSets()
     }
 
     this->VariableList = List;
+}
+
+DateTime ScInfoPropWidget::textToDateTime(QString dateString)
+{
+    DateTime retVal;
+    QStringList DateSplit;
+    QStringList Date;
+    QStringList Time;
+
+    QStringList TimeSplit = dateString.split(".");
+
+    if(TimeSplit.size() >= 1)
+    {
+        DateSplit = TimeSplit[0].split("T");
+    }
+
+    if(DateSplit.size() >= 2)
+    {
+        Date = DateSplit[0].split("-");
+        Time = DateSplit[1].split(":");
+    }
+    if(Date.size() >= 3 && Time.size() >= 3)
+    {
+        retVal.setYear(Date[0].toInt());
+        retVal.setMonth(Date[1].toInt());
+        retVal.setDay(Date[2].toInt());
+
+        retVal.setHours(Time[0].toInt());
+        retVal.setMinutes(Time[1].toInt());
+        retVal.setSeconds(Time[2].toInt());
+    }
+    std::cout << "Converted From Text to DT: " << retVal.getDateTimeString() << std::endl;
+
+    return retVal;
 }
 
 //==================================================================
@@ -741,7 +799,7 @@ void ScInfoPropWidget::processDeniedDataRequests()
 
 //==================================================================
 //get instrument list for current selections
-bool ScInfoPropWidget::getInstrumentList()
+bool ScInfoPropWidget::getInstrumentList(double startTimes, double endTime)
 {
 
     std::cout << "Getting the Data List" << std::endl;
