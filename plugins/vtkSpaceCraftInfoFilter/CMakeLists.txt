@@ -24,6 +24,7 @@ QT4_WRAP_CPP(
     statusbar.h
     status.h
     filedownloader.h
+    vtkSpaceCraftInfo.h
     )
 
 # Wrap UI
@@ -45,8 +46,9 @@ ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
 ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
 	SERVER_MANAGER_XML SpaceCraftInfo.xml
         GUI_INTERFACES ${outifaces0}
-        SERVER_MANAGER_SOURCES vtkSpaceCraftInfo.cxx
+        SERVER_MANAGER_SOURCES vtkSpaceCraftInfoFilter.cpp
         SOURCES filterNetworkAccessModule.cpp
+                vtkSpaceCraftInfo.cxx
                 ScInfoPropWidget.cpp
                 statusbar.cpp
                 status.cpp
@@ -62,3 +64,27 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 )
 
 target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS})
+
+
+ADD_PARAVIEW_PLUGIN(SpaceCraftnInfoSource "0.1.0"
+        SERVER_MANAGER_XML SpaceCraftInfoSource.xml
+        GUI_INTERFACES ${outifaces0}
+        SERVER_MANAGER_SOURCES vtkSpaceCraftInfoSource.cpp
+        SOURCES filterNetworkAccessModule.cpp
+                vtkSpaceCraftInfo.cxx
+                ScInfoPropWidget.cpp
+                statusbar.cpp
+                status.cpp
+                DateTime.C
+                filedownloader.cpp
+                timefithandler.cpp
+                BadDataHandler.cpp
+                cdfDataReader.cpp
+                omitBDHandler.cpp
+                ${outsrcs0}
+                ${MOC_BUILT_SOURCES}
+                ${UI_BUILT_SOURCES}
+                )
+
+target_link_libraries(SpaceCraftnInfoSource ${LIBS})
+

@@ -1,27 +1,13 @@
 <ServerManagerConfiguration>
 <!-- Begin SpaceCraftInfo -->
-    <ProxyGroup name="filters">
-    <SourceProxy name="NASA CDAweb Space Craft Data over Time (MJD)" class="vtkSpaceCraftInfoFilter">
-
-       <InputProperty name="Input" command="SetInputConnection">
-          <ProxyGroupDomain name="groups">
-            <Group name="sources"/>
-            <Group name="filters"/>
-          </ProxyGroupDomain>
-          <DataTypeDomain name="input_type">
-            <DataType value="vtkStructuredGrid"/>
-          </DataTypeDomain>
-
-          <InputArrayDomain name="input_array" attribute_type="point"
-                            number_of_components="1" optional="0"/>
-
-       </InputProperty>
+    <ProxyGroup name="sources">
+    <SourceProxy name="NASA CDAweb Space Craft Data Source" class="vtkSpaceCraftInfoSource">
 
             <DoubleVectorProperty name="TimeRangeInfoStart"
                                   command="getStartTime"
                                   information_only="1"
                                   number_of_elements="1"
-                                  default_values="1" >
+                                  default_values="-1" >
                 <SimpleDoubleInformationHelper/>
 
                 <Documentation>
@@ -34,7 +20,7 @@
                                   command="getEndTime"
                                   information_only="1"
                                   number_of_elements="1"
-                                  default_values="1" >
+                                  default_values="-1" >
                 <SimpleDoubleInformationHelper/>
 
                 <Documentation>

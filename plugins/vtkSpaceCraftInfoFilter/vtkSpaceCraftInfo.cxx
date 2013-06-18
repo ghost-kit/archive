@@ -62,10 +62,9 @@
 #include "BadDataHandler.h"
 #include "omitBDHandler.h"
 
-vtkStandardNewMacro(vtkSpaceCraftInfo)
 
 //=========================================================================================//
-vtkSpaceCraftInfo::vtkSpaceCraftInfo()
+vtkSpaceCraftInfoHandler::vtkSpaceCraftInfoHandler()
 {
     this->NumberOfTimeSteps = 0;
     this->processed = false;
@@ -78,120 +77,14 @@ vtkSpaceCraftInfo::vtkSpaceCraftInfo()
     this->TFhandler = new timeFitHandler();
     this->TimeRange[0] = 0;
     this->TimeRange[1] = 0;
+
+
 }
 
 //=========================================================================================//
-vtkSpaceCraftInfo::~vtkSpaceCraftInfo()
+vtkSpaceCraftInfoHandler::~vtkSpaceCraftInfoHandler()
 {
 
-}
-
-//----- required overides -----//
-//=========================================================================================//
-//Process Request
-int vtkSpaceCraftInfo::ProcessRequest(vtkInformation *request, vtkInformationVector ** inputVector, vtkInformationVector *outputVector)
-{
-    if(request->Has(vtkDemandDrivenPipeline::REQUEST_INFORMATION()))
-    {
-        return this->RequestInformation(request, inputVector, outputVector);
-    }
-    else if(request->Has(vtkStreamingDemandDrivenPipeline::REQUEST_DATA()))
-    {
-        return this->RequestData(request, inputVector, outputVector);
-    }
-
-    return this->Superclass::ProcessRequest(request, inputVector, outputVector);
-}
-
-//=========================================================================================//
-//Request Inoformation
-int vtkSpaceCraftInfo::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
-{
-
-    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
-
-    this->inInfo = inputVector[0]->GetInformationObject(0);
-    if(inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
-    {
-        std::cout << "Getting Number of Time steps" << std::flush << std::endl;
-        this->NumberOfTimeSteps = this->inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-        double *timeValues = this->inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-
-        //push time steps into list
-        this->timeSteps.clear();
-        for (int y = 0; y < this->NumberOfTimeSteps; y++)
-        {
-            this->timeSteps.push_back(timeValues[y]);
-        }
-        this->TimeRange[0] = this->timeSteps.first();
-        this->TimeRange[1] = this->timeSteps.last();
-    }
-    else
-    {
-        this->NumberOfTimeSteps = 0;
-    }
-
-    //Provide information to PV on how many time steps for which we will be providing information
-    this->outInfo = outputVector->GetInformationObject(0);
-
-    this->outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-                       this->getTimeSteps(),
-                       this->NumberOfTimeSteps);
-
-    double timeRange[2] = {this->timeSteps.first(), this->timeSteps.last()};
-
-    this->outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
-                       timeRange,
-                       2);
-
-    this->inInfo = NULL;
-    this->outInfo = NULL;
-    return 1;
-}
-
-//=========================================================================================//
-//Request Data
-int vtkSpaceCraftInfo::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
-{
-    //Get the output Data object
-    this->outInfo = outputVector->GetInformationObject(0);
-    this->output = vtkTable::GetData(outInfo);
-
-    //get time request data
-    if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
-    {
-        this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    }
-
-
-
-
-    //if the data still needs to be loaded, load it...
-    if(!this->processed)
-    {
-        this->DataCache.clear();
-        this->LoadCDFData();
-    }
-
-    //process to return the needed information
-    this->processCDAWeb(this->output);
-    return 1;
-}
-
-
-//=========================================================================================//
-//------ Port Information ------//
-int vtkSpaceCraftInfo::FillInputPortInformation(int port, vtkInformation *info)
-{
-    info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataSet");
-    return 1;
-}
-
-//=========================================================================================//
-int vtkSpaceCraftInfo::FillOutputPortInformation(int port, vtkInformation *info)
-{
-    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
-    return 1;
 }
 
 
@@ -199,7 +92,7 @@ int vtkSpaceCraftInfo::FillOutputPortInformation(int port, vtkInformation *info)
 //----- helper function -----//
 //getTimeSteps() returns a NEW double array that *must*
 //  be managed by the caller. TODO: Fix this to manage memory slef.
-double *vtkSpaceCraftInfo::getTimeSteps()
+double *vtkSpaceCraftInfoHandler::getTimeSteps()
 {
     double *ret = new double[this->NumberOfTimeSteps];
 
@@ -212,7 +105,7 @@ double *vtkSpaceCraftInfo::getTimeSteps()
 }
 
 //=========================================================================================//
-bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
+bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkTable *output)
 {
 
     QMap<QString, QString>::Iterator iter;
@@ -257,7 +150,7 @@ bool vtkSpaceCraftInfo::processCDAWeb(vtkTable *output)
 }
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::checkCDFstatus(CDFstatus status)
+void vtkSpaceCraftInfoHandler::checkCDFstatus(CDFstatus status)
 {
     char text[CDF_STATUSTEXT_LEN+1];
     if(status != CDF_OK)
@@ -268,7 +161,7 @@ void vtkSpaceCraftInfo::checkCDFstatus(CDFstatus status)
 }
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::LoadCDFData()
+void vtkSpaceCraftInfoHandler::LoadCDFData()
 {
 
     QVector<double> timeSteps;
@@ -293,7 +186,7 @@ void vtkSpaceCraftInfo::LoadCDFData()
 }
 
 //=========================================================================================//
-bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> &vector)
+bool vtkSpaceCraftInfoHandler::cToQVector(double *data, long dataSize, QVector<double> &vector)
 {
     for(int x = 0; x < dataSize; x++)
     {
@@ -304,7 +197,7 @@ bool vtkSpaceCraftInfo::cToQVector(double *data, long dataSize, QVector<double> 
 }
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::getCDFUnits(cdfDataReader &reader, QString &VarName, QString &UnitText)
+void vtkSpaceCraftInfoHandler::getCDFUnits(cdfDataReader &reader, QString &VarName, QString &UnitText)
 {
     QString attName = QString("UNITS");
 
@@ -323,7 +216,7 @@ void vtkSpaceCraftInfo::getCDFUnits(cdfDataReader &reader, QString &VarName, QSt
 }
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, cdfDataSet Epoch)
+void vtkSpaceCraftInfoHandler::convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, cdfDataSet Epoch)
 {
     long year;
     long month;
@@ -348,7 +241,7 @@ void vtkSpaceCraftInfo::convertEpochToDateTime(QVector<DateTime> &convertedFileE
 }
 
 //=========================================================================================//
-long vtkSpaceCraftInfo::getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch)
+long vtkSpaceCraftInfoHandler::getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch)
 {
     QVector<DateTime>::Iterator i = qLowerBound(convertedFileEpoch.begin(), convertedFileEpoch.end(), neededEpoch);
 
@@ -386,7 +279,7 @@ long vtkSpaceCraftInfo::getNearestLowerIndex(DateTime &neededEpoch, QVector<Date
 }
 
 //=========================================================================================//
-bool vtkSpaceCraftInfo::findEpochVar(cdfDataReader &cdfFile, QStringList &varsAvailable, QString &EpochVar)
+bool vtkSpaceCraftInfoHandler::findEpochVar(cdfDataReader &cdfFile, QStringList &varsAvailable, QString &EpochVar)
 {
     //iterators
     QStringList::Iterator SLiter;
@@ -418,7 +311,7 @@ bool vtkSpaceCraftInfo::findEpochVar(cdfDataReader &cdfFile, QStringList &varsAv
 
 
 
-bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch, epochDataEntry  &data)
+bool vtkSpaceCraftInfoHandler::getDataForEpoch(QString &DataSet, double requestedEpoch, epochDataEntry  &data)
 {
 
     //A Whole Mess of needed Variables...
@@ -490,7 +383,7 @@ bool vtkSpaceCraftInfo::getDataForEpoch(QString &DataSet, double requestedEpoch,
 }
 
 //=========================================================================================//
-bool vtkSpaceCraftInfo::getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data)
+bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data)
 {
     //we want to process an entire list of epochs at a time instead of just one
 
@@ -596,7 +489,7 @@ bool vtkSpaceCraftInfo::getDataForEpochList(QString &DataSet, QVector<double> &E
 
 
 //=========================================================================================//
-void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, const char *list)
+void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observatory, const char *list)
 {
     //mark dirty
     this->processed = false;
@@ -767,21 +660,18 @@ void vtkSpaceCraftInfo::SetSCIData(const char *group, const char *observatory, c
 
     statusBar.hide();
 
-    this->Modified();
-
 }
 
 //=========================================================================================//
 //Time Fit Handler
-void vtkSpaceCraftInfo::SetTimeFitHandler(int handler)
+void vtkSpaceCraftInfoHandler::SetTimeFitHandler(int handler)
 {
     std::cout << "Selected a New Time Fit Handler" << std::endl;
-    this->Modified();
 }
 
 //=========================================================================================//
 //Bad Data Fit Handler
-void vtkSpaceCraftInfo::SetBadDataHandler(int handler)
+void vtkSpaceCraftInfoHandler::SetBadDataHandler(int handler)
 {
     //mark dirty
     this->processed = false;
@@ -809,16 +699,9 @@ void vtkSpaceCraftInfo::SetBadDataHandler(int handler)
         break;
     }
 
-    this->Modified();
 }
 
-//=========================================================================================//
-//----- other stuff needed ------//
-void vtkSpaceCraftInfo::PrintSelf(ostream& os, vtkIndent indent)
-{
-    this->Superclass::PrintSelf(os, indent);
-    os << indent << "NumberOfTimeSteps: " << this->NumberOfTimeSteps << std::endl;
-}
+
 
 
 

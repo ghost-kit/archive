@@ -20,6 +20,7 @@
 #include "vtkSmartPointer.h"
 #include "vtkTable.h"
 #include "vtkSMDoubleVectorProperty.h"
+#include "vtkInformation.h"
 
 #include "qmap.h"
 #include "qstring.h"
@@ -40,17 +41,17 @@ class vtkDataSetAttributes;
 class vtkDataArraySelection;
 class vtkCallbackCommand;
 
-class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfo : public vtkTableAlgorithm, QObject
+class  vtkSpaceCraftInfoHandler : public  QObject
 {
+    Q_OBJECT
 
     typedef QMap<QString, QVector <QPair < QVariant, QPair<QString, QVariant > > > >   epochDataEntry;
     typedef QMap< double, epochDataEntry > varDataEntry;
 public:
-  static vtkSpaceCraftInfo *New();
-  vtkTypeMacro(vtkSpaceCraftInfo,vtkTableAlgorithm)
+    vtkSpaceCraftInfoHandler();
+    ~vtkSpaceCraftInfoHandler();
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  vtkGetMacro(NumberOfTimeSteps, int)
 
   //Callbacks
   void SetSCIData(const char *group, const char *observatory, const char *list);
@@ -72,17 +73,6 @@ public:
   }
 
 protected:
-  vtkSpaceCraftInfo();
-  ~vtkSpaceCraftInfo();
-
-  //----- required overides -----//
-  int ProcessRequest(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector);
-  int RequestInformation(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-  int RequestData(vtkInformation *, vtkInformationVector **, vtkInformationVector *);
-
-  //------ Port Information ------//
-  int FillInputPortInformation(int port, vtkInformation *info);
-  int FillOutputPortInformation(int port, vtkInformation *info);
 
   //----- data -----//
   // Records the number of timesteps present
@@ -122,8 +112,7 @@ protected:
   void checkCDFstatus(CDFstatus status);
   void getCDFUnits(cdfDataReader &reader, QString &VarName, QString &UnitText);
   void convertEpochToDateTime(QVector<DateTime> &convertedFileEpoch, cdfDataSet Epoch);
-  //IN: DataSet IN: Epoch OUT: data OUT: bool success
-  //NOTE: method will ADD TO the data list provided, not replace.
+
   bool getDataForEpoch(QString &DataSet, double Epoch, epochDataEntry  &data);
   bool getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data);
 
@@ -143,9 +132,6 @@ protected:
   timeFitHandler *TFhandler;
 
 
-private:
-  vtkSpaceCraftInfo(const vtkSpaceCraftInfo&);
-  void operator = (const vtkSpaceCraftInfo&);
 };
 #endif
 
