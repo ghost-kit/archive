@@ -70,6 +70,14 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     ui->Instruments->setDisabled(true);
     ui->DataSet->setDisabled(true);
 
+    if(!smproxy->GetProperty("TimeRange"))
+    {
+        ui->startTime->hide();
+        ui->startTime_Label->hide();
+        ui->endTime->hide();
+        ui->endTime_Label->hide();
+    }
+
     //Load first set of Values
     filterNetworkAccessModule SCListManager;
     this->getSCList(SCListManager);
@@ -212,40 +220,42 @@ void ScInfoPropWidget::apply()
     this->svp->SetElement(1, this->currentObservatory.toAscii().data());
     this->svp->SetElement(2, DataString.toAscii().data());
 
-    //set date and time
-    QDateTime start = ui->startTime->dateTime();
 
-    DateTime startDT;
-    startDT.setYear(start.date().year());
-    startDT.setMonth(start.date().month());
-    startDT.setDay(start.date().day());
-
-    startDT.setHours(start.time().hour());
-    startDT.setMinutes(start.time().minute());
-    startDT.setSeconds(start.time().second());
-
-    QDateTime end = ui->endTime->dateTime();
-
-    DateTime endDT;
-    endDT.setYear(end.date().year());
-    endDT.setMonth(end.date().month());
-    endDT.setDay(end.date().day());
-
-    endDT.setHours(end.time().hour());
-    endDT.setMinutes(end.time().minute());
-    endDT.setSeconds(end.time().second());
-
-    std::cout << "Set Start DateTime to: " << startDT.getDateTimeString() << std::endl;
-    std::cout << "Set End DateTime to: " << endDT.getDateTimeString() << std::endl;
 
     if(this->smProxy->GetProperty("TimeRange"))
     {
+        //set date and time
+        QDateTime start = ui->startTime->dateTime();
+
+        DateTime startDT;
+        startDT.setYear(start.date().year());
+        startDT.setMonth(start.date().month());
+        startDT.setDay(start.date().day());
+
+        startDT.setHours(start.time().hour());
+        startDT.setMinutes(start.time().minute());
+        startDT.setSeconds(start.time().second());
+
+        QDateTime end = ui->endTime->dateTime();
+
+        DateTime endDT;
+        endDT.setYear(end.date().year());
+        endDT.setMonth(end.date().month());
+        endDT.setDay(end.date().day());
+
+        endDT.setHours(end.time().hour());
+        endDT.setMinutes(end.time().minute());
+        endDT.setSeconds(end.time().second());
+
+        std::cout << "Set Start DateTime to: " << startDT.getDateTimeString() << std::endl;
+        std::cout << "Set End DateTime to: " << endDT.getDateTimeString() << std::endl;
+
+
         vtkSMDoubleVectorProperty *timeRange =  vtkSMDoubleVectorProperty::SafeDownCast(this->smProxy->GetProperty("TimeRange"));
         timeRange->SetNumberOfElementsPerCommand(2);
         timeRange->SetElement(0,startDT.getMJD());
         timeRange->SetElement(1,endDT.getMJD());
     }
-
 
     //apply the upstream parameters
     Superclass::apply();
