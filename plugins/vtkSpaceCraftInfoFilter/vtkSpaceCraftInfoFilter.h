@@ -4,17 +4,14 @@
 #include "vtkSpaceCraftInfo.h"
 #include "vtkTableAlgorithm.h"
 
-class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfoFilter : public vtkTableAlgorithm, vtkSpaceCraftInfoHandler
+class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfoFilter : public vtkTableAlgorithm
 {
-    typedef vtkSpaceCraftInfoHandler Superclass2;
 
 public:
 
     static vtkSpaceCraftInfoFilter *New();
     vtkTypeMacro(vtkSpaceCraftInfoFilter, vtkTableAlgorithm)
     void PrintSelf(ostream& os, vtkIndent indent);
-
-    vtkGetMacro(NumberOfTimeSteps, int)
 
     double getStartTime();
     double getEndTime();
@@ -31,6 +28,9 @@ protected:
     int RequestData(vtkInformation *request, vtkInformationVector ** inputVector, vtkInformationVector * outputVector);
     int FillInputPortInformation(int port, vtkInformation *info);
     int FillOutputPortInformation(int port, vtkInformation *info);
+
+    //handler
+    vtkSpaceCraftInfoHandler infoHandler;
 
 private:
     vtkSpaceCraftInfoFilter(const vtkSpaceCraftInfoFilter&);

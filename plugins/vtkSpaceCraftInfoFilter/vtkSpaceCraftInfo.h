@@ -41,12 +41,26 @@ class vtkDataSetAttributes;
 class vtkDataArraySelection;
 class vtkCallbackCommand;
 
+class spaceCraftDataElement
+{
+public:
+    QString  varName;
+    QVariant data;
+    QVariant badDataValue;
+    QString  units;
+    QString  notes;
+
+    long dataType;
+
+};
+
+
 class  vtkSpaceCraftInfoHandler : public  QObject
 {
     Q_OBJECT
 
     typedef QMap<QString, QVector <QPair < QVariant, QPair<QString, QVariant > > > >   epochDataEntry;
-    typedef QMap< double, epochDataEntry > varDataEntry;
+    typedef QMap< double, QMap<QString, spaceCraftDataElement > > varDataEntry;
 public:
     vtkSpaceCraftInfoHandler();
     ~vtkSpaceCraftInfoHandler();
@@ -72,11 +86,32 @@ public:
       return this->TimeRange[1];
   }
 
+  vtkInformation *getInInfo() const;
+  void setInInfo(vtkInformation *value);
+
+  vtkInformation *getOutInfo() const;
+  void setOutInfo(vtkInformation *value);
+
+  vtkTable *getOutput() const;
+  void setOutput(vtkTable *value);
+
+  int getNumberOfTimeSteps() const;
+  void setNumberOfTimeSteps(int value);
+
+  int RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector);
+  int RequestInfoFilter(vtkInformation * request, vtkInformationVector ** inputVector, vtkInformationVector * outputVector);
+
+  bool getProcessed() const;
+  void setProcessed(bool value);
+
 protected:
+
+
 
   //----- data -----//
   // Records the number of timesteps present
   int NumberOfTimeSteps;
+
   double requestedTimeValue;
   double *getTimeSteps();
   double startTime;
@@ -86,10 +121,6 @@ protected:
   //    timeSteps[timeStep] = time step value
   QList <double> timeSteps;
   double TimeRange[2];
-
-  // this data structure is as follows
-  //    satPositions ["sat Name"] [timeStep] [x|y|z] = position[x|y|z]
-  QMap <QString, QMap< double, double* > >  satPositions;
 
   //SpaceCraft Data Collection utilities
   bool processCDAWeb(vtkTable *output);
@@ -105,8 +136,10 @@ protected:
   QString tempFilePath;
 
   //Cached Data
-  //DataCache[DataSet][EPOCH][Variable][element][component]
-  QMap <QString, QMap< double, epochDataEntry > >   DataCache;
+  //DataCache[DataSet][EPOCH][Variable][element][component] !!OUTDATED!!
+  QMap <QString, QMap< double, QMap<QString, spaceCraftDataElement > > >  DataCache;
+  void cleanData();
+
   QMap<QString, QVector<double> > Epoch;
   bool processed;
 

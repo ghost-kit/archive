@@ -110,43 +110,37 @@ double *vtkSpaceCraftInfoHandler::getTimeSteps()
 //=========================================================================================//
 bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkTable *output)
 {
+    QMap<QString,spaceCraftDataElement>::Iterator elementsIter;
+
+
 
     QMap<QString, QString>::Iterator iter;
     for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
     {
 
-
         QString DataSet = this->CacheFileName.key(*iter);
         double time = this->requestedTimeValue;
         QStringList keys = this->DataCache[DataSet][time].keys();
 
-        for(int q=0; q<keys.size(); q++)
+        for(elementsIter = this->DataCache[DataSet][time].begin(); elementsIter != this->DataCache[DataSet][time].end(); ++elementsIter)
         {
-            std::cout << "DATA[" << time << "][" << keys[q].toAscii().data() << "]: " << this->DataCache[DataSet][time][keys[q]][0].first.toDouble()
-                    << " " << this->DataCache[DataSet][time][keys[q]][0].second.first.toAscii().data() <<  " :Bad Data: " <<  this->DataCache[DataSet][time][keys[q]][0].second.second.toDouble() << std::endl;
+            std::cout << "DATA[" << time << "][" << (*elementsIter).varName.toStdString()
+                      << "]: " << (*elementsIter).data.toDouble() << " " << (*elementsIter).units.toStdString() << " :Bad Data: "
+                      << (*elementsIter).badDataValue.toDouble() << std::endl;
 
-            long numElements = this->DataCache[DataSet][time][keys[q]].size();
 
-            vtkDoubleArray *newArray = vtkDoubleArray::New();
-            newArray->SetName(keys[q].toAscii().data());
-            newArray->SetNumberOfComponents(numElements);
+            vtkDoubleArray *newDataElement = vtkDoubleArray::New();
 
-            double *newData = new double[numElements];
-            for(int a=0; a < numElements; a++)
-            {
-                newData[a] = this->DataCache[DataSet][time][keys[q]][a].first.toDouble();
-                newArray->SetComponentName(a, this->DataCache[DataSet][time][keys[q]][a].second.first.toAscii().data());
-            }
+            newDataElement->SetName((*elementsIter).varName.toAscii().data());
+            newDataElement->SetNumberOfComponents(1);
 
-            newArray->InsertNextTupleValue(newData);
+            newDataElement->SetComponentName(0, (*elementsIter).units.toAscii().data());
 
-            output->AddColumn(newArray);
+            newDataElement->InsertNextValue( (*elementsIter).data.toDouble());
+            output->AddColumn(newDataElement);
 
-            newArray->Delete();
-            delete [] newData;
-
+            newDataElement->Delete();
         }
-
     }
 
     return true;
@@ -166,7 +160,7 @@ void vtkSpaceCraftInfoHandler::checkCDFstatus(CDFstatus status)
 //=========================================================================================//
 void vtkSpaceCraftInfoHandler::LoadCDFData()
 {
-    this->DataCache.clear();
+    this->cleanData();
 
     QVector<double> timeSteps;
 
@@ -187,6 +181,23 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
     }
 
     this->processed = true;
+}
+
+//=========================================================================================//
+void vtkSpaceCraftInfoHandler::cleanData()
+{
+    QMap<double, QMap<QString,spaceCraftDataElement> >::Iterator timeIter;
+    QMap <QString, QMap< double, QMap<QString, spaceCraftDataElement > > >::Iterator cacheIter;
+
+    for(cacheIter = this->DataCache.begin(); cacheIter != this->DataCache.end(); ++cacheIter)
+    {
+        for(timeIter = (*cacheIter).begin(); timeIter != (*cacheIter).end(); ++timeIter)
+        {
+            (*timeIter).clear();
+        }
+        (*cacheIter).clear();
+    }
+
 }
 
 //=========================================================================================//
@@ -465,12 +476,6 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
 
             for(int p =0; p < dataSet.size(); p++)
             {
-                QPair<QVariant, QPair<QString, QVariant> >  newData;
-
-                newData.first = dataSet[p];
-                newData.second.first = Units;
-                newData.second.second = InData.getInvalidData();
-
                 QString varNameTmp = InData.getName();
                 if(dataSet.size() > 1)
                 {
@@ -478,7 +483,11 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
                     std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
                 }
 
-                data[EpochList[v]][varNameTmp].push_back(newData);
+                data[EpochList[v]][varNameTmp].varName = varNameTmp;
+                data[EpochList[v]][varNameTmp].data = dataSet[p];
+                data[EpochList[v]][varNameTmp].units = Units;
+                data[EpochList[v]][varNameTmp].badDataValue = InData.getInvalidData();
+
                 std::cout << "Inserting into " << DateTime(EpochList[v]).getDateTimeString() << std::endl;
 
                 ++iter;
@@ -686,6 +695,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
     statusBar.hide();
 
+
 }
 
 //=========================================================================================//
@@ -727,7 +737,123 @@ void vtkSpaceCraftInfoHandler::SetBadDataHandler(int handler)
 
 }
 
+int vtkSpaceCraftInfoHandler::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+{
+    //Get the output Data object
+    this->outInfo = outputVector->GetInformationObject(0);
+    this->output = vtkTable::GetData(outInfo);
+
+    //get time request data
+    if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
+    {
+        this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    }
+
+    //if the data still needs to be loaded, load it...
+    if(!this->processed)
+    {
+        this->LoadCDFData();
+    }
+
+    //process to return the needed information
+    this->processCDAWeb(this->output);
+    return 1;
+}
+
+int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+{
+    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
+
+    this->setInInfo(inputVector[0]->GetInformationObject(0));
+    if(this->getInInfo()->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
+    {
+        std::cout << "Getting Number of Time steps" << std::flush << std::endl;
+        this->NumberOfTimeSteps = this->inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+        double *timeValues = this->inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+
+        //push time steps into list
+        this->timeSteps.clear();
+        for (int y = 0; y < this->NumberOfTimeSteps; y++)
+        {
+            this->timeSteps.push_back(timeValues[y]);
+        }
+        this->TimeRange[0] = this->timeSteps.first();
+        this->TimeRange[1] = this->timeSteps.last();
+    }
+    else
+    {
+        this->NumberOfTimeSteps = 0;
+    }
+
+    //Provide information to PV on how many time steps for which we will be providing information
+    this->outInfo = outputVector->GetInformationObject(0);
+
+    this->outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
+                       this->getTimeSteps(),
+                       this->NumberOfTimeSteps);
+
+    double timeRange[2] = {this->timeSteps.first(), this->timeSteps.last()};
+
+    this->outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
+                       timeRange,
+                       2);
+
+    this->inInfo = NULL;
+    this->outInfo = NULL;
+    return 1;
+}
 
 
 
 
+
+
+vtkTable *vtkSpaceCraftInfoHandler::getOutput() const
+{
+    return output;
+}
+
+void vtkSpaceCraftInfoHandler::setOutput(vtkTable *value)
+{
+    output = value;
+}
+
+vtkInformation *vtkSpaceCraftInfoHandler::getOutInfo() const
+{
+    return outInfo;
+}
+
+void vtkSpaceCraftInfoHandler::setOutInfo(vtkInformation *value)
+{
+    outInfo = value;
+}
+
+vtkInformation *vtkSpaceCraftInfoHandler::getInInfo() const
+{
+    return inInfo;
+}
+
+void vtkSpaceCraftInfoHandler::setInInfo(vtkInformation *value)
+{
+    inInfo = value;
+}
+
+int vtkSpaceCraftInfoHandler::getNumberOfTimeSteps() const
+{
+    return NumberOfTimeSteps;
+}
+
+void vtkSpaceCraftInfoHandler::setNumberOfTimeSteps(int value)
+{
+    NumberOfTimeSteps = value;
+}
+
+bool vtkSpaceCraftInfoHandler::getProcessed() const
+{
+    return processed;
+}
+
+void vtkSpaceCraftInfoHandler::setProcessed(bool value)
+{
+    processed = value;
+}

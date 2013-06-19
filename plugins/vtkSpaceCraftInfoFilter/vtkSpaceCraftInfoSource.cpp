@@ -41,34 +41,14 @@ vtkSpaceCraftInfoSource::~vtkSpaceCraftInfoSource()
 //===============================================//
 int vtkSpaceCraftInfoSource::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-    this->inInfo = NULL;
-    this->outInfo = NULL;
+
     return 1;
 }
 
 //===============================================//
 int vtkSpaceCraftInfoSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-    //Get the output Data object
-    this->outInfo = outputVector->GetInformationObject(0);
-    this->output = vtkTable::GetData(outInfo);
-
-    //get time request data
-    if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
-    {
-        this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    }
-
-    //if the data still needs to be loaded, load it...
-    if(!this->processed)
-    {
-        this->DataCache.clear();
-        this->LoadCDFData();
-    }
-
-    //process to return the needed information
-    this->processCDAWeb(this->output);
-    return 1;
+   return this->Superclass2::RequestData(request, inputVector, outputVector);
 }
 
 //===============================================//

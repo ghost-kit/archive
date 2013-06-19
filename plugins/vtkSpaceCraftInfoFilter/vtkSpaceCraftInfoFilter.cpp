@@ -27,10 +27,11 @@ vtkStandardNewMacro(vtkSpaceCraftInfoFilter)
 
 //===============================================//
 vtkSpaceCraftInfoFilter::vtkSpaceCraftInfoFilter()
-    : Superclass(), Superclass2()
+    : Superclass()
 {
     this->SetNumberOfInputPorts(1);
     this->SetNumberOfOutputPorts(1);
+
 }
 
 //===============================================//
@@ -41,71 +42,13 @@ vtkSpaceCraftInfoFilter::~vtkSpaceCraftInfoFilter()
 //===============================================//
 int vtkSpaceCraftInfoFilter::RequestInformation(vtkInformation * request, vtkInformationVector ** inputVector, vtkInformationVector * outputVector)
 {
-        std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
-
-        this->inInfo = inputVector[0]->GetInformationObject(0);
-        if(inInfo->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
-        {
-            std::cout << "Getting Number of Time steps" << std::flush << std::endl;
-            this->NumberOfTimeSteps = this->inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-            double *timeValues = this->inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-
-            //push time steps into list
-            this->timeSteps.clear();
-            for (int y = 0; y < this->NumberOfTimeSteps; y++)
-            {
-                this->timeSteps.push_back(timeValues[y]);
-            }
-            this->TimeRange[0] = this->timeSteps.first();
-            this->TimeRange[1] = this->timeSteps.last();
-        }
-        else
-        {
-            this->NumberOfTimeSteps = 0;
-        }
-
-        //Provide information to PV on how many time steps for which we will be providing information
-        this->outInfo = outputVector->GetInformationObject(0);
-
-        this->outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_STEPS(),
-                           this->getTimeSteps(),
-                           this->NumberOfTimeSteps);
-
-        double timeRange[2] = {this->timeSteps.first(), this->timeSteps.last()};
-
-        this->outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(),
-                           timeRange,
-                           2);
-
-        this->inInfo = NULL;
-        this->outInfo = NULL;
-        return 1;
+    return this->infoHandler.RequestInfoFilter(request, inputVector, outputVector);
 }
 
 //===============================================//
 int vtkSpaceCraftInfoFilter::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-
-        //Get the output Data object
-        this->outInfo = outputVector->GetInformationObject(0);
-        this->output = vtkTable::GetData(outInfo);
-
-        //get time request data
-        if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
-        {
-            this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-        }
-
-        //if the data still needs to be loaded, load it...
-        if(!this->processed)
-        {
-            this->DataCache.clear();
-            this->LoadCDFData();
-        }
-
-        //process to return the needed information
-        this->processCDAWeb(this->output);
-        return 1;
+    return this->infoHandler.RequestData(request, inputVector, outputVector);
 }
 
 //===============================================//
@@ -122,45 +65,49 @@ int vtkSpaceCraftInfoFilter::FillOutputPortInformation(int port, vtkInformation 
     return 1;
 }
 
+
 //===============================================//
 void vtkSpaceCraftInfoFilter::PrintSelf(ostream &os, vtkIndent indent)
 {
     this->Superclass::PrintSelf(os, indent);
-    os << indent << "NumberOfTimeSteps: " << this->NumberOfTimeSteps << std::endl;
 }
+
 
 //===============================================//
 double vtkSpaceCraftInfoFilter::getStartTime()
 {
-    return this->Superclass2::getStartTime();
+    return this->infoHandler.getStartTime();
 }
 
 //===============================================//
 double vtkSpaceCraftInfoFilter::getEndTime()
 {
-    return this->Superclass2::getEndTime();
+    return this->infoHandler.getEndTime();
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetSCIData(const char *group, const char *observatory, const char *list)
 {
-    return this->Superclass2::SetSCIData(group, observatory, list);
+    return this->infoHandler.SetSCIData(group, observatory, list);
+    this->infoHandler.setProcessed(false);
     this->Modified();
-    this->processed = false;
+
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetTimeFitHandler(int handler)
 {
-    return this->Superclass2::SetTimeFitHandler(handler);
+    return this->infoHandler.SetTimeFitHandler(handler);
+    this->infoHandler.setProcessed(false);
     this->Modified();
-    this->processed = false;
+
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetBadDataHandler(int handler)
 {
-    return this->Superclass2::SetBadDataHandler(handler);
+    return this->infoHandler.SetBadDataHandler(handler);
+    this->infoHandler.setProcessed(false);
     this->Modified();
-    this->processed = false;
+
 }

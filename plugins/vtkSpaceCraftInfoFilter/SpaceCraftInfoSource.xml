@@ -20,6 +20,7 @@
                                   command="getEndTime"
                                   information_only="1"
                                   number_of_elements="1"
+                                  immediate_update="1"
                                   default_values="-1" >
                 <SimpleDoubleInformationHelper/>
 
@@ -49,6 +50,7 @@
                                 command="SetTimeFitHandler"
                                 number_of_elements_per_command="1"
                                 label="Time Fit Handler"
+                                immediate_update="1"
                                 panel_visibility="default">
 
                 <EnumerationDomain name="enum">
@@ -72,6 +74,7 @@
                                 number_of_elements_per_command="1"
                                 label="Bad Data Handler"
                                 panel_visibility="default"
+                                immediate_update="1"
                                 default_values="2">
 
                 <EnumerationDomain name="enum">
@@ -96,6 +99,7 @@
                                 number_of_elements = "3"
                                 panel_widget="SpaceCraftInfoProperties"
                                 label = ""
+                                immediate_update="1"
                                 panel_visibility = "default">
 
                 <Documentation>
