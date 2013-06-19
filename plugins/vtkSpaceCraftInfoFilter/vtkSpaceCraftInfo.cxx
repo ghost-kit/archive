@@ -695,6 +695,9 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
     statusBar.hide();
 
+    //hack
+    this->LoadCDFData();
+
 
 }
 
@@ -847,6 +850,7 @@ void vtkSpaceCraftInfoHandler::setNumberOfTimeSteps(int value)
 {
     NumberOfTimeSteps = value;
 }
+
 
 bool vtkSpaceCraftInfoHandler::getProcessed() const
 {

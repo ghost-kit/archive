@@ -81,9 +81,20 @@ public:
       return this->TimeRange[0];
   }
 
+  void setStartTime(double value)
+  {
+      this->TimeRange[0] = value;
+  }
+
   virtual double getEndTime()
   {
       return this->TimeRange[1];
+  }
+
+
+  void setEndTime(double value)
+  {
+      this->TimeRange[1] = value;
   }
 
   vtkInformation *getInInfo() const;

@@ -24,6 +24,7 @@ protected:
     vtkSpaceCraftInfoFilter();
     ~vtkSpaceCraftInfoFilter();
 
+    int ProcessRequest(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector);
     int RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector);
     int RequestData(vtkInformation *request, vtkInformationVector ** inputVector, vtkInformationVector * outputVector);
     int FillInputPortInformation(int port, vtkInformation *info);

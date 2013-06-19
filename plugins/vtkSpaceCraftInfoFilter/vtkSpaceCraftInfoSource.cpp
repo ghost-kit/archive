@@ -27,7 +27,7 @@ vtkStandardNewMacro(vtkSpaceCraftInfoSource)
 
 //===============================================//
 vtkSpaceCraftInfoSource::vtkSpaceCraftInfoSource()
-    : Superclass(), Superclass2()
+    : Superclass()
 {
     this->SetNumberOfInputPorts(0);
     this->SetNumberOfOutputPorts(1);
@@ -36,6 +36,22 @@ vtkSpaceCraftInfoSource::vtkSpaceCraftInfoSource()
 //===============================================//
 vtkSpaceCraftInfoSource::~vtkSpaceCraftInfoSource()
 {
+}
+
+//===============================================//
+int vtkSpaceCraftInfoSource::ProcessRequest(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+{
+    if(request->Has(vtkDemandDrivenPipeline::REQUEST_INFORMATION()))
+    {
+        return this->RequestInformation(request, inputVector, outputVector);
+    }
+    else if(request->Has(vtkStreamingDemandDrivenPipeline::REQUEST_DATA()))
+    {
+        return this->RequestData(request, inputVector, outputVector);
+    }
+
+    return this->Superclass::ProcessRequest(request, inputVector, outputVector);
+
 }
 
 //===============================================//
@@ -48,7 +64,7 @@ int vtkSpaceCraftInfoSource::RequestInformation(vtkInformation *request, vtkInfo
 //===============================================//
 int vtkSpaceCraftInfoSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-   return this->Superclass2::RequestData(request, inputVector, outputVector);
+    return this->infoHandler.RequestData(request, inputVector, outputVector);
 }
 
 //===============================================//
@@ -85,24 +101,24 @@ double vtkSpaceCraftInfoSource::getEndTime()
 //===============================================//
 void vtkSpaceCraftInfoSource::SetSCIData(const char *group, const char *observatory, const char *list)
 {
-    this->Superclass2::SetSCIData(group,observatory, list);
-    this->processed = false;
+    return this->infoHandler.SetSCIData(group, observatory, list);
+    this->infoHandler.setProcessed(false);
     this->Modified();
 }
 
 //===============================================//
 void vtkSpaceCraftInfoSource::SetTimeFitHandler(int handler)
 {
-    this->Superclass2::SetTimeFitHandler(handler);
-    this->processed = false;
+    return this->infoHandler.SetTimeFitHandler(handler);
+    this->infoHandler.setProcessed(false);
     this->Modified();
 }
 
 //===============================================//
 void vtkSpaceCraftInfoSource::SetBadDataHandler(int handler)
 {
-    this->Superclass2::SetBadDataHandler(handler);
-    this->processed = false;
+    return this->infoHandler.SetBadDataHandler(handler);
+    this->infoHandler.setProcessed(false);
     this->Modified();
 }
 
@@ -112,10 +128,10 @@ void vtkSpaceCraftInfoSource::setTimeRange(const double start, const double end)
     std::cout << "Start MJD: " << start << std::endl;
     std::cout << "End MJD:   " << end << std::endl;
 
-    this->startTime = start;
-    this->endTime = end;
+    this->infoHandler.setStartTime(start);
+    this->infoHandler.setEndTime(end);
 
-    this->processed = false;
+    this->infoHandler.setProcessed( false);
 
     this->Modified();
 }

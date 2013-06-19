@@ -39,6 +39,21 @@ vtkSpaceCraftInfoFilter::~vtkSpaceCraftInfoFilter()
 {
 }
 
+int vtkSpaceCraftInfoFilter::ProcessRequest(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+{
+    if(request->Has(vtkDemandDrivenPipeline::REQUEST_INFORMATION()))
+    {
+        return this->RequestInformation(request, inputVector, outputVector);
+    }
+    else if(request->Has(vtkStreamingDemandDrivenPipeline::REQUEST_DATA()))
+    {
+        return this->RequestData(request, inputVector, outputVector);
+    }
+
+    return this->Superclass::ProcessRequest(request, inputVector, outputVector);
+
+}
+
 //===============================================//
 int vtkSpaceCraftInfoFilter::RequestInformation(vtkInformation * request, vtkInformationVector ** inputVector, vtkInformationVector * outputVector)
 {
