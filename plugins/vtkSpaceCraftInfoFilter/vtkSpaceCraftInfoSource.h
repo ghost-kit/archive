@@ -6,13 +6,17 @@
 
 class  VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfoSource : public vtkTableAlgorithm, vtkSpaceCraftInfoHandler
 {
-    typedef Superclass vtkSpaceCraftInfoHandler;
+    typedef vtkSpaceCraftInfoHandler Superclass2;
 public:
     static vtkSpaceCraftInfoSource *New();
     vtkTypeMacro(vtkSpaceCraftInfoSource, vtkTableAlgorithm)
     void PrintSelf(ostream& os, vtkIndent indent);
 
-    vtkGetMacro(NumberOfTimeSteps, int);
+    double getStartTime();
+    double getEndTime();
+    void SetSCIData(const char *group, const char *observatory, const char *list);
+    void SetTimeFitHandler(int handler);
+    void SetBadDataHandler(int handler);
 
 protected:
     vtkSpaceCraftInfoSource();

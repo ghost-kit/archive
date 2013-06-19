@@ -10,6 +10,7 @@
           </ProxyGroupDomain>
           <DataTypeDomain name="input_type">
             <DataType value="vtkStructuredGrid"/>
+            <DataType value="vtkUnstructuredGrid"/>
           </DataTypeDomain>
 
           <InputArrayDomain name="input_array" attribute_type="point"

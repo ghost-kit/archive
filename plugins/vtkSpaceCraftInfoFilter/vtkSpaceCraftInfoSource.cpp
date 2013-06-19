@@ -93,4 +93,38 @@ void vtkSpaceCraftInfoSource::PrintSelf(ostream &os, vtkIndent indent)
 {
 }
 
+//===============================================//
+double vtkSpaceCraftInfoSource::getStartTime()
+{
+    return -1;
+}
+
+//===============================================//
+double vtkSpaceCraftInfoSource::getEndTime()
+{
+    return -1;
+}
+
+//===============================================//
+void vtkSpaceCraftInfoSource::SetSCIData(const char *group, const char *observatory, const char *list)
+{
+    this->Superclass2::SetSCIData(group,observatory, list);
+}
+
+//===============================================//
+void vtkSpaceCraftInfoSource::SetTimeFitHandler(int handler)
+{
+    this->Superclass2::SetTimeFitHandler(handler);
+}
+
+//===============================================//
+void vtkSpaceCraftInfoSource::SetBadDataHandler(int handler)
+{
+    this->Superclass2::SetBadDataHandler(handler);
+}
+
+
+
+
+
 

@@ -52,22 +52,22 @@ public:
     ~vtkSpaceCraftInfoHandler();
   void PrintSelf(ostream& os, vtkIndent indent);
 
-
-  //Callbacks
-  void SetSCIData(const char *group, const char *observatory, const char *list);
-  void SetTimeFitHandler(int handler);
-  void SetBadDataHandler(int handler);
   long getNearestLowerIndex(DateTime &neededEpoch, QVector<DateTime> &convertedFileEpoch);
   bool findEpochVar(cdfDataReader &cdfFile, QStringList &varsAvailable, QString &EpochVar);
 
+  //Callbacks
+  virtual void SetSCIData(const char *group, const char *observatory, const char *list);
+  virtual void SetTimeFitHandler(int handler);
+  virtual void SetBadDataHandler(int handler);
+
   //call for getting time range
 //  vtkGetVector2Macro(TimeRange, double);
-  double getStartTime()
+  virtual double getStartTime()
   {
       return this->TimeRange[0];
   }
 
-  double getEndTime()
+  virtual double getEndTime()
   {
       return this->TimeRange[1];
   }
