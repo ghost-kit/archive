@@ -78,6 +78,9 @@ vtkSpaceCraftInfoHandler::vtkSpaceCraftInfoHandler()
     this->TimeRange[0] = 0;
     this->TimeRange[1] = 0;
 
+    this->startTime =0;
+    this->endTime   =0;
+
 
 }
 
@@ -562,10 +565,32 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
                     filterNetworkAccessModule manager;
                     QString url;
 
-                    DateTime startTime(this->timeSteps.first());
-                    startTime.incrementMinutes(-60);
-                    DateTime endTime(this->timeSteps.last());
+
+                    //set start time
+                    DateTime startTime;
+                    if(this->startTime == 0)
+                    {
+                        startTime.setMJD(this->timeSteps.first());
+                    }
+                    else
+                    {
+                        startTime.setMJD(this->startTime);
+                    }
+
+                    //set the end time
+                    DateTime endTime;
+                    if(this->endTime == 0)
+                    {
+                        endTime.setMJD(this->timeSteps.last());
+                    }
+                    else
+                    {
+                        endTime.setMJD(this->endTime);
+                    }
+
                     endTime.incrementMinutes(+60);
+                    startTime.incrementMinutes(-60);
+
 
                     url = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys")
                             + "/datasets/" + DSet

@@ -1,6 +1,5 @@
 #include "vtkSpaceCraftInfoSource.h"
 
-
 #include "vtkCommand.h"
 #include "vtkAbstractArray.h"
 #include "vtkCallbackCommand.h"
@@ -28,7 +27,7 @@ vtkStandardNewMacro(vtkSpaceCraftInfoSource)
 
 //===============================================//
 vtkSpaceCraftInfoSource::vtkSpaceCraftInfoSource()
-    : Superclass()
+    : Superclass(), Superclass2()
 {
     this->SetNumberOfInputPorts(0);
     this->SetNumberOfOutputPorts(1);
@@ -42,7 +41,6 @@ vtkSpaceCraftInfoSource::~vtkSpaceCraftInfoSource()
 //===============================================//
 int vtkSpaceCraftInfoSource::RequestInformation(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-
     this->inInfo = NULL;
     this->outInfo = NULL;
     return 1;
@@ -73,14 +71,12 @@ int vtkSpaceCraftInfoSource::RequestData(vtkInformation *request, vtkInformation
     return 1;
 }
 
-
 //===============================================//
 int vtkSpaceCraftInfoSource::FillOutputPortInformation(int port, vtkInformation *info)
 {
     info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
     return 1;
 }
-
 
 //===============================================//
 int vtkSpaceCraftInfoSource::FillInputPortInformation(int port, vtkInformation *info)
@@ -91,6 +87,7 @@ int vtkSpaceCraftInfoSource::FillInputPortInformation(int port, vtkInformation *
 //===============================================//
 void vtkSpaceCraftInfoSource::PrintSelf(ostream &os, vtkIndent indent)
 {
+    this->Superclass::PrintSelf(os, indent);
 }
 
 //===============================================//
@@ -123,8 +120,12 @@ void vtkSpaceCraftInfoSource::SetBadDataHandler(int handler)
     this->Superclass2::SetBadDataHandler(handler);
 }
 
+//===============================================//
+void vtkSpaceCraftInfoSource::setTimeRange(const double start, const double end)
+{
+    std::cout << "Start MJD: " << start << std::endl;
+    std::cout << "End MJD:   " << end << std::endl;
 
-
-
-
-
+    this->startTime = start;
+    this->endTime = end;
+}

@@ -3,8 +3,6 @@
 //      3) Fix Variable Selection
 //      4) Optimize the call pattern for information
 
-
-
 #include "ScInfoPropWidget.h"
 #include "ui_ScInfoPropWidget.h"
 
@@ -85,6 +83,10 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     //connect signals to slots
 
+    /** Time Connections */
+    connect(ui->startTime, SIGNAL(editingFinished()), this, SLOT(startDateEditComplete()));
+    connect(ui->endTime, SIGNAL(editingFinished()), this, SLOT(endDateEditComplete()));
+
     /** Group Connections */
     connect(ui->Group, SIGNAL(activated(QString)), this, SLOT(selectedGroup(QString)));
 
@@ -99,8 +101,10 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     connect(ui->DataSet, SIGNAL(itemSelectionChanged()), this, SLOT(dataGroupSelectionChanged()));
     connect(this, SIGNAL(recheckDataSetSelction()), this, SLOT(dataGroupSelectionChanged()));
 
-    /** Property Links */
+    /** Property Links to trigger Apply button active */
     this->addPropertyLink(ui->Variables, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
+    this->addPropertyLink(ui->startTime, smproxy->GetPropertyName(smproperty), SIGNAL(editingFinished()), this->svp);
+    this->addPropertyLink(ui->endTime, smproxy->GetPropertyName(smproperty), SIGNAL(editingFinished()), this->svp);
 
 }
 
@@ -115,9 +119,6 @@ ScInfoPropWidget::~ScInfoPropWidget()
 //==================================================================
 void ScInfoPropWidget::apply()
 {
-
-    //TODO: Need to capture the Selected Variables to pass back to filter.
-
 
     std::cout << "APPLY CLICKED" << std::endl;
 
@@ -210,6 +211,41 @@ void ScInfoPropWidget::apply()
     this->svp->SetElement(0, this->currentGroup.toAscii().data());
     this->svp->SetElement(1, this->currentObservatory.toAscii().data());
     this->svp->SetElement(2, DataString.toAscii().data());
+
+    //set date and time
+    QDateTime start = ui->startTime->dateTime();
+
+    DateTime startDT;
+    startDT.setYear(start.date().year());
+    startDT.setMonth(start.date().month());
+    startDT.setDay(start.date().day());
+
+    startDT.setHours(start.time().hour());
+    startDT.setMinutes(start.time().minute());
+    startDT.setSeconds(start.time().second());
+
+    QDateTime end = ui->endTime->dateTime();
+
+    DateTime endDT;
+    endDT.setYear(end.date().year());
+    endDT.setMonth(end.date().month());
+    endDT.setDay(end.date().day());
+
+    endDT.setHours(end.time().hour());
+    endDT.setMinutes(end.time().minute());
+    endDT.setSeconds(end.time().second());
+
+    std::cout << "Set Start DateTime to: " << startDT.getDateTimeString() << std::endl;
+    std::cout << "Set End DateTime to: " << endDT.getDateTimeString() << std::endl;
+
+    if(this->smProxy->GetProperty("TimeRange"))
+    {
+        vtkSMDoubleVectorProperty *timeRange =  vtkSMDoubleVectorProperty::SafeDownCast(this->smProxy->GetProperty("TimeRange"));
+        timeRange->SetNumberOfElementsPerCommand(2);
+        timeRange->SetElement(0,startDT.getMJD());
+        timeRange->SetElement(1,endDT.getMJD());
+    }
+
 
     //apply the upstream parameters
     Superclass::apply();
@@ -793,6 +829,47 @@ void ScInfoPropWidget::processDeniedDataRequests()
 
         emit this->recheckDataSetSelction();
     }
+
+}
+
+//==================================================================
+void ScInfoPropWidget::startDateEditComplete()
+{
+    std::cout << "Start Date has beed edited" << std::endl;
+
+    QDateTime start = ui->startTime->dateTime();
+
+    DateTime startDT;
+    startDT.setYear(start.date().year());
+    startDT.setMonth(start.date().month());
+    startDT.setDay(start.date().day());
+
+    startDT.setHours(start.time().hour());
+    startDT.setMinutes(start.time().minute());
+    startDT.setSeconds(start.time().second());
+
+    this->startMJD = startDT.getMJD();
+
+
+}
+
+//==================================================================
+void ScInfoPropWidget::endDateEditComplete()
+{
+    std::cout << "End Date has been edited" << std::endl;
+
+    QDateTime end = ui->endTime->dateTime();
+
+    DateTime endDT;
+    endDT.setYear(end.date().year());
+    endDT.setMonth(end.date().month());
+    endDT.setDay(end.date().day());
+
+    endDT.setHours(end.time().hour());
+    endDT.setMinutes(end.time().minute());
+    endDT.setSeconds(end.time().second());
+
+    this->endMJD = endDT.getMJD();
 
 }
 

@@ -27,10 +27,10 @@ vtkStandardNewMacro(vtkSpaceCraftInfoFilter)
 
 //===============================================//
 vtkSpaceCraftInfoFilter::vtkSpaceCraftInfoFilter()
+    : Superclass(), Superclass2()
 {
     this->SetNumberOfInputPorts(1);
     this->SetNumberOfOutputPorts(1);
-
 }
 
 //===============================================//
@@ -128,29 +128,32 @@ void vtkSpaceCraftInfoFilter::PrintSelf(ostream &os, vtkIndent indent)
     os << indent << "NumberOfTimeSteps: " << this->NumberOfTimeSteps << std::endl;
 }
 
+//===============================================//
 double vtkSpaceCraftInfoFilter::getStartTime()
 {
     return this->Superclass2::getStartTime();
 }
 
+//===============================================//
 double vtkSpaceCraftInfoFilter::getEndTime()
 {
     return this->Superclass2::getEndTime();
 }
 
+//===============================================//
 void vtkSpaceCraftInfoFilter::SetSCIData(const char *group, const char *observatory, const char *list)
 {
     return this->Superclass2::SetSCIData(group, observatory, list);
 }
 
+//===============================================//
 void vtkSpaceCraftInfoFilter::SetTimeFitHandler(int handler)
 {
     return this->Superclass2::SetTimeFitHandler(handler);
 }
 
+//===============================================//
 void vtkSpaceCraftInfoFilter::SetBadDataHandler(int handler)
 {
     return this->Superclass2::SetBadDataHandler(handler);
 }
-
-

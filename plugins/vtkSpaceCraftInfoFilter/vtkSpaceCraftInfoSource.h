@@ -18,6 +18,8 @@ public:
     void SetTimeFitHandler(int handler);
     void SetBadDataHandler(int handler);
 
+    void setTimeRange(const double start, const double end);
+
 protected:
     vtkSpaceCraftInfoSource();
     ~vtkSpaceCraftInfoSource();

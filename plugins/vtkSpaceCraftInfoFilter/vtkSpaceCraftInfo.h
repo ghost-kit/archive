@@ -79,6 +79,8 @@ protected:
   int NumberOfTimeSteps;
   double requestedTimeValue;
   double *getTimeSteps();
+  double startTime;
+  double endTime;
 
   // This Data Structure yeilds the value of the timestep by integer step
   //    timeSteps[timeStep] = time step value

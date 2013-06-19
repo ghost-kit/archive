@@ -128,6 +128,9 @@ private slots:
     void processDeniedInstrumentRequests();
     void processDeniedDataRequests();
 
+    void startDateEditComplete();
+    void endDateEditComplete();
+
 signals:
     void recheckInstrumentSelections();
     void recheckDataSetSelction();
