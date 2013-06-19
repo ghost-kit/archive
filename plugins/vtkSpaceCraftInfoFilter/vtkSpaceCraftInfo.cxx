@@ -166,6 +166,7 @@ void vtkSpaceCraftInfoHandler::checkCDFstatus(CDFstatus status)
 //=========================================================================================//
 void vtkSpaceCraftInfoHandler::LoadCDFData()
 {
+    this->DataCache.clear();
 
     QVector<double> timeSteps;
 

@@ -106,18 +106,24 @@ double vtkSpaceCraftInfoSource::getEndTime()
 void vtkSpaceCraftInfoSource::SetSCIData(const char *group, const char *observatory, const char *list)
 {
     this->Superclass2::SetSCIData(group,observatory, list);
+    this->processed = false;
+    this->Modified();
 }
 
 //===============================================//
 void vtkSpaceCraftInfoSource::SetTimeFitHandler(int handler)
 {
     this->Superclass2::SetTimeFitHandler(handler);
+    this->processed = false;
+    this->Modified();
 }
 
 //===============================================//
 void vtkSpaceCraftInfoSource::SetBadDataHandler(int handler)
 {
     this->Superclass2::SetBadDataHandler(handler);
+    this->processed = false;
+    this->Modified();
 }
 
 //===============================================//
@@ -128,4 +134,8 @@ void vtkSpaceCraftInfoSource::setTimeRange(const double start, const double end)
 
     this->startTime = start;
     this->endTime = end;
+
+    this->processed = false;
+
+    this->Modified();
 }

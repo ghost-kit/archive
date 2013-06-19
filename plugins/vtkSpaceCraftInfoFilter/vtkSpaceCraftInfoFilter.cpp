@@ -85,6 +85,7 @@ int vtkSpaceCraftInfoFilter::RequestInformation(vtkInformation * request, vtkInf
 //===============================================//
 int vtkSpaceCraftInfoFilter::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+
         //Get the output Data object
         this->outInfo = outputVector->GetInformationObject(0);
         this->output = vtkTable::GetData(outInfo);
@@ -144,16 +145,22 @@ double vtkSpaceCraftInfoFilter::getEndTime()
 void vtkSpaceCraftInfoFilter::SetSCIData(const char *group, const char *observatory, const char *list)
 {
     return this->Superclass2::SetSCIData(group, observatory, list);
+    this->Modified();
+    this->processed = false;
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetTimeFitHandler(int handler)
 {
     return this->Superclass2::SetTimeFitHandler(handler);
+    this->Modified();
+    this->processed = false;
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetBadDataHandler(int handler)
 {
     return this->Superclass2::SetBadDataHandler(handler);
+    this->Modified();
+    this->processed = false;
 }
