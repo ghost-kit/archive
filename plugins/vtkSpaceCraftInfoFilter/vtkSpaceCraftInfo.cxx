@@ -147,6 +147,47 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkTable *output)
 }
 
 //=========================================================================================//
+bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkTable *output)
+{
+    QMap<QString,spaceCraftDataElement>::Iterator elementsIter;
+
+    QMap<QString, QString>::Iterator iter;
+    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    {
+        vtkDoubleArray *newDataElement = vtkDoubleArray::New();
+
+
+        QString DataSet = this->CacheFileName.key(*iter);
+        QList<double> times = this->DataCache[DataSet].keys();
+        QList<double>::Iterator timesIter;
+
+        for(timesIter=times.begin(); timesIter != times.end(); ++timesIter)
+        {
+            double time = (*timesIter);
+
+            newDataElement->SetName((*elementsIter).varName.toAscii().data());
+
+            for(elementsIter = this->DataCache[DataSet][time].begin(); elementsIter != this->DataCache[DataSet][time].end(); ++elementsIter)
+            {
+                std::cout << "DATA[" << time << "][" << (*elementsIter).varName.toStdString()
+                          << "]: " << (*elementsIter).data.toDouble() << " " << (*elementsIter).units.toStdString() << " :Bad Data: "
+                          << (*elementsIter).badDataValue.toDouble() << std::endl;
+
+                newDataElement->SetComponentName(0, (*elementsIter).units.toAscii().data());
+
+                newDataElement->InsertNextValue( (*elementsIter).data.toDouble());
+
+            }
+
+            output->AddColumn(newDataElement);
+            newDataElement->Delete();
+        }
+    }
+
+    return true;
+}
+
+//=========================================================================================//
 void vtkSpaceCraftInfoHandler::checkCDFstatus(CDFstatus status)
 {
     char text[CDF_STATUSTEXT_LEN+1];
@@ -893,7 +934,7 @@ int vtkSpaceCraftInfoHandler::RequestDataSource(vtkInformation *request, vtkInfo
         this->LoadCDFDataSource();
     }
 
-    this->processCDAWeb(this->output);
+    this->processCDAWebSource(this->output);
     return 1;
 }
 
@@ -1013,10 +1054,10 @@ void vtkSpaceCraftInfoHandler::setNumInputPorts(int value)
 
 int vtkSpaceCraftInfoHandler::getNumOutputPorts() const
 {
-return numOutputPorts;
+    return numOutputPorts;
 }
 
 void vtkSpaceCraftInfoHandler::setNumOutputPorts(int value)
 {
-numOutputPorts = value;
+    numOutputPorts = value;
 }

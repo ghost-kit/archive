@@ -144,6 +144,7 @@ protected:
 
   //SpaceCraft Data Collection utilities
   bool processCDAWeb(vtkTable *output);
+  bool processCDAWebSource(vtkTable *output);
 
   //Requested Data
   QStringList requestedData;
