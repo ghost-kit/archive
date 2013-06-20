@@ -78,23 +78,23 @@ public:
 //  vtkGetVector2Macro(TimeRange, double);
   virtual double getStartTime()
   {
-      return this->TimeRange[0];
+      return this->startTime;
   }
 
   void setStartTime(double value)
   {
-      this->TimeRange[0] = value;
+      this->startTime = value;
   }
 
   virtual double getEndTime()
   {
-      return this->TimeRange[1];
+      return this->endTime;
   }
 
 
   void setEndTime(double value)
   {
-      this->TimeRange[1] = value;
+      this->endTime = value;
   }
 
   vtkInformation *getInInfo() const;
@@ -110,14 +110,23 @@ public:
   void setNumberOfTimeSteps(int value);
 
   int RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector);
+  int RequestDataSource(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector);
+
   int RequestInfoFilter(vtkInformation * request, vtkInformationVector ** inputVector, vtkInformationVector * outputVector);
 
   bool getProcessed() const;
   void setProcessed(bool value);
 
+  int getNumInputPorts() const;
+  void setNumInputPorts(int value);
+
+  int getNumOutputPorts() const;
+  void setNumOutputPorts(int value);
+
 protected:
 
-
+  int numInputPorts;
+  int numOutputPorts;
 
   //----- data -----//
   // Records the number of timesteps present
@@ -142,6 +151,7 @@ protected:
   QString observatory;
 
   void LoadCDFData();
+  void LoadCDFDataSource();
 
   //temp file paths
   QString tempFilePath;
@@ -161,6 +171,7 @@ protected:
 
   bool getDataForEpoch(QString &DataSet, double Epoch, epochDataEntry  &data);
   bool getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data);
+  bool getDataForAllEpochs(QString &DataSet, varDataEntry &data);
 
   //------ gui attributes pannel ------//
 

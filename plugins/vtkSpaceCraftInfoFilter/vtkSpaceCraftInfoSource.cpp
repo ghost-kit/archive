@@ -31,6 +31,9 @@ vtkSpaceCraftInfoSource::vtkSpaceCraftInfoSource()
 {
     this->SetNumberOfInputPorts(0);
     this->SetNumberOfOutputPorts(1);
+
+    this->infoHandler.setNumInputPorts(0);
+    this->infoHandler.setNumOutputPorts(1);
 }
 
 //===============================================//
@@ -64,7 +67,7 @@ int vtkSpaceCraftInfoSource::RequestInformation(vtkInformation *request, vtkInfo
 //===============================================//
 int vtkSpaceCraftInfoSource::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-    return this->infoHandler.RequestData(request, inputVector, outputVector);
+    return this->infoHandler.RequestDataSource(request, inputVector, outputVector);
 }
 
 //===============================================//
@@ -101,25 +104,28 @@ double vtkSpaceCraftInfoSource::getEndTime()
 //===============================================//
 void vtkSpaceCraftInfoSource::SetSCIData(const char *group, const char *observatory, const char *list)
 {
-    return this->infoHandler.SetSCIData(group, observatory, list);
     this->infoHandler.setProcessed(false);
     this->Modified();
+    return this->infoHandler.SetSCIData(group, observatory, list);
+
 }
 
 //===============================================//
 void vtkSpaceCraftInfoSource::SetTimeFitHandler(int handler)
 {
-    return this->infoHandler.SetTimeFitHandler(handler);
     this->infoHandler.setProcessed(false);
     this->Modified();
+    return this->infoHandler.SetTimeFitHandler(handler);
+
 }
 
 //===============================================//
 void vtkSpaceCraftInfoSource::SetBadDataHandler(int handler)
 {
-    return this->infoHandler.SetBadDataHandler(handler);
     this->infoHandler.setProcessed(false);
     this->Modified();
+    return this->infoHandler.SetBadDataHandler(handler);
+
 }
 
 //===============================================//

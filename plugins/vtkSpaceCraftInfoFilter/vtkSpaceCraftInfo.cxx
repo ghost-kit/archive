@@ -184,8 +184,26 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
 }
 
 //=========================================================================================//
+void vtkSpaceCraftInfoHandler::LoadCDFDataSource()
+{
+    this->cleanData();
+
+    QMap<QString, QString>::Iterator iter;
+    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    {
+        // get the data set name so we can organize our data
+        QString DataSet = this->CacheFileName.key(*iter);
+
+        //get the data for ALL Epochs
+        this->getDataForAllEpochs(DataSet, this->DataCache[DataSet]);
+    }
+
+}
+
+//=========================================================================================//
 void vtkSpaceCraftInfoHandler::cleanData()
 {
+    //clear all of the data cache elements
     QMap<double, QMap<QString,spaceCraftDataElement> >::Iterator timeIter;
     QMap <QString, QMap< double, QMap<QString, spaceCraftDataElement > > >::Iterator cacheIter;
 
@@ -500,6 +518,95 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
     return true;
 }
 
+//=========================================================================================//
+bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCraftInfoHandler::varDataEntry &data)
+{
+    QVector<DateTime> FileEpochsAsDateTime;
+    QString EpochVar;
+
+
+    //Data File
+    cdfDataReader cdfFile(this->CacheFileName[DataSet]);
+
+    //link the handler and reader to each other (Required)
+    this->BDhandler->setReader(&cdfFile);
+    cdfFile.setBDHandler(this->BDhandler);
+
+    //get list of variables
+    QStringList varsAvailable = cdfFile.getZVariableList();
+
+    //Find Epoch Variable (we need it for our time information)
+    if(findEpochVar(cdfFile, varsAvailable, EpochVar))
+    {
+        //get the Epoch data
+        cdfDataSet Epoch = cdfFile.getZVariable(EpochVar.toAscii().data());
+
+        //convert to Epoch Times
+        this->convertEpochToDateTime(FileEpochsAsDateTime, Epoch);
+    }
+    else
+    {
+        std::cerr << "Could not find Epoch Var. Setting Index Found to 1" << std::endl;
+    }
+
+    QVector<long>::Iterator timeIter;
+
+    //get the data
+    for(int c = 0; c < varsAvailable.size(); c++)
+    {
+
+        cdfVarInfo varinfo = cdfFile.getZVariableInformation(varsAvailable[c]);
+
+        //skip the variable if it doesn't have the correct index.
+        if(varinfo.numRecords < FileEpochsAsDateTime.size())
+        {
+            std::cerr << "Data Parse Failure on Variable " << varsAvailable[c].toAscii().data() << "..." << std::endl;
+            break;
+        }
+
+        //get the units
+        QString Units;
+        getCDFUnits(cdfFile, varsAvailable[c], Units);
+
+        for(int64_t v = 0; v < FileEpochsAsDateTime.size(); v++)
+        {
+            //get the corrected value so the selected bad data handler will be applied
+            cdfDataSet InData = cdfFile.getCorrectedZVariableRecord(varsAvailable[c], v);
+
+            std::cout << "Getting Variable: " << varsAvailable[c].toAscii().data() <<  std::endl;
+
+            QVector<QVariant> dataSet = InData.getData();
+
+            QVector<QVariant>::Iterator iter;
+
+            //cycle through the items
+
+            for(int p =0; p < dataSet.size(); p++)
+            {
+                QString varNameTmp = InData.getName();
+                if(dataSet.size() > 1)
+                {
+                    varNameTmp = varNameTmp + "_" + QVariant(p).toString();
+                    std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
+                }
+
+                data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].varName = varNameTmp;
+                data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].data = dataSet[p];
+                data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].units = Units;
+                data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].badDataValue = InData.getInvalidData();
+
+                std::cout << "Inserting into " << FileEpochsAsDateTime[v].getDateTimeString() << std::endl;
+
+                ++iter;
+            }
+
+        }
+    }
+
+
+    return true;
+}
+
 
 //=========================================================================================//
 void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observatory, const char *list)
@@ -568,6 +675,8 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
                 statusBar.updateAll();
 
                 //get the variables we need to get data on
+
+
                 if(parts[1] != "")
                 {
                     VarSet = parts[1].split("|");
@@ -578,7 +687,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
                     //set start time
                     DateTime startTime;
-                    if(this->startTime == 0)
+                    if(this->numInputPorts == 1)
                     {
                         startTime.setMJD(this->timeSteps.first());
                     }
@@ -589,7 +698,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
                     //set the end time
                     DateTime endTime;
-                    if(this->endTime == 0)
+                    if(this->numInputPorts == 1)
                     {
                         endTime.setMJD(this->timeSteps.last());
                     }
@@ -740,6 +849,7 @@ void vtkSpaceCraftInfoHandler::SetBadDataHandler(int handler)
 
 }
 
+//===============================================//
 int vtkSpaceCraftInfoHandler::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
     //Get the output Data object
@@ -763,6 +873,31 @@ int vtkSpaceCraftInfoHandler::RequestData(vtkInformation *request, vtkInformatio
     return 1;
 }
 
+//===============================================//
+int vtkSpaceCraftInfoHandler::RequestDataSource(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
+{
+
+    //Get the output Data object
+    this->outInfo = outputVector->GetInformationObject(0);
+    this->output = vtkTable::GetData(outInfo);
+
+    //if we are dealing with timesteps, put them here
+    if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
+    {
+        this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+    }
+
+    //load the data
+    if(!this->processed)
+    {
+        this->LoadCDFDataSource();
+    }
+
+    this->processCDAWeb(this->output);
+    return 1;
+}
+
+//===============================================//
 int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
     std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
@@ -806,58 +941,82 @@ int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInfo
     return 1;
 }
 
-
-
-
-
-
+//===============================================//
 vtkTable *vtkSpaceCraftInfoHandler::getOutput() const
 {
     return output;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setOutput(vtkTable *value)
 {
     output = value;
 }
 
+//===============================================//
 vtkInformation *vtkSpaceCraftInfoHandler::getOutInfo() const
 {
     return outInfo;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setOutInfo(vtkInformation *value)
 {
     outInfo = value;
 }
 
+//===============================================//
 vtkInformation *vtkSpaceCraftInfoHandler::getInInfo() const
 {
     return inInfo;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setInInfo(vtkInformation *value)
 {
     inInfo = value;
 }
 
+//===============================================//
 int vtkSpaceCraftInfoHandler::getNumberOfTimeSteps() const
 {
     return NumberOfTimeSteps;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setNumberOfTimeSteps(int value)
 {
     NumberOfTimeSteps = value;
 }
 
-
+//===============================================//
 bool vtkSpaceCraftInfoHandler::getProcessed() const
 {
     return processed;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setProcessed(bool value)
 {
     processed = value;
+}
+
+int vtkSpaceCraftInfoHandler::getNumInputPorts() const
+{
+    return numInputPorts;
+}
+
+void vtkSpaceCraftInfoHandler::setNumInputPorts(int value)
+{
+    numInputPorts = value;
+}
+
+int vtkSpaceCraftInfoHandler::getNumOutputPorts() const
+{
+return numOutputPorts;
+}
+
+void vtkSpaceCraftInfoHandler::setNumOutputPorts(int value)
+{
+numOutputPorts = value;
 }

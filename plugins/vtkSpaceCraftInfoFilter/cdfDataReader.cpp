@@ -608,13 +608,13 @@ void cdfDataReader::cdfAllocateMemory(long dataType, void* &data, long numValues
     }
 }
 
+//===============================================================//
 cdfDataSet cdfDataReader::getZVariable(int64_t variable)
 {
 
     std::cout << __FUNCTION__ << std::endl;
 
     cdfDataSet returnVal;
-    CDFstatus status;
 
     cdfVarInfo VarInfo = this->getZVariableInformation(variable);
 
@@ -647,6 +647,40 @@ cdfDataSet cdfDataReader::getCorrectedZVariableRecord(QString variable, int64_t 
 cdfDataSet cdfDataReader::getCorrectedZVariableRecord(int64_t variable, int64_t record)
 {
     return BDHandler->getGoodDataRecord(variable, record);
+}
+
+//===============================================================//
+cdfDataSet cdfDataReader::getCorrectedZVariable(QString variable)
+{
+    long varNum = CDFgetVarNum(this->fileId,variable.toAscii().data());
+    return this->getCorrectedZVariable(varNum);
+}
+
+//===============================================================//
+cdfDataSet cdfDataReader::getCorrectedZVariable(int64_t variable)
+{
+    std::cout << __FUNCTION__ << std::endl;
+
+    cdfDataSet returnVal;
+
+    cdfVarInfo VarInfo = this->getZVariableInformation(variable);
+
+    for(int x = 0; x < VarInfo.numRecords; x++)
+    {
+        cdfDataSet record = this->BDHandler->getGoodDataRecord(variable,x);
+
+        if(!record.getData().isEmpty())
+        {
+            returnVal.addNextElement(record.getData()[0]);
+        }
+        else
+        {
+            std::cerr << "No value at Record # " << x << std::endl;
+        }
+
+    }
+
+    return returnVal;
 }
 
 //===============================================================//

@@ -116,6 +116,9 @@ public:
     cdfDataSet getCorrectedZVariableRecord(QString variable, int64_t record);
     cdfDataSet getCorrectedZVariableRecord(int64_t variable, int64_t record);
 
+    cdfDataSet getCorrectedZVariable(QString variable);
+    cdfDataSet getCorrectedZVariable(int64_t variable);
+
     cdfDataSet getZVariableRecord(QString variable, int64_t record);
     cdfDataSet getZVariableRecord(int64_t variable, int64_t record);
 

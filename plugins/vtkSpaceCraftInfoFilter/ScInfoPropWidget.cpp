@@ -18,6 +18,7 @@
 #include <vtkSMDoubleVectorProperty.h>
 #include <iomanip>
 
+//==================================================================
 ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smproperty, QWidget *parentObject)
     : Superclass(smproxy, parentObject),
       ui(new Ui::ScInfoPropWidget)
@@ -92,8 +93,8 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
     //connect signals to slots
 
     /** Time Connections */
-    connect(ui->startTime, SIGNAL(editingFinished()), this, SLOT(startDateEditComplete()));
-    connect(ui->endTime, SIGNAL(editingFinished()), this, SLOT(endDateEditComplete()));
+    connect(ui->startTime, SIGNAL(editingFinished()), this, SLOT(timeRangeChanged()));
+    connect(ui->endTime, SIGNAL(editingFinished()), this, SLOT(timeRangeChanged()));
 
     /** Group Connections */
     connect(ui->Group, SIGNAL(activated(QString)), this, SLOT(selectedGroup(QString)));
@@ -220,8 +221,6 @@ void ScInfoPropWidget::apply()
     this->svp->SetElement(1, this->currentObservatory.toAscii().data());
     this->svp->SetElement(2, DataString.toAscii().data());
 
-
-
     if(this->smProxy->GetProperty("TimeRange"))
     {
         //set date and time
@@ -252,7 +251,6 @@ void ScInfoPropWidget::apply()
 
 
         vtkSMDoubleVectorProperty *timeRange =  vtkSMDoubleVectorProperty::SafeDownCast(this->smProxy->GetProperty("TimeRange"));
-        timeRange->SetNumberOfElementsPerCommand(2);
         timeRange->SetElement(0,startDT.getMJD());
         timeRange->SetElement(1,endDT.getMJD());
     }
@@ -681,6 +679,7 @@ void ScInfoPropWidget::setupVariableSets()
     this->VariableList = List;
 }
 
+//==================================================================
 DateTime ScInfoPropWidget::textToDateTime(QString dateString)
 {
     DateTime retVal;
@@ -843,13 +842,23 @@ void ScInfoPropWidget::processDeniedDataRequests()
 }
 
 //==================================================================
-void ScInfoPropWidget::startDateEditComplete()
+void ScInfoPropWidget::timeRangeChanged()
 {
-    std::cout << "Start Date has beed edited" << std::endl;
 
+    std::cout << "Time Range has been changed" << std::endl;
+    QDateTime end = ui->endTime->dateTime();
     QDateTime start = ui->startTime->dateTime();
-
+    DateTime endDT;
     DateTime startDT;
+
+    endDT.setYear(end.date().year());
+    endDT.setMonth(end.date().month());
+    endDT.setDay(end.date().day());
+
+    endDT.setHours(end.time().hour());
+    endDT.setMinutes(end.time().minute());
+    endDT.setSeconds(end.time().second());
+
     startDT.setYear(start.date().year());
     startDT.setMonth(start.date().month());
     startDT.setDay(start.date().day());
@@ -859,27 +868,9 @@ void ScInfoPropWidget::startDateEditComplete()
     startDT.setSeconds(start.time().second());
 
     this->startMJD = startDT.getMJD();
-
-
-}
-
-//==================================================================
-void ScInfoPropWidget::endDateEditComplete()
-{
-    std::cout << "End Date has been edited" << std::endl;
-
-    QDateTime end = ui->endTime->dateTime();
-
-    DateTime endDT;
-    endDT.setYear(end.date().year());
-    endDT.setMonth(end.date().month());
-    endDT.setDay(end.date().day());
-
-    endDT.setHours(end.time().hour());
-    endDT.setMinutes(end.time().minute());
-    endDT.setSeconds(end.time().second());
-
     this->endMJD = endDT.getMJD();
+
+    this->instrumentSelectionChanged();
 
 }
 
