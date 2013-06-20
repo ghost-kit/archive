@@ -174,6 +174,9 @@ protected:
   bool getDataForEpochList(QString &DataSet, QVector<double> &EpochList, varDataEntry &data);
   bool getDataForAllEpochs(QString &DataSet, varDataEntry &data);
 
+  bool getAllTemperalDataFromCacheByVar(const QString DataSet, const QString var, QList<spaceCraftDataElement> &data);
+
+
   //------ gui attributes pannel ------//
 
   //gui data objects

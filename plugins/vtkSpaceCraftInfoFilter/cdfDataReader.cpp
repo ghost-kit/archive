@@ -719,10 +719,6 @@ cdfDataSet cdfDataReader::getZVariableRecord(int64_t variable, int64_t record)
             }
         }
 
-
-        //allocate data
-        std::cout << "Number of Values: " << numValues << std::endl;
-
         cdfAllocateMemory(VarInfo.dataType, data, numValues);
 
         //get data record

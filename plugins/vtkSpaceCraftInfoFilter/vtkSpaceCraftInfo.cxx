@@ -19,6 +19,7 @@
 #include "vtkCompositeDataSet.h"
 #include "vtkDoubleArray.h"
 #include "vtkDataArray.h"
+#include "vtkStringArray.h"
 #include "vtkDataObject.h"
 #include "vtkFieldData.h"
 #include "vtkInformation.h"
@@ -31,7 +32,7 @@
 #include "vtkStructuredData.h"
 #include "vtkTable.h"
 #include "vtksys/SystemTools.hxx"
-
+#include "vtkTimeStamp.h"
 
 #include "QObject"
 #include "QtXml"
@@ -149,38 +150,81 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkTable *output)
 //=========================================================================================//
 bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkTable *output)
 {
-    QMap<QString,spaceCraftDataElement>::Iterator elementsIter;
+    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
 
-    QMap<QString, QString>::Iterator iter;
-    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    QStringList DataSetsAvail = this->CacheFileName.keys();
+
+//    QMap<QString, double> TimeSizesList;
+//    QString LargestTimeSeries;
+//    double largestTime=0;
+
+//    //determine the largest time size
+//    for(int k=0; k < DataSetsAvail.size(); k++)
+//    {
+//        QString CurrentDS = DataSetsAvail[k];
+//        TimeSizesList[DataSetsAvail[k]] = this->DataCache[CurrentDS].keys().size();
+
+//        //if the current timestep is the largest,
+//        if(k == 0 || largestTime < TimeSizesList[CurrentDS])
+//        {
+//            LargestTimeSeries = CurrentDS;
+//            largestTime = TimeSizesList[CurrentDS];
+//        }
+//    }
+
+//    std::cout << "Largest Time Set: " << largestTime << std::endl;
+
+
+
+    //lets now get time series data
+    QStringList::Iterator dataSetIter;
+    for(dataSetIter = DataSetsAvail.begin(); dataSetIter != DataSetsAvail.end(); ++dataSetIter)
     {
-        vtkDoubleArray *newDataElement = vtkDoubleArray::New();
+        QList<double> availTimes = this->DataCache[*dataSetIter].keys();
+        QStringList varsAvail = this->DataCache[*dataSetIter][availTimes[0]].keys();
 
+        std::cout << "Number of time stesp: " << availTimes.size() << std::endl;
 
-        QString DataSet = this->CacheFileName.key(*iter);
-        QList<double> times = this->DataCache[DataSet].keys();
-        QList<double>::Iterator timesIter;
+        //lets add the MJD first
+        vtkDoubleArray *newMJDcolumn = vtkDoubleArray::New();
+        vtkStringArray *dateStamp = vtkStringArray::New();
+        newMJDcolumn->SetName("Modified Julian Date");
+        dateStamp->SetName("Date Stamp");
 
-        for(timesIter=times.begin(); timesIter != times.end(); ++timesIter)
+        QList<double>::Iterator availTimesIter;
+        for(availTimesIter = availTimes.begin(); availTimesIter != availTimes.end(); ++availTimesIter)
         {
-            double time = (*timesIter);
+            newMJDcolumn->InsertNextValue((*availTimesIter));
+            dateStamp->InsertNextValue(DateTime(*availTimesIter).getDateTimeString().c_str());
+        }
+        output->AddColumn(dateStamp);
+        output->AddColumn(newMJDcolumn);
+        newMJDcolumn->Delete();
+        dateStamp->Delete();
 
-            newDataElement->SetName((*elementsIter).varName.toAscii().data());
+        QStringList::Iterator VarIter;
+        for(VarIter = varsAvail.begin(); VarIter != varsAvail.end(); ++VarIter)
+        {
+            QList<spaceCraftDataElement> varOverTime;
+            this->getAllTemperalDataFromCacheByVar((*dataSetIter), (*VarIter), varOverTime);
+            vtkDoubleArray *newDataColumn = vtkDoubleArray::New();
 
-            for(elementsIter = this->DataCache[DataSet][time].begin(); elementsIter != this->DataCache[DataSet][time].end(); ++elementsIter)
+            //set the column name
+            newDataColumn->SetName((*VarIter).toAscii().data());
+            newDataColumn->SetNumberOfComponents(1);
+
+            QList<spaceCraftDataElement>::Iterator elementIter;
+            int c = 0;
+            for(elementIter = varOverTime.begin(); elementIter != varOverTime.end(); ++elementIter)
             {
-                std::cout << "DATA[" << time << "][" << (*elementsIter).varName.toStdString()
-                          << "]: " << (*elementsIter).data.toDouble() << " " << (*elementsIter).units.toStdString() << " :Bad Data: "
-                          << (*elementsIter).badDataValue.toDouble() << std::endl;
-
-                newDataElement->SetComponentName(0, (*elementsIter).units.toAscii().data());
-
-                newDataElement->InsertNextValue( (*elementsIter).data.toDouble());
-
+                newDataColumn->InsertNextValue((*elementIter).data.toDouble());
+                c++;
             }
 
-            output->AddColumn(newDataElement);
-            newDataElement->Delete();
+            std::cout << "Variable: " << (*VarIter).toAscii().data() << std::endl;
+            std::cout << "Entering " << c << " values into table." << std::endl;
+            output->AddColumn(newDataColumn);
+            newDataColumn->Delete();
         }
     }
 
@@ -201,6 +245,7 @@ void vtkSpaceCraftInfoHandler::checkCDFstatus(CDFstatus status)
 //=========================================================================================//
 void vtkSpaceCraftInfoHandler::LoadCDFData()
 {
+    std::cout << __FUNCTION__ << std::endl;
     this->cleanData();
 
     QVector<double> timeSteps;
@@ -227,6 +272,7 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
 //=========================================================================================//
 void vtkSpaceCraftInfoHandler::LoadCDFDataSource()
 {
+    std::cout << __FUNCTION__ << std::endl;
     this->cleanData();
 
     QMap<QString, QString>::Iterator iter;
@@ -235,10 +281,14 @@ void vtkSpaceCraftInfoHandler::LoadCDFDataSource()
         // get the data set name so we can organize our data
         QString DataSet = this->CacheFileName.key(*iter);
 
+        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
+                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+
         //get the data for ALL Epochs
         this->getDataForAllEpochs(DataSet, this->DataCache[DataSet]);
     }
 
+    this->processed = true;
 }
 
 //=========================================================================================//
@@ -311,6 +361,7 @@ void vtkSpaceCraftInfoHandler::convertEpochToDateTime(QVector<DateTime> &convert
         DateTime convert(year, month, day, hour, minute, second);
         convertedFileEpoch.push_back( convert);
 
+//        std::cerr << "Date: " << convert.getDateTimeString() << std::endl;
     }
 }
 
@@ -590,7 +641,7 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
         std::cerr << "Could not find Epoch Var. Setting Index Found to 1" << std::endl;
     }
 
-    QVector<long>::Iterator timeIter;
+    std::cout << "Number of Epochs: " <<FileEpochsAsDateTime.size() << std::endl << std::flush;
 
     //get the data
     for(int c = 0; c < varsAvailable.size(); c++)
@@ -622,21 +673,21 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
 
             //cycle through the items
 
+
             for(int p =0; p < dataSet.size(); p++)
             {
                 QString varNameTmp = InData.getName();
                 if(dataSet.size() > 1)
                 {
                     varNameTmp = varNameTmp + "_" + QVariant(p).toString();
-                    std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
                 }
+                std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
 
                 data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].varName = varNameTmp;
                 data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].data = dataSet[p];
                 data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].units = Units;
                 data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].badDataValue = InData.getInvalidData();
 
-                std::cout << "Inserting into " << FileEpochsAsDateTime[v].getDateTimeString() << std::endl;
 
                 ++iter;
             }
@@ -645,6 +696,22 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
     }
 
 
+    return true;
+}
+
+//=========================================================================================//
+bool vtkSpaceCraftInfoHandler::getAllTemperalDataFromCacheByVar(const QString DataSet, const QString var, QList<spaceCraftDataElement> &data)
+{
+       QMap<double, QMap<QString, spaceCraftDataElement> >::Iterator TimeIter;
+
+       int count = 0;
+       for(TimeIter = this->DataCache[DataSet].begin(); TimeIter != this->DataCache[DataSet].end(); ++TimeIter)
+       {
+           data.push_back((*TimeIter)[var]);
+           count++;
+       }
+
+       std::cout << "Number of Time Steps in DataSet: " << DataSet.toAscii().data()  << ": " << count << std::endl;
     return true;
 }
 
@@ -694,9 +761,6 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
             QStringList Split = this->requestedData[x].split(":");
 
             QStringList DataSets = Split[1].split(",");
-            QString     Instrument = Split[0];
-
-
             //iterate over the data strings, get the data, and store localy
             QStringList::Iterator iter;
             for(iter = DataSets.begin(); iter != DataSets.end(); ++iter)
@@ -845,10 +909,6 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
     statusBar.hide();
 
-    //hack
-    this->LoadCDFData();
-
-
 }
 
 //=========================================================================================//
@@ -917,6 +977,7 @@ int vtkSpaceCraftInfoHandler::RequestData(vtkInformation *request, vtkInformatio
 //===============================================//
 int vtkSpaceCraftInfoHandler::RequestDataSource(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
+    std::cout << __FUNCTION__ << std::endl;
 
     //Get the output Data object
     this->outInfo = outputVector->GetInformationObject(0);
