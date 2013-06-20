@@ -103,26 +103,28 @@ double vtkSpaceCraftInfoFilter::getEndTime()
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetSCIData(const char *group, const char *observatory, const char *list)
 {
-    return this->infoHandler.SetSCIData(group, observatory, list);
     this->infoHandler.setProcessed(false);
     this->Modified();
+    return this->infoHandler.SetSCIData(group, observatory, list);
+
 
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetTimeFitHandler(int handler)
 {
-    return this->infoHandler.SetTimeFitHandler(handler);
     this->infoHandler.setProcessed(false);
     this->Modified();
+    return this->infoHandler.SetTimeFitHandler(handler);
+
 
 }
 
 //===============================================//
 void vtkSpaceCraftInfoFilter::SetBadDataHandler(int handler)
 {
-    return this->infoHandler.SetBadDataHandler(handler);
     this->infoHandler.setProcessed(false);
     this->Modified();
+    return this->infoHandler.SetBadDataHandler(handler);
 
 }
