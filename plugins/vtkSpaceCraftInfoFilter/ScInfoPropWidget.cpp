@@ -111,8 +111,8 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     /** Property Links to trigger Apply button active */
     this->addPropertyLink(ui->Variables, smproxy->GetPropertyName(smproperty), SIGNAL(itemSelectionChanged()), this->svp);
-//    this->addPropertyLink(ui->startTime, smproxy->GetPropertyName(smproperty), SIGNAL(editingFinished()), this->svp);
-//    this->addPropertyLink(ui->endTime, smproxy->GetPropertyName(smproperty), SIGNAL(editingFinished()), this->svp);
+    this->addPropertyLink(ui->startTime, smproxy->GetPropertyName(smproperty), SIGNAL(editingFinished()), this->svp);
+    this->addPropertyLink(ui->endTime, smproxy->GetPropertyName(smproperty), SIGNAL(editingFinished()), this->svp);
 
 }
 
