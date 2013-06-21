@@ -109,15 +109,20 @@ double *vtkSpaceCraftInfoHandler::getTimeSteps()
 }
 
 //=========================================================================================//
-bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkTable *output)
+bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
 {
+    mb->SetNumberOfBlocks(this->CacheFileName.size());
+
     QMap<QString,spaceCraftDataElement>::Iterator elementsIter;
 
 
+    long count = 0;
 
     QMap<QString, QString>::Iterator iter;
     for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
     {
+
+        vtkTable* output = vtkTable::New();
 
         QString DataSet = this->CacheFileName.key(*iter);
         double time = this->requestedTimeValue;
@@ -142,44 +147,31 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkTable *output)
 
             newDataElement->Delete();
         }
+
+        mb->SetBlock(count, output);
+        output->Delete();
+        count++;
     }
 
     return true;
 }
 
 //=========================================================================================//
-bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkTable *output)
+bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
 {
+    long count = 0;
+    mb->SetNumberOfBlocks(this->CacheFileName.size());
+
 //    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
 
     QStringList DataSetsAvail = this->CacheFileName.keys();
-
-//    QMap<QString, double> TimeSizesList;
-//    QString LargestTimeSeries;
-//    double largestTime=0;
-
-//    //determine the largest time size
-//    for(int k=0; k < DataSetsAvail.size(); k++)
-//    {
-//        QString CurrentDS = DataSetsAvail[k];
-//        TimeSizesList[DataSetsAvail[k]] = this->DataCache[CurrentDS].keys().size();
-
-//        //if the current timestep is the largest,
-//        if(k == 0 || largestTime < TimeSizesList[CurrentDS])
-//        {
-//            LargestTimeSeries = CurrentDS;
-//            largestTime = TimeSizesList[CurrentDS];
-//        }
-//    }
-
-//    std::cout << "Largest Time Set: " << largestTime << std::endl;
-
-
 
     //lets now get time series data
     QStringList::Iterator dataSetIter;
     for(dataSetIter = DataSetsAvail.begin(); dataSetIter != DataSetsAvail.end(); ++dataSetIter)
     {
+        vtkTable* output = vtkTable::New();
+
         QList<double> availTimes = this->DataCache[*dataSetIter].keys();
         QStringList varsAvail = this->DataCache[*dataSetIter][availTimes[0]].keys();
 
@@ -227,6 +219,10 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkTable *output)
             output->AddColumn(newDataColumn);
             newDataColumn->Delete();
         }
+
+        mb->SetBlock(count, output);
+        output->Delete();
+        count++;
     }
 
     return true;
@@ -254,8 +250,8 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
     QMap<QString, QString>::Iterator iter;
     for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
     {
-        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
-                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+//        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
+//                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
 
         for(int x =0; x < this->timeSteps.size(); x++)
         {
@@ -282,8 +278,8 @@ void vtkSpaceCraftInfoHandler::LoadCDFDataSource()
         // get the data set name so we can organize our data
         QString DataSet = this->CacheFileName.key(*iter);
 
-        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
-                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+//        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
+//                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
 
         //get the data for ALL Epochs
         this->getDataForAllEpochs(DataSet, this->DataCache[DataSet]);
@@ -540,7 +536,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
         // get the next lowest time for all epochs
         for(int a =0; a < EpochList.size(); a++)
         {
-            std:: cout << "EpochListEntry: " << EpochList[a] << std::endl;
+//            std:: cout << "EpochListEntry: " << EpochList[a] << std::endl;
 
             DateTime neededEpoch(EpochList[a]);
 
@@ -563,7 +559,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
         for(int v = 0; v < indexListOfFound.size(); v++)
         {
             //skip the variable if it doesn't have the correct index.
-            std::cout << "Time Iterator: " << indexListOfFound[v] << " numRecords: " << varinfo.numRecords << std::endl;
+//            std::cout << "Time Iterator: " << indexListOfFound[v] << " numRecords: " << varinfo.numRecords << std::endl;
             if(varinfo.numRecords < (indexListOfFound[v]))
             {
                 std::cerr << "Failure..." << std::endl;
@@ -955,8 +951,13 @@ void vtkSpaceCraftInfoHandler::SetBadDataHandler(int handler)
 int vtkSpaceCraftInfoHandler::RequestData(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
     //Get the output Data object
-    this->outInfo = outputVector->GetInformationObject(0);
-    this->output = vtkTable::GetData(outInfo);
+
+    vtkInformation* info = outputVector->GetInformationObject(0);
+    vtkDataObject* doOutput = info->Get(vtkDataObject::DATA_OBJECT());
+    vtkMultiBlockDataSet* mb = vtkMultiBlockDataSet::SafeDownCast(doOutput);
+
+    this->outInfo = info;
+    this->output = mb;
 
     //get time request data
     if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
@@ -978,17 +979,22 @@ int vtkSpaceCraftInfoHandler::RequestData(vtkInformation *request, vtkInformatio
 //===============================================//
 int vtkSpaceCraftInfoHandler::RequestDataSource(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-    std::cout << __FUNCTION__ << std::endl;
+    vtkInformation* info = outputVector->GetInformationObject(0);
+    vtkDataObject* doOutput = info->Get(vtkDataObject::DATA_OBJECT());
+    vtkMultiBlockDataSet* mb = vtkMultiBlockDataSet::SafeDownCast(doOutput);
 
-    //Get the output Data object
-    this->outInfo = outputVector->GetInformationObject(0);
-    this->output = vtkTable::GetData(outInfo);
-
-    //if we are dealing with timesteps, put them here
-    if(this->outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
+    if(!mb)
     {
-        this->requestedTimeValue = this->outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
+        std::cerr << "Failed to create multi-block dataset... think again...  this way doesn't work..." << std::endl;
+        return 0;
     }
+    else
+    {
+        std::cout << "MB set created successfully... now what?" << std::endl;
+    }
+
+    this->outInfo = info;
+    this->output = mb;
 
     //load the data
     if(!this->processed)
@@ -1003,7 +1009,7 @@ int vtkSpaceCraftInfoHandler::RequestDataSource(vtkInformation *request, vtkInfo
 //===============================================//
 int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
+//    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
 
     this->setInInfo(inputVector[0]->GetInformationObject(0));
     if(this->getInInfo()->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
@@ -1011,6 +1017,8 @@ int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInfo
 //        std::cout << "Getting Number of Time steps" << std::flush << std::endl;
         this->NumberOfTimeSteps = this->inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
         double *timeValues = this->inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+
+        std::cout << "Number of time steps: " << this->NumberOfTimeSteps  << std::endl;
 
         //push time steps into list
         this->timeSteps.clear();
@@ -1020,6 +1028,8 @@ int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInfo
         }
         this->TimeRange[0] = this->timeSteps.first();
         this->TimeRange[1] = this->timeSteps.last();
+        this->startTime = this->timeSteps.first();
+        this->endTime = this->timeSteps.last();
     }
     else
     {
@@ -1045,13 +1055,13 @@ int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInfo
 }
 
 //===============================================//
-vtkTable *vtkSpaceCraftInfoHandler::getOutput() const
+vtkMultiBlockDataSet *vtkSpaceCraftInfoHandler::getOutput() const
 {
     return output;
 }
 
 //===============================================//
-void vtkSpaceCraftInfoHandler::setOutput(vtkTable *value)
+void vtkSpaceCraftInfoHandler::setOutput(vtkMultiBlockDataSet *value)
 {
     output = value;
 }

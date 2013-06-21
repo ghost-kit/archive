@@ -73,7 +73,7 @@ int vtkSpaceCraftInfoSource::RequestData(vtkInformation *request, vtkInformation
 //===============================================//
 int vtkSpaceCraftInfoSource::FillOutputPortInformation(int port, vtkInformation *info)
 {
-    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkTable");
+    info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkMultiBlockDataSet");
     return 1;
 }
 

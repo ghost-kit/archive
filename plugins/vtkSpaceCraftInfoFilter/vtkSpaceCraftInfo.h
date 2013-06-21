@@ -8,7 +8,7 @@
 //  Date:   01 Apr 2013                                                         //
 //==============================================================================//
 
-#define DEBUG 1
+//#define DEBUG 1
 
 
 #ifndef _vtkSpaceCraftInfo_h
@@ -34,6 +34,8 @@
 
 #include "DateTime.h"
 #include "cdfDataReader.h"
+
+#include "vtkMultiBlockDataSet.h"
 
 class vtkDataSet;
 class vtkTable;
@@ -103,8 +105,8 @@ public:
   vtkInformation *getOutInfo() const;
   void setOutInfo(vtkInformation *value);
 
-  vtkTable *getOutput() const;
-  void setOutput(vtkTable *value);
+  vtkMultiBlockDataSet *getOutput() const;
+  void setOutput(vtkMultiBlockDataSet *value);
 
   int getNumberOfTimeSteps() const;
   void setNumberOfTimeSteps(int value);
@@ -143,8 +145,8 @@ protected:
   double TimeRange[2];
 
   //SpaceCraft Data Collection utilities
-  bool processCDAWeb(vtkTable *output);
-  bool processCDAWebSource(vtkTable *output);
+  bool processCDAWeb(vtkMultiBlockDataSet *mb);
+  bool processCDAWebSource(vtkMultiBlockDataSet *mb);
 
   //Requested Data
   QStringList requestedData;
@@ -186,7 +188,7 @@ protected:
   //Info items
   vtkInformation* inInfo;
   vtkInformation* outInfo;
-  vtkTable* output;
+  vtkMultiBlockDataSet* output;
 
   //Selected Handlers
   BadDataHandler *BDhandler;

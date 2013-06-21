@@ -3,14 +3,15 @@
 
 #include "vtkSpaceCraftInfo.h"
 #include "vtkTableAlgorithm.h"
+#include "vtkMultiBlockDataSetAlgorithm.h"
 
-class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfoFilter : public vtkTableAlgorithm
+class VTKFILTERSEXTRACTION_EXPORT vtkSpaceCraftInfoFilter : public vtkMultiBlockDataSetAlgorithm
 {
 
 public:
 
     static vtkSpaceCraftInfoFilter *New();
-    vtkTypeMacro(vtkSpaceCraftInfoFilter, vtkTableAlgorithm)
+    vtkTypeMacro(vtkSpaceCraftInfoFilter, vtkMultiBlockDataSetAlgorithm)
     void PrintSelf(ostream& os, vtkIndent indent);
 
     double getStartTime();
