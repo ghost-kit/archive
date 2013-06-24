@@ -14,7 +14,7 @@ class Hdf : public Hdf4 {
   bool openWrite(const string& filename);
 
   void getBcastArrayInfo( const string& group,
-			  array_info_t& info );
+			  array_info_t& info ) const;
   
   void putArrayInfo( const string& group,
 		     const array_info_t& info );

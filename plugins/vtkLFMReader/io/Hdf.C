@@ -43,7 +43,7 @@ bool Hdf::openWrite(const string& filename)
 /*----------------------------------------------------------------------------*/
 
 void Hdf::getBcastArrayInfo( const string& group,
-			     array_info_t& info  ) 
+			     array_info_t& info  ) const
 {
 #ifdef HAS_HDF4
   memset(&info,0,sizeof(info));

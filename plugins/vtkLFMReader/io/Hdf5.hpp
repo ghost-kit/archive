@@ -35,24 +35,24 @@ class Hdf5 : public Io {
   Hdf5(int superDomainSize);
   ~Hdf5();
 
-  bool isEnabled();
+  bool isEnabled() const;
 
   bool openRead(const string &filename);
   bool openWrite(const string &filename);
 
   array_info_t getArrayInfo(const string& variableName, 
-			    const string& group);
+			    const string& group) const;
 
   bool readVariable( const string& variableName, 
 		     const string& group,
 		     const array_info_t& info,
-		     void* data );
+		     void* data ) const;
 
   bool readAttribute( const string& attributeName,
 		      void* data,
 		      int& dataLength, 
 		      const identify_data_type& dataType,
-		      const string& group);
+		      const string& group) const;
   
   bool writeVariable( const string& variableName, 
 		      const string& group,
@@ -66,10 +66,10 @@ class Hdf5 : public Io {
 		       const string& group);
 
   void getBcastArrayInfo( const string& group,
-			  array_info_t& info );
+			  array_info_t& info ) const;
   
   void getLocalArrayInfo( const string& group,
-			  array_info_t& info );
+			  array_info_t& info ) const;
   
   void putArrayInfo( const string& group,
 		     const array_info_t& info );
@@ -77,11 +77,11 @@ class Hdf5 : public Io {
 
   bool verifyShape( const string& variableName,
 		    const string& group,
-		    const array_info_t& info );
+		    const array_info_t& info ) const;
   
 
-  const list<string> getVariableNames();
-  const list<string> getAttributeNames();
+  const list<string> getVariableNames() const;
+  const list<string> getAttributeNames() const;
 
   bool close();
 
@@ -148,14 +148,14 @@ class Hdf5 : public Io {
    *
    * \return true if an error was found.
    */
-  bool errorCheck(const int &status, const char *file, const int &line, const char *func);
+  bool errorCheck(const int &status, const char *file, const int &line, const char *func) const;
 
   hid_t createGroup(const string &groupName);
 
   virtual bool open(const string &filename, const hid_t &accessMode );
   hid_t fileId, classId, majorErrorId, minorErrorId;
 
-  void pushError(const string &e, const char *file, const int &line, const char *func);
+  void pushError(const string &e, const char *file, const int &line, const char *func) const;
 
 #else
   int fileId;

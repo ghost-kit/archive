@@ -12,7 +12,7 @@ class PHdf5 : public Hdf5 {
   bool readVariable( const string& variableName, 
 		     const string& group,
 		     const array_info_t& info,
-		     void* data );
+		     void* data ) const;
   
   bool writeVariable( const string& variableName, 
 		      const string& group,
@@ -20,14 +20,14 @@ class PHdf5 : public Hdf5 {
 		      const void* data );
 
   void getBcastArrayInfo( const string& group,
-			  array_info_t& info );
+			  array_info_t& info ) const;
   
   void putArrayInfo( const string& group,
 		     const array_info_t& info );
 
   bool verifyShape( const string& variableName,
 		    const string& group,
-		    const array_info_t& info );
+		    const array_info_t& info ) const;
 
  protected:
 

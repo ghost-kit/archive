@@ -25,7 +25,7 @@ Hdf5::~Hdf5()
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf5::isEnabled()
+bool Hdf5::isEnabled() const
 {
 #ifdef HAS_HDF5
   return true;
@@ -63,7 +63,7 @@ bool Hdf5::openWrite(const string& filename)
 /*----------------------------------------------------------------------------*/
 #ifdef HAS_HDF5
 
-bool Hdf5::errorCheck(const int& status, const char* file, const int& line, const char* func)
+bool Hdf5::errorCheck(const int& status, const char* file, const int& line, const char* func) const
 {
   if (status < 0) {
     stringstream errorString;
@@ -81,7 +81,7 @@ bool Hdf5::errorCheck(const int& status, const char* file, const int& line, cons
 
 /*----------------------------------------------------------------------------*/
 
-void Hdf5::pushError(const string &e, const char *file, const int &line, const char *func)
+void Hdf5::pushError(const string &e, const char *file, const int &line, const char *func) const
 {
   H5Epush(H5E_DEFAULT,file,func,line,classId,majorErrorId,minorErrorId,e.c_str());
   H5Eprint(H5E_DEFAULT, stderr);
@@ -91,7 +91,7 @@ void Hdf5::pushError(const string &e, const char *file, const int &line, const c
 /*----------------------------------------------------------------------------*/
 
 array_info_t Hdf5::getArrayInfo( const string& variableName,
-				 const string& group ) 
+				 const string& group ) const
 {
   array_info_t info;
 #ifdef HAS_HDF5
@@ -165,7 +165,7 @@ array_info_t Hdf5::getArrayInfo( const string& variableName,
 bool Hdf5::readVariable( const string& variableName, 
 			 const string& group,
 			 const array_info_t& info,
-			 void* data )
+			 void* data ) const
 {   
 #ifdef HAS_HDF5
   bool hasError = false;
@@ -215,7 +215,7 @@ bool Hdf5::readAttribute( const string& attributeName,
 			  void* data,
 			  int& dataLength,
 			  const identify_data_type& dataType,
-			  const string& group)
+			  const string& group) const
 {
 #ifdef HAS_HDF5
   bool hasError = false;
@@ -391,7 +391,7 @@ bool Hdf5::writeAttribute( const string& variableName,
 /*----------------------------------------------------------------------------*/
 
 void Hdf5::getBcastArrayInfo( const string& group,
-			      array_info_t& info  ) {
+			      array_info_t& info ) const {
 #ifdef HAS_HDF5
 #ifdef BUILD_WITH_MPI
   if (rank==0) {
@@ -412,7 +412,7 @@ void Hdf5::getBcastArrayInfo( const string& group,
 /*----------------------------------------------------------------------------*/
 
 void Hdf5::getLocalArrayInfo( const string& group,
-			      array_info_t& info  ) {
+			      array_info_t& info ) const {
 #ifdef HAS_HDF5
   memset(&info,0,sizeof(info));
   if (rank<superSize) {
@@ -467,7 +467,7 @@ void Hdf5::putArrayInfo( const string& group,
 
 bool Hdf5::verifyShape( const string& variableName,
 			const string& group,
-			const array_info_t& info ) {
+			const array_info_t& info ) const {
 #ifdef HAS_HDF5
   int error = 0;
   hsize_t nPoints = 0;
@@ -527,7 +527,7 @@ static herr_t appendVariableNameToList(hid_t id, const char *name, const H5O_inf
 
 /*----------------------------------------------------------------------------*/
 
-const list<string> Hdf5::getVariableNames()
+const list<string> Hdf5::getVariableNames() const
 {
   list<string> r;
 #ifdef HAS_HDF5
@@ -551,7 +551,7 @@ static herr_t appendAttributeNameToList(hid_t id, const char *name, const H5A_in
 
 /*----------------------------------------------------------------------------*/
 
-const list<string> Hdf5::getAttributeNames()
+const list<string> Hdf5::getAttributeNames() const
 {
   list<string> attrNames;
   //herr_t H5Aiterate2( hid_t obj_id, H5_index_t idx_type, H5_iter_order_t order, hsize_t *n, H5A_operator2_t op, void *op_data, )

@@ -21,24 +21,24 @@ class Hdf4 : public Io {
   Hdf4(int superDomainSize);
   ~Hdf4();
 
-  bool isEnabled();
+  bool isEnabled() const;
 
   bool openRead(const string& filename);
   bool openWrite(const string& filename);
 
   array_info_t getArrayInfo(const string& variableName, 
-			    const string& group);
+			    const string& group) const;
 
   bool readVariable( const string& variableName, 
 		     const string& group,
 		     const array_info_t& info,
-		     void* data );
+		     void* data ) const;
 
   bool readAttribute( const string& attributeName,
 		      void* data,
 		      int& dataLength,
 		      const identify_data_type& dataType,
-		      const string& group);
+		      const string& group) const;
   
   bool writeVariable( const string& variableName, 
 		      const string& group,
@@ -52,10 +52,10 @@ class Hdf4 : public Io {
 		       const string& group);
 
   void getBcastArrayInfo( const string& group,
-			  array_info_t& info );
+			  array_info_t& info ) const;
   
   void getLocalArrayInfo( const string& group,
-			  array_info_t& info );
+			  array_info_t& info ) const;
   
   void putArrayInfo( const string& group,
 		     const array_info_t& info );
@@ -63,10 +63,10 @@ class Hdf4 : public Io {
 
   bool verifyShape( const string& variableName,
 		    const string& group,
-		    const array_info_t& info );
+		    const array_info_t& info ) const;
   
-  const list<string> getVariableNames();
-  const list<string> getAttributeNames();
+  const list<string> getVariableNames() const;
+  const list<string> getAttributeNames() const;
 
 
   bool close();
@@ -75,7 +75,7 @@ class Hdf4 : public Io {
 
 #ifdef HAS_HDF4
 
-  map<string,int32> h4groups;
+  mutable map<string,int32> h4groups;
   
   template<class T> int32* int32_convert(const T* v, const int& s, int32* n, 
 					 const int& max=MAX_ARRAY_DIMENSION) const {
@@ -117,7 +117,7 @@ class Hdf4 : public Io {
     }
   }
 
-  int32 openGroup(const string& groupName);
+  int32 openGroup(const string& groupName) const;
 
   int32 createGroup(const string& groupName);
 
@@ -133,7 +133,7 @@ class Hdf4 : public Io {
    *
    * \return true if an error was found.
    */
-  bool errorCheck(const int& status, const char* file, const int& line, const char* func);  
+  bool errorCheck(const int& status, const char* file, const int& line, const char* func) const;
   
   bool open(const string& filename, const int32& accessMode);
 

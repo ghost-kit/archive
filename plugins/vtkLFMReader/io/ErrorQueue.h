@@ -10,8 +10,10 @@ public:
   void pushError(const std::string &message);
   void pushError(std::stringstream& stream);
 
-  std::string getMessages();
-  void print(std::ostream &outs);
+  const std::string getMessages() const;
+  void print(std::ostream &outs) const;
+
+  void clear();
 
 private:
 

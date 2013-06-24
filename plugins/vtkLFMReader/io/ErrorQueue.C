@@ -12,19 +12,29 @@ void ErrorQueue::pushError(stringstream& stream)
   errorMessages.push(stream.str());
 }
 
-string ErrorQueue::getMessages()
+const string ErrorQueue::getMessages() const
 {
+  queue<string> messagesToGet(errorMessages); 
+
   string messages;
-  while (not errorMessages.empty()){
-    messages += errorMessages.front();
+  while (not messagesToGet.empty()){
+    messages += messagesToGet.front();
     messages += "\n";
-    errorMessages.pop();
+    messagesToGet.pop();
   }
   
   return messages;
 }
 
-void ErrorQueue::print(std::ostream &outs)
+void ErrorQueue::print(std::ostream &outs) const
 {
   outs << getMessages();
+}
+
+
+void ErrorQueue::clear()
+{
+  while (not errorMessages.empty()){
+    errorMessages.pop();
+  }
 }

@@ -48,7 +48,7 @@ void PHdf5::setupComm()
 bool PHdf5::readVariable( const string& variableName, 
 			  const string& group,
 			  const array_info_t& info,
-			  void* data ) 
+			  void* data ) const
 {
 #ifdef HAS_PHDF5
   bool hasError = false;
@@ -191,7 +191,7 @@ bool PHdf5::writeVariable( const string& variableName,
 /*----------------------------------------------------------------------------*/
 
 void PHdf5::getBcastArrayInfo( const string& group,
-			 array_info_t& info  ) 
+			 array_info_t& info ) const
 {
 #ifdef HAS_PHDF5
   if (rank == 0) {
@@ -223,7 +223,7 @@ void PHdf5::putArrayInfo( const string& group,
 
 bool PHdf5::verifyShape( const string& variableName,
 			 const string& group,
-			 const array_info_t& info ) 
+			 const array_info_t& info ) const
 {
 #ifdef HAS_PHDF5
   int error = 0, errorAll = 0;

@@ -27,7 +27,7 @@ Hdf4::~Hdf4()
 
 /*----------------------------------------------------------------------------*/
 
-bool Hdf4::isEnabled()
+bool Hdf4::isEnabled() const
 {
 #ifdef HAS_HDF4
   return true;
@@ -65,7 +65,7 @@ bool Hdf4::openWrite(const string &filename)
 /*----------------------------------------------------------------------------*/
 
 #ifdef HAS_HDF4
-bool Hdf4::errorCheck(const int &status, const char *file, const int &line, const char *func)
+bool Hdf4::errorCheck(const int &status, const char *file, const int &line, const char *func) const
 {
   if (status < 0) {
     stringstream errorString;
@@ -82,7 +82,7 @@ bool Hdf4::errorCheck(const int &status, const char *file, const int &line, cons
 /*----------------------------------------------------------------------------*/
 
 array_info_t Hdf4::getArrayInfo(const string& variableName,
-				const string& group)
+				const string& group) const
 {
   bool hasError = false;
 #ifdef HAS_HDF4
@@ -135,7 +135,7 @@ array_info_t Hdf4::getArrayInfo(const string& variableName,
 bool Hdf4::readVariable( const string& variableName, 
 			 const string& group,
 			 const array_info_t& info,
-			 void* data )
+			 void* data ) const
 {
 #ifdef HAS_HDF4
   bool hasError = false;
@@ -187,7 +187,7 @@ bool Hdf4::readAttribute( const string& attributeName,
 			  void* data,
 			  int& dataLength, 
 			  const identify_data_type& dataType,
-			  const string& group) 
+			  const string& group) const
 {
 #ifdef HAS_HDF4
   bool hasError = false;
@@ -317,7 +317,7 @@ bool Hdf4::writeAttribute( const string& attributeName,
 /*----------------------------------------------------------------------------*/
 
 void Hdf4::getBcastArrayInfo( const string& group,
-			      array_info_t& info  ) {
+			      array_info_t& info  ) const {
 #ifdef HAS_HDF4
 #ifdef BUILD_WITH_MPI
   if (rank==0) {
@@ -339,7 +339,7 @@ void Hdf4::getBcastArrayInfo( const string& group,
 
 
 void Hdf4::getLocalArrayInfo( const string& group,
-			      array_info_t& info  ) {
+			      array_info_t& info  ) const {
 #ifdef HAS_HDF4
   memset(&info,0,sizeof(info));
   if (rank<superSize) {
@@ -388,7 +388,7 @@ void Hdf4::putArrayInfo( const string& group,
 
 bool Hdf4::verifyShape( const string& variableName,
 			const string& group,
-			const array_info_t& info ) {
+			const array_info_t& info ) const {
 #ifdef HAS_HDF4
   int nPoints=0, dims[MAX_VAR_DIMS], dataType, nAttrs, error=0;
 
@@ -429,7 +429,7 @@ bool Hdf4::verifyShape( const string& variableName,
   
 /*----------------------------------------------------------------------------*/
 
-const list<string> Hdf4::getVariableNames()
+const list<string> Hdf4::getVariableNames() const
 {
   list<string> r;
 #ifdef HAS_HDF4
@@ -455,7 +455,7 @@ const list<string> Hdf4::getVariableNames()
 
 /*----------------------------------------------------------------------------*/
 
-const list<string> Hdf4::getAttributeNames()
+const list<string> Hdf4::getAttributeNames() const
 {
   list<string> attrNames;
   bool hasError = false;
@@ -486,7 +486,7 @@ const list<string> Hdf4::getAttributeNames()
 /*----------------------------------------------------------------------------*/
 
 #ifdef HAS_HDF4
-int32 Hdf4::openGroup(const string &group)
+int32 Hdf4::openGroup(const string &group) const
 {
   int32 groupId = sdId;
   if (rank < superSize && group != ""){

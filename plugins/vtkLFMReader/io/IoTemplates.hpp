@@ -357,7 +357,7 @@ template<class T>
 bool Io::readAttribute(const string& attributeName, 
 		       T& data, 
 		       int& dataLength,
-		       const string& group) {
+		       const string& group) const {
   return readAttribute(attributeName,&data,dataLength,identify(data),group);
 }
 
@@ -366,7 +366,7 @@ bool Io::readAttribute(const string& attributeName,
 template<class T>
 bool Io::readAttribute(const string& attributeName, 
 		       T& data, 
-		       const string& group) {
+		       const string& group) const {
   int dataLength;
   return readAttribute(attributeName,data,dataLength,group);
 }
@@ -377,7 +377,7 @@ template<class T>
 bool Io::readAttribute0(const string& attributeName, 
 			T& data, 		       
 			int& dataLength,
-			const string& group){  
+			const string& group) const{
   return (rank==0?readAttribute(attributeName,data,dataLength,group):0);
 }
 
@@ -387,7 +387,7 @@ template<> inline
 bool Io::readAttribute<string>(const string& attributeName,
 			       string& data, 
 			       int& dataLength,
-			       const string& group) {
+			       const string& group) const {
   static const int MAX_STR_LEN = 2048;
   static char str[MAX_STR_LEN] = { 0 };
   readAttribute(attributeName, str, dataLength, identify(data), group);

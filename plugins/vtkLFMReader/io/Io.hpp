@@ -50,7 +50,7 @@ public:
    * \return true if output format is available
    */ 
   virtual
-  bool isEnabled() = 0;
+  bool isEnabled() const = 0;
 
   virtual
   bool openRead(const string& filename) = 0;
@@ -75,7 +75,7 @@ public:
 			  const int& superDomainSize=-1);
 
   virtual 
-  const list<string> getAttributeNames() = 0;
+  const list<string> getAttributeNames() const = 0;
   
   /** \brief Methods to read attributes
    * Sets data & dataLength (number of elements read in).
@@ -91,22 +91,22 @@ public:
   bool readAttribute(const string& attributeName,
 		     T& data,
 		     int& dataLength,
-		     const string& group="");
+		     const string& group="") const;
   template<class T>
   bool readAttribute(const string& attributeName,
 		     T& data,
-		     const string& group="");
+		     const string& group="") const;
   template<class T>
   bool readAttribute0(const string& attributeName,
 		      T& data,
 		      int& dataLength,
-		      const string& group="");
+		      const string& group="") const;
   virtual
   bool readAttribute(const string& attributeName,
 		     void *data,
 		     int& dataLength,
 		     const identify_data_type& dataType,
-		     const string& group="") = 0;
+		     const string& group="") const = 0;
   //@}
 
   /** \brief Methods to write attributes
@@ -133,7 +133,7 @@ public:
   //@}
 
   virtual
-  const list<string> getVariableNames() = 0;
+  const list<string> getVariableNames() const = 0;
 
   
   /** \brief Read variable information (dimensions, rank, etc) for group/variable
@@ -152,7 +152,7 @@ public:
    */
   virtual
   array_info_t getArrayInfo(const string &variableName, 
-			    const string &group="" ) = 0;
+			    const string &group="" ) const = 0;
 
   /// Methods to read variables
   //@{
@@ -160,7 +160,7 @@ public:
   bool readVariable( const string& variableName,
 		     const string& group,
 		     const array_info_t& info,
-		     void* data ) = 0;
+		     void* data ) const = 0;
   //@}
 
   /// Methods to write variables
@@ -179,11 +179,11 @@ public:
   //@{
   virtual
   void getBcastArrayInfo( const string& group,
-			  array_info_t& info ) = 0;
+			  array_info_t& info ) const = 0;
 
   virtual
   void getLocalArrayInfo( const string& group,
-			  array_info_t& info ) = 0;
+			  array_info_t& info ) const = 0;
 
   virtual
   void putArrayInfo( const string& group,
@@ -194,7 +194,7 @@ public:
   virtual
   bool verifyShape( const string& variableName,
 		    const string& group,
-		    const array_info_t& info ) = 0;
+		    const array_info_t& info ) const = 0;
 
   virtual
   bool close() = 0;
@@ -246,26 +246,26 @@ public:
   bool readVariable(PppArray& data,
 		    const string& variableName,
 		    const string& group="",
-		    const int multiVarDims=0);
+		    const int multiVarDims=0) const;
 
   template<class PppArray>
   void readVarUnits(PppArray& data,
 		    const string& variableName,
 		    string& units,
-		    const string& group="");
+		    const string& group="") const;
 
   template<class PppArray>
   void readMultiVar(PppArray& data,
 		    const string& variableName,
 		    const string& group="",
-		    const int multiVarDims=4);
+		    const int multiVarDims=4) const;
 
   template<class PppArray>
   void readMultiVarUnits(PppArray& data,
 			 const string& variableName,
 			 string& units,
 			 const string& group="",
-			 const int multiVarDims=4);
+			 const int multiVarDims=4) const;
 
   template<class PppArray>
   void writeShape(const PppArray& data,
@@ -274,7 +274,7 @@ public:
   template<class PppArray>
   PppArray& readShape(PppArray& data,
 		      const string& group="",
-		      const bool& conformityCheck=true);
+		      const bool& conformityCheck=true) const;
 
   Partitioning_Type /*partitionAll,*/ partitionSuper;
 
@@ -290,7 +290,7 @@ protected:
    *
    * \see ErrorQueue.h for usage.
    */
-  ErrorQueue errorQueue;
+  mutable ErrorQueue errorQueue;
   
   /// Extension for the selected I/O format.
   string extension;
