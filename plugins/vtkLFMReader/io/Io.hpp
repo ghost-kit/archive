@@ -300,6 +300,12 @@ protected:
    * false: Fortran style column-major ordering.
    */
   bool isArrayCOrdered;
+
+private:
+  /// Prevent copying
+  Io(const Io &io);
+  /// Prevent assignment
+  Io& operator=(const Io& rhs );
 };
 
 #include "IoTemplates.hpp"

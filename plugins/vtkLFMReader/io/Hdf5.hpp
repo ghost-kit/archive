@@ -161,6 +161,11 @@ class Hdf5 : public Io {
   int fileId;
 #endif
 
+private:
+  /// Prevent copying
+  Hdf5(const Hdf5 &copy_me);
+  /// Prevent assignment
+  Hdf5& operator=(const Hdf5& rhs );  
 };
 
 #endif

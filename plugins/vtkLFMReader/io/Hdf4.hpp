@@ -143,6 +143,11 @@ class Hdf4 : public Io {
   int sdId;
 #endif //HAS_HDF4
 
+private:
+  /// Prevent copying
+  Hdf4(const Hdf4 &copy_me);
+  /// Prevent assignment
+  Hdf4& operator=(const Hdf4& rhs );  
 };
 
 #endif //HDF4_HPP__

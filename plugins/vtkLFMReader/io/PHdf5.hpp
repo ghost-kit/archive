@@ -39,6 +39,12 @@ class PHdf5 : public Hdf5 {
 
   bool collectiveRead, collectiveWrite;
 #endif
+
+private:
+  /// Prevent copying
+  PHdf5(const PHdf5 &copy_me);
+  /// Prevent assignment
+  PHdf5& operator=(const PHdf5& rhs );  
 };
 
 #endif

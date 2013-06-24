@@ -25,6 +25,11 @@ class Hdf : public Hdf4 {
   bool open(const std::string& filename, const int32& accessMode);
 #endif
 
+private:
+  /// Prevent copying
+  Hdf(const Hdf &copy_me);
+  /// Prevent assignment
+  Hdf& operator=(const Hdf& rhs );  
 };
 
 #endif
