@@ -34,7 +34,7 @@ array_info_t& Io::fillInfo(const PppArray& data,
 
 template<class PppArray>
 void Io::writeShape(const PppArray& data, 
-		    const string& group) {
+		    const std::string& group) {
   array_info_t info;
   PppArray tmpArray = data;
 
@@ -46,8 +46,8 @@ void Io::writeShape(const PppArray& data,
 
 template<class PppArray>
 bool Io::writeVariable(const PppArray& data, 
-		       const string& variableName, 
-		       const string& group, 
+		       const std::string& variableName, 
+		       const std::string& group, 
 		       const int multiVarDims) {
   bool hasError = false;
 
@@ -71,12 +71,12 @@ bool Io::writeVariable(const PppArray& data,
   if (multiVarDims){
     if( not writeAttribute("nVars", info.nVars, 1(group==""?variableName:group+"/"+variableName)) ){
       hasError = true;
-      errorQueue.pushError("Error writing attribute nVars=" + string(info.nVars));
+      errorQueue.pushError("Error writing attribute nVars=" + std::string(info.nVars));
     }
   }
 
   if (hasError){
-    stringstream ss;
+    std::stringstream ss;
     ss << __FUNCTION__ << " arguments:" << endl
        << "\tvariableName=" << variableName << endl
        << "\tgroup=" << group << endl
@@ -91,9 +91,9 @@ bool Io::writeVariable(const PppArray& data,
 
 template<class PppArray>
 void Io::writeVarUnits(const PppArray& data, 
-		       const string& variableName, 
-		       const string& units, 
-		       const string& group) {
+		       const std::string& variableName, 
+		       const std::string& units, 
+		       const std::string& group) {
   bool hasError = false;
   
   if(not writeVariable(data,variableName,group) )
@@ -102,7 +102,7 @@ void Io::writeVarUnits(const PppArray& data,
     hasError = true;
 
     if (hasError){
-    stringstream ss;
+    std::stringstream ss;
     ss << __FUNCTION__ << " arguments:" << endl
        << "\tvariableName=" << variableName << endl
        << "\tunits=" << units << endl
@@ -117,8 +117,8 @@ void Io::writeVarUnits(const PppArray& data,
 
 template<class PppArray>
 void Io::writeMultiVar(const PppArray& data, 
-		       const string& variableName, 
-		       const string& group,
+		       const std::string& variableName, 
+		       const std::string& group,
 		       const int multiVarDims) {
   return writeVariable(data,variableName,group,multiVarDims);
 }
@@ -127,9 +127,9 @@ void Io::writeMultiVar(const PppArray& data,
 
 template<class PppArray>
 void Io::writeMultiVarUnits(const PppArray& data, 
-			    const string& variableName, 
-			    const string& units, 
-			    const string& group,
+			    const std::string& variableName, 
+			    const std::string& units, 
+			    const std::string& group,
 			    const int multiVarDims) {
   bool hasError = false;
 
@@ -143,7 +143,7 @@ void Io::writeMultiVarUnits(const PppArray& data,
 
 template<class PppArray>
 PppArray& Io::readShape(PppArray& data, 
-			const string& group, 
+			const std::string& group, 
 			const bool& conformityCheck) {
   array_info_t info;
 
@@ -205,8 +205,8 @@ PppArray& Io::readShape(PppArray& data,
 
 template<class PppArray>
 bool Io::readVariable(PppArray& data, 
-		      const string& variableName, 
-		      const string& group, 
+		      const std::string& variableName, 
+		      const std::string& group, 
 		      const int multiVarDims) {
 
   bool hasError = false;
@@ -233,7 +233,7 @@ bool Io::readVariable(PppArray& data,
 
   if (rank==0 && nVars > info.nVars) {
     hasError = true;
-    stringstream ss;
+    std::stringstream ss;
     ss << rank << ": more multi-vars in file than memory available for variable " 
        << variableName << " : " << nVars << " > " << info.nVars << endl;
     errorQueue.pushError(ss);
@@ -247,7 +247,7 @@ bool Io::readVariable(PppArray& data,
       hasError = true;
       Communication_Manager::Sync();
       usleep(10000*rank);
-      stringstream ss;
+      std::stringstream ss;
       ss << rank << ": shape for " << variableName << " does not match?!" << endl;
       errorQueue.pushError(ss);
       //errorQueue.print(cerr);
@@ -268,9 +268,9 @@ bool Io::readVariable(PppArray& data,
 
 template<class PppArray>
 void Io::readVarUnits(PppArray& data, 
-		      const string& variableName, 
-		      string& units, 
-		      const string& group) {
+		      const std::string& variableName, 
+		      std::string& units, 
+		      const std::string& group) {
   bool hasError = false;
   if(not readVariable(data,variableName,group) )
     hasError = true;
@@ -279,7 +279,7 @@ void Io::readVarUnits(PppArray& data,
     hasError = true;
   
   if (hasError){
-    stringstream ss;
+    std::stringstream ss;
     ss << __FUNCTION__ << " arguments:" << endl
        << "\tvariableName=" << variableName << endl
        << "\tunits=" << units << endl
@@ -296,8 +296,8 @@ void Io::readVarUnits(PppArray& data,
 
 template<class PppArray>
 void Io::readMultiVar(PppArray& data, 
-		      const string& variableName, 
-		      const string& group,
+		      const std::string& variableName, 
+		      const std::string& group,
 		      const int multiVarDims) {
   return readVariable(data,variableName,group,multiVarDims);
 }
@@ -306,9 +306,9 @@ void Io::readMultiVar(PppArray& data,
 
 template<class PppArray>
 void Io::readMultiVarUnits(PppArray& data, 
-			   const string& variableName, 
-			   string& units, 
-			   const string& group,
+			   const std::string& variableName, 
+			   std::string& units, 
+			   const std::string& group,
 			   const int multiVarDims) {
   bool hasError = false;
   
@@ -324,49 +324,49 @@ void Io::readMultiVarUnits(PppArray& data,
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::writeAttribute(const string& attributeName, 
+bool Io::writeAttribute(const std::string& attributeName, 
 			const T& data, 
 			const int& dataLength,
-			const string& group) {
+			const std::string& group) {
   return writeAttribute(attributeName,&data,dataLength,identify(data),group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::writeAttribute0(const string& attributeName,
+bool Io::writeAttribute0(const std::string& attributeName,
 			 const T& data,
 			 const int& dataLength,
-			 const string& group) {
+			 const std::string& group) {
   return (rank==0?writeAttribute(attributeName,data,dataLength,group):(void)0);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<> inline
-bool Io::writeAttribute<string>(const string& attributeName, 
-				const string& data,
+bool Io::writeAttribute<std::string>(const std::string& attributeName, 
+				const std::string& data,
 				const int& dataLength,
-				const string& group) {
+				const std::string& group) {
   return writeAttribute(attributeName,data.c_str(), data.length(), identify(data), group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::readAttribute(const string& attributeName, 
+bool Io::readAttribute(const std::string& attributeName, 
 		       T& data, 
 		       int& dataLength,
-		       const string& group) const {
+		       const std::string& group) const {
   return readAttribute(attributeName,&data,dataLength,identify(data),group);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::readAttribute(const string& attributeName, 
+bool Io::readAttribute(const std::string& attributeName, 
 		       T& data, 
-		       const string& group) const {
+		       const std::string& group) const {
   int dataLength;
   return readAttribute(attributeName,data,dataLength,group);
 }
@@ -374,20 +374,20 @@ bool Io::readAttribute(const string& attributeName,
 /*----------------------------------------------------------------------------*/
 
 template<class T>
-bool Io::readAttribute0(const string& attributeName, 
+bool Io::readAttribute0(const std::string& attributeName, 
 			T& data, 		       
 			int& dataLength,
-			const string& group) const{
+			const std::string& group) const{
   return (rank==0?readAttribute(attributeName,data,dataLength,group):0);
 }
 
 /*----------------------------------------------------------------------------*/
 
 template<> inline
-bool Io::readAttribute<string>(const string& attributeName,
-			       string& data, 
+bool Io::readAttribute<std::string>(const std::string& attributeName,
+			       std::string& data, 
 			       int& dataLength,
-			       const string& group) const {
+			       const std::string& group) const {
   static const int MAX_STR_LEN = 2048;
   static char str[MAX_STR_LEN] = { 0 };
   readAttribute(attributeName, str, dataLength, identify(data), group);

@@ -12,10 +12,7 @@
 #endif//BUILD_WITH_APP
 
 #include <string>
-#include <vector>
 #include <list>
-
-using namespace std;
 
 #include "ErrorQueue.h"
 #include "Util.hpp"
@@ -53,16 +50,16 @@ public:
   bool isEnabled() const = 0;
 
   virtual
-  bool openRead(const string& filename) = 0;
+  bool openRead(const std::string& filename) = 0;
 
   virtual
-  bool openWrite(const string& filename) = 0;
+  bool openWrite(const std::string& filename) = 0;
 
   /** \brief Instantiate apprprioate I/O implementation based on the extension
    * \return new Io object.
    * \warning This allocates new memory.  Don't forget to delete!
    */
-  static Io* extensionSelector(const string& extension, 
+  static Io* extensionSelector(const std::string& extension, 
 			 const int& superDomainSize=-1);
 
   /** \brief Not sure what this does!
@@ -70,12 +67,12 @@ public:
    * \return new Io object.
    * \warning This allocates new memory.  Don't forget to delete!
    */
-  static Io* fileComplete(const string& fileName, 
-			  const string& dir=".", 
+  static Io* fileComplete(const std::string& fileName, 
+			  const std::string& dir=".", 
 			  const int& superDomainSize=-1);
 
   virtual 
-  const list<string> getAttributeNames() const = 0;
+  const std::list<std::string> getAttributeNames() const = 0;
   
   /** \brief Methods to read attributes
    * Sets data & dataLength (number of elements read in).
@@ -88,25 +85,25 @@ public:
    */
   //@{
   template<class T>
-  bool readAttribute(const string& attributeName,
+  bool readAttribute(const std::string& attributeName,
 		     T& data,
 		     int& dataLength,
-		     const string& group="") const;
+		     const std::string& group="") const;
   template<class T>
-  bool readAttribute(const string& attributeName,
+  bool readAttribute(const std::string& attributeName,
 		     T& data,
-		     const string& group="") const;
+		     const std::string& group="") const;
   template<class T>
-  bool readAttribute0(const string& attributeName,
+  bool readAttribute0(const std::string& attributeName,
 		      T& data,
 		      int& dataLength,
-		      const string& group="") const;
+		      const std::string& group="") const;
   virtual
-  bool readAttribute(const string& attributeName,
+  bool readAttribute(const std::string& attributeName,
 		     void *data,
 		     int& dataLength,
 		     const identify_data_type& dataType,
-		     const string& group="") const = 0;
+		     const std::string& group="") const = 0;
   //@}
 
   /** \brief Methods to write attributes
@@ -114,26 +111,26 @@ public:
    */
   //@{
   template<class T>
-  bool writeAttribute(const string& attributeName,
+  bool writeAttribute(const std::string& attributeName,
 		      const T& data,
 		      const int& dataLength,
-		      const string& group="");
+		      const std::string& group="");
   template<class T>
-  bool writeAttribute0(const string& attributeName,
+  bool writeAttribute0(const std::string& attributeName,
 		       const T& data,
 		       const int& dataLength,
-		       const string& group="");
+		       const std::string& group="");
 
   virtual
-  bool writeAttribute( const string& attributeName,
+  bool writeAttribute( const std::string& attributeName,
 		       const void* data,
 		       const int& dataLength,
 		       const identify_data_type& dataType,
-		       const string& group) = 0;
+		       const std::string& group) = 0;
   //@}
 
   virtual
-  const list<string> getVariableNames() const = 0;
+  const std::list<std::string> getVariableNames() const = 0;
 
   
   /** \brief Read variable information (dimensions, rank, etc) for group/variable
@@ -151,14 +148,14 @@ public:
    *  }
    */
   virtual
-  array_info_t getArrayInfo(const string &variableName, 
-			    const string &group="" ) const = 0;
+  array_info_t getArrayInfo(const std::string &variableName, 
+			    const std::string &group="" ) const = 0;
 
   /// Methods to read variables
   //@{
   virtual
-  bool readVariable( const string& variableName,
-		     const string& group,
+  bool readVariable( const std::string& variableName,
+		     const std::string& group,
 		     const array_info_t& info,
 		     void* data ) const = 0;
   //@}
@@ -166,8 +163,8 @@ public:
   /// Methods to write variables
   //@{
   virtual
-  bool writeVariable( const string& variableName,
-		      const string& group,
+  bool writeVariable( const std::string& variableName,
+		      const std::string& group,
 		      const array_info_t& info,
 		      const void* data ) = 0;
   //@}
@@ -178,29 +175,29 @@ public:
    */
   //@{
   virtual
-  void getBcastArrayInfo( const string& group,
+  void getBcastArrayInfo( const std::string& group,
 			  array_info_t& info ) const = 0;
 
   virtual
-  void getLocalArrayInfo( const string& group,
+  void getLocalArrayInfo( const std::string& group,
 			  array_info_t& info ) const = 0;
 
   virtual
-  void putArrayInfo( const string& group,
+  void putArrayInfo( const std::string& group,
 		     const array_info_t& info ) = 0;
   //@}
 
   /// Assert that "info" matches the group/variable stored in file.
   virtual
-  bool verifyShape( const string& variableName,
-		    const string& group,
+  bool verifyShape( const std::string& variableName,
+		    const std::string& group,
 		    const array_info_t& info ) const = 0;
 
   virtual
   bool close() = 0;
 
   /// \return file extension for the selected I/O format.
-  string getExtension() 
+  std::string getExtension() 
   { return extension; }
 
   /** 
@@ -219,61 +216,61 @@ public:
 
   template<class PppArray> 
   bool writeVariable(const PppArray& data,
-		     const string& variableName,
-		     const string& group="",
+		     const std::string& variableName,
+		     const std::string& group="",
 		     const int multiVarDims=0);
 
   template<class PppArray>
   void writeVarUnits(const PppArray& data,
-		     const string& variableName,		     
-		     const string &units="not set",
-		     const string& group="");
+		     const std::string& variableName,		     
+		     const std::string &units="not set",
+		     const std::string& group="");
 
   template<class PppArray>
   void writeMultiVar(const PppArray& data,
-		     const string& variableName,
-		     const string& group="",
+		     const std::string& variableName,
+		     const std::string& group="",
 		     const int multiVarDims=4);
 
   template<class PppArray>
   void writeMultiVarUnits(const PppArray& data,
-			  const string& variableName,
-			  const string &units="not set",
-			  const string& group="",
+			  const std::string& variableName,
+			  const std::string &units="not set",
+			  const std::string& group="",
 			  const int multiVarDims=4);
 
   template<class PppArray>
   bool readVariable(PppArray& data,
-		    const string& variableName,
-		    const string& group="",
+		    const std::string& variableName,
+		    const std::string& group="",
 		    const int multiVarDims=0) const;
 
   template<class PppArray>
   void readVarUnits(PppArray& data,
-		    const string& variableName,
-		    string& units,
-		    const string& group="") const;
+		    const std::string& variableName,
+		    std::string& units,
+		    const std::string& group="") const;
 
   template<class PppArray>
   void readMultiVar(PppArray& data,
-		    const string& variableName,
-		    const string& group="",
+		    const std::string& variableName,
+		    const std::string& group="",
 		    const int multiVarDims=4) const;
 
   template<class PppArray>
   void readMultiVarUnits(PppArray& data,
-			 const string& variableName,
-			 string& units,
-			 const string& group="",
+			 const std::string& variableName,
+			 std::string& units,
+			 const std::string& group="",
 			 const int multiVarDims=4) const;
 
   template<class PppArray>
   void writeShape(const PppArray& data,
-		  const string& group="");
+		  const std::string& group="");
 
   template<class PppArray>
   PppArray& readShape(PppArray& data,
-		      const string& group="",
+		      const std::string& group="",
 		      const bool& conformityCheck=true) const;
 
   Partitioning_Type /*partitionAll,*/ partitionSuper;
@@ -293,7 +290,7 @@ protected:
   mutable ErrorQueue errorQueue;
   
   /// Extension for the selected I/O format.
-  string extension;
+  std::string extension;
   
   int nProcs, rank, superSize;
   

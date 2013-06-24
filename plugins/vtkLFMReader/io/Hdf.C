@@ -1,5 +1,7 @@
 #include "Hdf.hpp"
 
+using namespace std;
+
 /*----------------------------------------------------------------------------*/
 
 Hdf::Hdf(int superDomainSize) : Hdf4(1)

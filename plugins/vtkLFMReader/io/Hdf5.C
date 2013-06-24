@@ -1,5 +1,7 @@
 #include "Hdf5.hpp"
 
+using namespace std;
+
 /*----------------------------------------------------------------------------*/
 
 Hdf5::Hdf5(int superDomainSize) : Io(superDomainSize), fileId(-999)

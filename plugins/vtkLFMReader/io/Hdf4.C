@@ -1,5 +1,7 @@
 #include "Hdf4.hpp"
 
+using namespace std;
+
 #ifndef MAX_VAR_DIMS
 #define MAX_VAR_DIMS H4_MAX_VAR_DIMS
 #endif

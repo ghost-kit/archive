@@ -23,50 +23,50 @@ class Hdf4 : public Io {
 
   bool isEnabled() const;
 
-  bool openRead(const string& filename);
-  bool openWrite(const string& filename);
+  bool openRead(const std::string& filename);
+  bool openWrite(const std::string& filename);
 
-  array_info_t getArrayInfo(const string& variableName, 
-			    const string& group) const;
+  array_info_t getArrayInfo(const std::string& variableName, 
+			    const std::string& group) const;
 
-  bool readVariable( const string& variableName, 
-		     const string& group,
+  bool readVariable( const std::string& variableName, 
+		     const std::string& group,
 		     const array_info_t& info,
 		     void* data ) const;
 
-  bool readAttribute( const string& attributeName,
+  bool readAttribute( const std::string& attributeName,
 		      void* data,
 		      int& dataLength,
 		      const identify_data_type& dataType,
-		      const string& group) const;
+		      const std::string& group) const;
   
-  bool writeVariable( const string& variableName, 
-		      const string& group,
+  bool writeVariable( const std::string& variableName, 
+		      const std::string& group,
 		      const array_info_t& info,
 		      const void* data );
 
-  bool writeAttribute( const string& attributeName,
+  bool writeAttribute( const std::string& attributeName,
 		       const void* data,
 		       const int& dataLength,
 		       const identify_data_type& dataType,
-		       const string& group);
+		       const std::string& group);
 
-  void getBcastArrayInfo( const string& group,
+  void getBcastArrayInfo( const std::string& group,
 			  array_info_t& info ) const;
   
-  void getLocalArrayInfo( const string& group,
+  void getLocalArrayInfo( const std::string& group,
 			  array_info_t& info ) const;
   
-  void putArrayInfo( const string& group,
+  void putArrayInfo( const std::string& group,
 		     const array_info_t& info );
 
 
-  bool verifyShape( const string& variableName,
-		    const string& group,
+  bool verifyShape( const std::string& variableName,
+		    const std::string& group,
 		    const array_info_t& info ) const;
   
-  const list<string> getVariableNames() const;
-  const list<string> getAttributeNames() const;
+  const std::list<std::string> getVariableNames() const;
+  const std::list<std::string> getAttributeNames() const;
 
 
   bool close();
@@ -75,7 +75,7 @@ class Hdf4 : public Io {
 
 #ifdef HAS_HDF4
 
-  mutable map<string,int32> h4groups;
+  mutable std::map<std::string,int32> h4groups;
   
   template<class T> int32* int32_convert(const T* v, const int& s, int32* n, 
 					 const int& max=MAX_ARRAY_DIMENSION) const {
@@ -83,7 +83,7 @@ class Hdf4 : public Io {
     return n;
   }
 
-  int32 identifyH4Type( const identify_data_type& dataType, const string& v ) const {
+  int32 identifyH4Type( const identify_data_type& dataType, const std::string& v ) const {
     switch (dataType) {
     case identify_byte_t:   return DFNT_UCHAR8;
     case identify_char_t:   return DFNT_CHAR8;
@@ -95,13 +95,13 @@ class Hdf4 : public Io {
     case identify_double_t: return DFNT_FLOAT64;
     case identify_unknown_t:
     default:                
-      cerr << "Unknown type for identifyH4Type with variable " << v << endl;
+      std::cerr << "Unknown type for identifyH4Type with variable " << v << std::endl;
       raise(SIGABRT);
       return -1;
     }
   }
 
-  identify_data_type H4identifyType( const int32 h4type, const string& v ) const {
+  identify_data_type H4identifyType( const int32 h4type, const std::string& v ) const {
     switch (h4type) {
     case DFNT_UCHAR8:   return identify_byte_t;
     case DFNT_CHAR8:    return identify_char_t;
@@ -111,15 +111,15 @@ class Hdf4 : public Io {
     case DFNT_FLOAT32:  return identify_float_t;
     case DFNT_FLOAT64:  return identify_double_t;
     default:                
-      cerr << "Unknown type for H4identifyType with variable " << v << endl;
+      std::cerr << "Unknown type for H4identifyType with variable " << v << std::endl;
       raise(SIGABRT);
       return identify_unknown_t;
     }
   }
 
-  int32 openGroup(const string& groupName) const;
+  int32 openGroup(const std::string& groupName) const;
 
-  int32 createGroup(const string& groupName);
+  int32 createGroup(const std::string& groupName);
 
   /**
    * \brief Check for Hdf4 errors.  If a problem is found, push error message(s) to errorStack.
@@ -135,7 +135,7 @@ class Hdf4 : public Io {
    */
   bool errorCheck(const int& status, const char* file, const int& line, const char* func) const;
   
-  bool open(const string& filename, const int32& accessMode);
+  bool open(const std::string& filename, const int32& accessMode);
 
   int32 sdId;
 

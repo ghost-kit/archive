@@ -8,21 +8,21 @@ class Hdf : public Hdf4 {
  public:
 
   Hdf(int superDomainSize);
-  Hdf(int superDomainSize, const string& extension);
+  Hdf(int superDomainSize, const std::string& extension);
 
-  bool openRead(const string& filename);
-  bool openWrite(const string& filename);
+  bool openRead(const std::string& filename);
+  bool openWrite(const std::string& filename);
 
-  void getBcastArrayInfo( const string& group,
+  void getBcastArrayInfo( const std::string& group,
 			  array_info_t& info ) const;
   
-  void putArrayInfo( const string& group,
+  void putArrayInfo( const std::string& group,
 		     const array_info_t& info );
 
  protected:
 
 #ifdef HAS_HDF4
-  bool open(const string& filename, const int32& accessMode);
+  bool open(const std::string& filename, const int32& accessMode);
 #endif
 
 };

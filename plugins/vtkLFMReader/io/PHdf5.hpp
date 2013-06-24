@@ -9,30 +9,30 @@ class PHdf5 : public Hdf5 {
 
   PHdf5(int superDomainSize);
 
-  bool readVariable( const string& variableName, 
-		     const string& group,
+  bool readVariable( const std::string& variableName, 
+		     const std::string& group,
 		     const array_info_t& info,
 		     void* data ) const;
   
-  bool writeVariable( const string& variableName, 
-		      const string& group,
+  bool writeVariable( const std::string& variableName, 
+		      const std::string& group,
 		      const array_info_t& info,
 		      const void* data );
 
-  void getBcastArrayInfo( const string& group,
+  void getBcastArrayInfo( const std::string& group,
 			  array_info_t& info ) const;
   
-  void putArrayInfo( const string& group,
+  void putArrayInfo( const std::string& group,
 		     const array_info_t& info );
 
-  bool verifyShape( const string& variableName,
-		    const string& group,
+  bool verifyShape( const std::string& variableName,
+		    const std::string& group,
 		    const array_info_t& info ) const;
 
  protected:
 
 #ifdef HAS_PHDF5
-  bool open(const string& filename, const hid_t& accessMode );
+  bool open(const std::string& filename, const hid_t& accessMode );
 
   MPI_Comm comm;
   void setupComm();

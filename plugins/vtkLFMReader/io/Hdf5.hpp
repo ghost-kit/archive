@@ -37,51 +37,51 @@ class Hdf5 : public Io {
 
   bool isEnabled() const;
 
-  bool openRead(const string &filename);
-  bool openWrite(const string &filename);
+  bool openRead(const std::string &filename);
+  bool openWrite(const std::string &filename);
 
-  array_info_t getArrayInfo(const string& variableName, 
-			    const string& group) const;
+  array_info_t getArrayInfo(const std::string& variableName, 
+			    const std::string& group) const;
 
-  bool readVariable( const string& variableName, 
-		     const string& group,
+  bool readVariable( const std::string& variableName, 
+		     const std::string& group,
 		     const array_info_t& info,
 		     void* data ) const;
 
-  bool readAttribute( const string& attributeName,
+  bool readAttribute( const std::string& attributeName,
 		      void* data,
 		      int& dataLength, 
 		      const identify_data_type& dataType,
-		      const string& group) const;
+		      const std::string& group) const;
   
-  bool writeVariable( const string& variableName, 
-		      const string& group,
+  bool writeVariable( const std::string& variableName, 
+		      const std::string& group,
 		      const array_info_t& info,
 		      const void* data );
 
-  bool writeAttribute( const string& attributeName,
+  bool writeAttribute( const std::string& attributeName,
 		       const void* data,
 		       const int& dataLength ,
 		       const identify_data_type& dataType,
-		       const string& group);
+		       const std::string& group);
 
-  void getBcastArrayInfo( const string& group,
+  void getBcastArrayInfo( const std::string& group,
 			  array_info_t& info ) const;
   
-  void getLocalArrayInfo( const string& group,
+  void getLocalArrayInfo( const std::string& group,
 			  array_info_t& info ) const;
   
-  void putArrayInfo( const string& group,
+  void putArrayInfo( const std::string& group,
 		     const array_info_t& info );
 
 
-  bool verifyShape( const string& variableName,
-		    const string& group,
+  bool verifyShape( const std::string& variableName,
+		    const std::string& group,
 		    const array_info_t& info ) const;
   
 
-  const list<string> getVariableNames() const;
-  const list<string> getAttributeNames() const;
+  const std::list<std::string> getVariableNames() const;
+  const std::list<std::string> getAttributeNames() const;
 
   bool close();
 
@@ -89,7 +89,7 @@ class Hdf5 : public Io {
   
 #ifdef HAS_HDF5
 
-  map<string,hid_t> h5groups;
+  std::map<std::string,hid_t> h5groups;
 
   template<class T> hsize_t* hsize_convert(const T* v, const int &s, hsize_t *n, 
 					   const int &max=MAX_ARRAY_DIMENSION) const {
@@ -97,7 +97,7 @@ class Hdf5 : public Io {
     return n;
   }
 
-  hid_t identifyH5Type( const identify_data_type& dataType, const string& v) const {
+  hid_t identifyH5Type( const identify_data_type& dataType, const std::string& v) const {
     switch (dataType) {
     case identify_byte_t:   return H5T_NATIVE_UCHAR;
     case identify_char_t:   return H5T_NATIVE_CHAR;
@@ -119,7 +119,7 @@ class Hdf5 : public Io {
    * Find a list of native data types here:
    *   http://www.hdfgroup.org/HDF5/doc/RM/RM_H5T.html#Datatype-GetNativeType
    */
-  identify_data_type H5identifyType( const hid_t h5type, const string& v ) const {
+  identify_data_type H5identifyType( const hid_t h5type, const std::string& v ) const {
 
     if (H5Tequal(h5type, H5T_C_S1))   return identify_string_t;
 
@@ -150,12 +150,12 @@ class Hdf5 : public Io {
    */
   bool errorCheck(const int &status, const char *file, const int &line, const char *func) const;
 
-  hid_t createGroup(const string &groupName);
+  hid_t createGroup(const std::string &groupName);
 
-  virtual bool open(const string &filename, const hid_t &accessMode );
+  virtual bool open(const std::string &filename, const hid_t &accessMode );
   hid_t fileId, classId, majorErrorId, minorErrorId;
 
-  void pushError(const string &e, const char *file, const int &line, const char *func) const;
+  void pushError(const std::string &e, const char *file, const int &line, const char *func) const;
 
 #else
   int fileId;

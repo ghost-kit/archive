@@ -1,8 +1,9 @@
-
 #include "Io.hpp"
 
 #include <dirent.h>
 #include <errno.h>
+
+using namespace std;
 
 /*----------------------------------------------------------------------------*/
 

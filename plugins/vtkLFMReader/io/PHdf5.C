@@ -1,6 +1,8 @@
 #include "PHdf5.hpp"
 #include <sstream>
 
+using namespace std;
+
 /*----------------------------------------------------------------------------*/
 
 PHdf5::PHdf5(int superDomainSize) : 
