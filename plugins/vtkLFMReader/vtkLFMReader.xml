@@ -92,7 +92,7 @@
       
       <StringVectorProperty
         name="PointArrayStatus"
-        command="SetPointArrayStatus"
+        command="SetCellArrayStatus"
         number_of_elements="0"
         repeat_command="1"
         number_of_elements_per_command="2"
