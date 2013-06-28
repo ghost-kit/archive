@@ -43,7 +43,7 @@ ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
         CLASS_NAME "ScInfoPropWidget")
 
 
-ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
+ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "0.1.0"
 	SERVER_MANAGER_XML SpaceCraftInfo.xml
         GUI_INTERFACES ${outifaces0}
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfoFilter.cpp
@@ -63,10 +63,10 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftInfoSMPlugin "0.1.0"
                 ${UI_BUILT_SOURCES}
                 )
 
-target_link_libraries(SpaceCraftInfoSMPlugin ${LIBS})
+target_link_libraries(CDAwebSpaceCraftInfoFilter ${LIBS})
 
 
-ADD_PARAVIEW_PLUGIN(SpaceCraftnInfoSource "0.1.0"
+ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoSource "0.1.0"
         SERVER_MANAGER_XML SpaceCraftInfoSource.xml
         GUI_INTERFACES ${outifaces0}
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfoSource.cpp
@@ -86,5 +86,5 @@ ADD_PARAVIEW_PLUGIN(SpaceCraftnInfoSource "0.1.0"
                 ${UI_BUILT_SOURCES}
                 )
 
-target_link_libraries(SpaceCraftnInfoSource ${LIBS})
+target_link_libraries(CDAwebSpaceCraftInfoSource ${LIBS})
 

@@ -148,6 +148,10 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
             newDataElement->Delete();
         }
 
+        //set block name
+        mb->GetMetaData(count)->Set(vtkCompositeDataSet::NAME(), DataSet.toAscii().data());
+
+        //set block output
         mb->SetBlock(count, output);
         output->Delete();
         count++;
@@ -220,6 +224,10 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
             newDataColumn->Delete();
         }
 
+        //set block name
+        mb->GetMetaData(count)->Set(vtkCompositeDataSet::NAME(), (*dataSetIter).toAscii().data());
+
+        //set block output
         mb->SetBlock(count, output);
         output->Delete();
         count++;
