@@ -111,6 +111,16 @@ double *vtkSpaceCraftInfoHandler::getTimeSteps()
 //=========================================================================================//
 bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
 {
+    int numCurrBlocks = mb->GetNumberOfBlocks();
+    //clean the block for re-processing.
+    if(numCurrBlocks > 0)
+    {
+        for(int x = 0; x < numCurrBlocks; x++)
+        {
+            mb->RemoveBlock(x);
+        }
+    }
+
     mb->SetNumberOfBlocks(this->CacheFileName.size());
 
     QMap<QString,spaceCraftDataElement>::Iterator elementsIter;
@@ -163,8 +173,29 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
 //=========================================================================================//
 bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
 {
+
+    int numCurrBlocks = mb->GetNumberOfBlocks();
+
+    std::cout << "Number of blocks reported: " << numCurrBlocks << std::endl;
+    //clean the block for re-processing.
+    if(numCurrBlocks > 0)
+    {
+        for(int x = 0; x < numCurrBlocks; x++)
+        {
+            mb->RemoveBlock(x);
+        }
+    }
+
     long count = 0;
     mb->SetNumberOfBlocks(this->CacheFileName.size());
+
+    std::cout << "File Names being processed:" << std::endl;
+    for(int h=0; h < this->CacheFileName.size(); h++)
+    {
+        std::cout << this->CacheFileName.values()[h].toAscii().data() << std::endl;
+    }
+
+    std::cout << "Number of NEW blocks: " << mb->GetNumberOfBlocks() << std::endl;
 
 //    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
 
