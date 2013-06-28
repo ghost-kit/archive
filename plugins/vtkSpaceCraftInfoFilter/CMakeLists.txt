@@ -44,7 +44,7 @@ ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
 
 
 ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "0.1.0"
-	SERVER_MANAGER_XML SpaceCraftInfo.xml
+        SERVER_MANAGER_XML SpaceCraftInfoFilter.xml
         GUI_INTERFACES ${outifaces0}
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfoFilter.cpp
         SOURCES filterNetworkAccessModule.cpp

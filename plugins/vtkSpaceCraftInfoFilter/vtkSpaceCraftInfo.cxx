@@ -729,6 +729,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
     //remove list of previous files
     this->uriList.clear();
+    this->tempFilePath.clear();
 
 //    std::cout << "Group: " << group << std::endl;
 //    std::cout << "Observatory: " << observatory << std::endl;
@@ -1122,22 +1123,33 @@ void vtkSpaceCraftInfoHandler::setProcessed(bool value)
     processed = value;
 }
 
+//===============================================//
 int vtkSpaceCraftInfoHandler::getNumInputPorts() const
 {
     return numInputPorts;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setNumInputPorts(int value)
 {
     numInputPorts = value;
 }
 
+//===============================================//
 int vtkSpaceCraftInfoHandler::getNumOutputPorts() const
 {
     return numOutputPorts;
 }
 
+//===============================================//
 void vtkSpaceCraftInfoHandler::setNumOutputPorts(int value)
 {
     numOutputPorts = value;
+}
+
+//===============================================//
+void vtkSpaceCraftInfoHandler::setTempPath(const char *path)
+{
+    std::cout << "You are trying to set your path to: " << path << std::endl;
+    this->tempFilePath = QString(path);
 }

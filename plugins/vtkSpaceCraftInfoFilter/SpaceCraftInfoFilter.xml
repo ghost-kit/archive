@@ -18,6 +18,18 @@
 
        </InputProperty>
 
+            <StringVectorProperty name="Timp File Path"
+                                  command="setTempPath"
+                                  number_of_elements="1"
+                                  default_values="/tmp/">
+
+
+                <Documentation>
+                    This tells the filter where to save temporary .CDF files
+                </Documentation>
+
+            </StringVectorProperty>
+
             <DoubleVectorProperty name="TimeRangeInfoStart"
                                   command="getStartTime"
                                   information_only="1"
@@ -52,8 +64,10 @@
 
                 <EnumerationDomain name="enum">
                     <Entry value="0" text="Fit to next lower available time" />
+                   <!--
                     <Entry value="1" text="Fit to next higher available time" />
                     <Entry value="2" text="Interpolate Linearly over time"/>
+                    -->
                 </EnumerationDomain>
 
                 <Documentation>
@@ -67,15 +81,15 @@
 
 
             <IntVectorProperty name="BadDataHandler"
-                                command="SetBadDataHandler"
-                                number_of_elements_per_command="1"
                                 label="Bad Data Handler"
-                                panel_visibility="default"
-                                default_values="2">
+                                command="SetBadDataHandler"
+                                number_of_elements="1"
+                                default_values="2"
+                                panel_visibility="default">
 
                 <EnumerationDomain name="enum">
                     <Entry value="0" text="Raw Data (do nothing)"/>
-                    <Entry value="1" text="Linear Interpolation"/>
+                   <!-- <Entry value="1" text="Linear Interpolation"/> -->
                     <Entry value="2" text="Omit (Fill with NaN)"/>
                 </EnumerationDomain>
 

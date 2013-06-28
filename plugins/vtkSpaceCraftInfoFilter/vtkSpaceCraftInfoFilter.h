@@ -19,6 +19,7 @@ public:
     void SetSCIData(const char *group, const char *observatory, const char *list);
     void SetTimeFitHandler(int handler);
     void SetBadDataHandler(int handler);
+    void setTempPath(const char *path);
 
 
 protected:

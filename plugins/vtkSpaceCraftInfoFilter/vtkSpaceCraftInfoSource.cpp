@@ -141,3 +141,10 @@ void vtkSpaceCraftInfoSource::setTimeRange(const double start, const double end)
 
     this->Modified();
 }
+
+//===============================================//
+void vtkSpaceCraftInfoSource::setTempPath(const char *path)
+{
+    this->infoHandler.setTempPath(path);
+    this->Modified();
+}

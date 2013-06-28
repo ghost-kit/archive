@@ -125,6 +125,8 @@ public:
   int getNumOutputPorts() const;
   void setNumOutputPorts(int value);
 
+  void setTempPath(const char *path);
+
 protected:
 
   int numInputPorts;

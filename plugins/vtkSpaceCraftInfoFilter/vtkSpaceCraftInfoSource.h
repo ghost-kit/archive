@@ -20,6 +20,7 @@ public:
 
     void setTimeRange(const double start, const double end);
 
+    void setTempPath(const char *path);
 protected:
     vtkSpaceCraftInfoSource();
     ~vtkSpaceCraftInfoSource();

@@ -131,3 +131,11 @@ void vtkSpaceCraftInfoFilter::SetBadDataHandler(int handler)
     return this->infoHandler.SetBadDataHandler(handler);
 
 }
+
+//===============================================//
+void vtkSpaceCraftInfoFilter::setTempPath(const char *path)
+{
+
+    this->infoHandler.setTempPath(path);
+    this->Modified();
+}
