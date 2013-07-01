@@ -2,6 +2,9 @@
 #include <QEventLoop>
 #include <QObject>
 #include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <iostream>
 
 FileDownloader::FileDownloader(QUrl imageUrl, QObject *parent) :
     QObject(parent)
@@ -10,6 +13,10 @@ FileDownloader::FileDownloader(QUrl imageUrl, QObject *parent) :
                 SLOT(fileDownloaded(QNetworkReply*)));
 
     QNetworkRequest request(imageUrl);
+    QNetworkReply *reply = m_WebCtrl.get(request);
+
+    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(downloadError(QNetworkReply::NetworkError)));
+
     m_WebCtrl.get(request);
 
     //this will wait until download has finished before returning to calling
@@ -32,6 +39,11 @@ void FileDownloader::fileDownloaded(QNetworkReply* pReply)
     //emit a signal
     pReply->deleteLater();
     emit downloaded();
+}
+
+void FileDownloader::downloadError(QNetworkReply::NetworkError error)
+{
+    std::cout << "Download Error occured" << std::endl;
 }
 
 QByteArray FileDownloader::downloadedData() const

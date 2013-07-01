@@ -786,8 +786,6 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
     for(int x = 0; x < this->requestedData.size(); x++)
     {
 
-        //        std::cout << "Count: " << count << " Progress should be: " << count/totalSets * 100 << std::endl;
-
         if(!this->requestedData[x].isEmpty())
         {
             //split the incoming data strings
