@@ -21,7 +21,8 @@
             <StringVectorProperty name="Timp File Path"
                                   command="setTempPath"
                                   number_of_elements="1"
-                                  default_values="/tmp/">
+                                  default_values="/tmp/"
+                                  panel_visibility="advanced">
 
 
                 <Documentation>

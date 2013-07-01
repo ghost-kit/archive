@@ -185,7 +185,7 @@ protected:
 
   //gui data objects
   QMap<QString, QString> CacheFileName;
-  QMap<QString, filterNetworkObject*> uriList;
+  QMap<QString, filterNetworkObject*> urlMap;
 
   //Info items
   vtkInformation* inInfo;

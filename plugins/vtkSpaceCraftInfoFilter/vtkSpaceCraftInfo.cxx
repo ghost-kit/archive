@@ -197,7 +197,7 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
 
     std::cout << "Number of NEW blocks: " << mb->GetNumberOfBlocks() << std::endl;
 
-//    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
+    //    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
 
     QStringList DataSetsAvail = this->CacheFileName.keys();
 
@@ -210,7 +210,7 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
         QList<double> availTimes = this->DataCache[*dataSetIter].keys();
         QStringList varsAvail = this->DataCache[*dataSetIter][availTimes[0]].keys();
 
-//        std::cout << "Number of time stesp: " << availTimes.size() << std::endl;
+        //        std::cout << "Number of time stesp: " << availTimes.size() << std::endl;
 
         //lets add the MJD first
         vtkDoubleArray *newMJDcolumn = vtkDoubleArray::New();
@@ -249,8 +249,8 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
                 c++;
             }
 
-//            std::cout << "Variable: " << (*VarIter).toAscii().data() << std::endl;
-//            std::cout << "Entering " << c << " values into table." << std::endl;
+            //            std::cout << "Variable: " << (*VarIter).toAscii().data() << std::endl;
+            //            std::cout << "Entering " << c << " values into table." << std::endl;
             output->AddColumn(newDataColumn);
             newDataColumn->Delete();
         }
@@ -289,8 +289,8 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
     QMap<QString, QString>::Iterator iter;
     for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
     {
-//        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
-//                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+        //        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
+        //                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
 
         for(int x =0; x < this->timeSteps.size(); x++)
         {
@@ -317,8 +317,8 @@ void vtkSpaceCraftInfoHandler::LoadCDFDataSource()
         // get the data set name so we can organize our data
         QString DataSet = this->CacheFileName.key(*iter);
 
-//        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
-//                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
+        //        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
+        //                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
 
         //get the data for ALL Epochs
         this->getDataForAllEpochs(DataSet, this->DataCache[DataSet]);
@@ -397,7 +397,7 @@ void vtkSpaceCraftInfoHandler::convertEpochToDateTime(QVector<DateTime> &convert
         DateTime convert(year, month, day, hour, minute, second);
         convertedFileEpoch.push_back( convert);
 
-//        std::cerr << "Date: " << convert.getDateTimeString() << std::endl;
+        //        std::cerr << "Date: " << convert.getDateTimeString() << std::endl;
     }
 }
 
@@ -455,7 +455,7 @@ bool vtkSpaceCraftInfoHandler::findEpochVar(cdfDataReader &cdfFile, QStringList 
             EpochVar = *SLiter;
             found = true;
 
-//            std::cerr << "FOUND EPOCH VARIABLE: " << EpochVar.toAscii().data() << std::endl;
+            //            std::cerr << "FOUND EPOCH VARIABLE: " << EpochVar.toAscii().data() << std::endl;
             break;
         }
 
@@ -470,7 +470,7 @@ bool vtkSpaceCraftInfoHandler::findEpochVar(cdfDataReader &cdfFile, QStringList 
     return found;
 }
 
-
+//=========================================================================================//
 
 bool vtkSpaceCraftInfoHandler::getDataForEpoch(QString &DataSet, double requestedEpoch, epochDataEntry  &data)
 {
@@ -575,7 +575,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
         // get the next lowest time for all epochs
         for(int a =0; a < EpochList.size(); a++)
         {
-//            std:: cout << "EpochListEntry: " << EpochList[a] << std::endl;
+            //            std:: cout << "EpochListEntry: " << EpochList[a] << std::endl;
 
             DateTime neededEpoch(EpochList[a]);
 
@@ -598,7 +598,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
         for(int v = 0; v < indexListOfFound.size(); v++)
         {
             //skip the variable if it doesn't have the correct index.
-//            std::cout << "Time Iterator: " << indexListOfFound[v] << " numRecords: " << varinfo.numRecords << std::endl;
+            //            std::cout << "Time Iterator: " << indexListOfFound[v] << " numRecords: " << varinfo.numRecords << std::endl;
             if(varinfo.numRecords < (indexListOfFound[v]))
             {
                 std::cerr << "Failure..." << std::endl;
@@ -612,7 +612,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
             //get the corrected value so the selected bad data handler will be applied
             cdfDataSet InData = cdfFile.getCorrectedZVariableRecord(varsAvailable[c], indexListOfFound[v]);
 
-//            std::cout << "Getting Variable: " << varsAvailable[c].toAscii().data() << " :index: " << indexListOfFound[v] << std::endl;
+            //            std::cout << "Getting Variable: " << varsAvailable[c].toAscii().data() << " :index: " << indexListOfFound[v] << std::endl;
 
             QVector<QVariant> dataSet = InData.getData();
 
@@ -626,7 +626,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
                 if(dataSet.size() > 1)
                 {
                     varNameTmp = varNameTmp + "_" + QVariant(p).toString();
-//                    std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
+                    //                    std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
                 }
 
                 data[EpochList[v]][varNameTmp].varName = varNameTmp;
@@ -634,7 +634,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
                 data[EpochList[v]][varNameTmp].units = Units;
                 data[EpochList[v]][varNameTmp].badDataValue = InData.getInvalidData();
 
-//                std::cout << "Inserting into " << DateTime(EpochList[v]).getDateTimeString() << std::endl;
+                //                std::cout << "Inserting into " << DateTime(EpochList[v]).getDateTimeString() << std::endl;
 
                 ++iter;
             }
@@ -677,7 +677,7 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
         std::cerr << "Could not find Epoch Var. Setting Index Found to 1" << std::endl;
     }
 
-//    std::cout << "Number of Epochs: " <<FileEpochsAsDateTime.size() << std::endl << std::flush;
+    //    std::cout << "Number of Epochs: " <<FileEpochsAsDateTime.size() << std::endl << std::flush;
 
     //get the data
     for(int c = 0; c < varsAvailable.size(); c++)
@@ -701,7 +701,7 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
             //get the corrected value so the selected bad data handler will be applied
             cdfDataSet InData = cdfFile.getCorrectedZVariableRecord(varsAvailable[c], v);
 
-//            std::cout << "Getting Variable: " << varsAvailable[c].toAscii().data() <<  std::endl;
+            //            std::cout << "Getting Variable: " << varsAvailable[c].toAscii().data() <<  std::endl;
 
             QVector<QVariant> dataSet = InData.getData();
 
@@ -717,7 +717,7 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
                 {
                     varNameTmp = varNameTmp + "_" + QVariant(p).toString();
                 }
-//                std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
+                //                std::cout << "VarName: " << varNameTmp.toStdString() << std::endl;
 
                 data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].varName = varNameTmp;
                 data[FileEpochsAsDateTime[v].getMJD()][varNameTmp].data = dataSet[p];
@@ -738,16 +738,16 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
 //=========================================================================================//
 bool vtkSpaceCraftInfoHandler::getAllTemperalDataFromCacheByVar(const QString DataSet, const QString var, QList<spaceCraftDataElement> &data)
 {
-       QMap<double, QMap<QString, spaceCraftDataElement> >::Iterator TimeIter;
+    QMap<double, QMap<QString, spaceCraftDataElement> >::Iterator TimeIter;
 
-       int count = 0;
-       for(TimeIter = this->DataCache[DataSet].begin(); TimeIter != this->DataCache[DataSet].end(); ++TimeIter)
-       {
-           data.push_back((*TimeIter)[var]);
-           count++;
-       }
+    int count = 0;
+    for(TimeIter = this->DataCache[DataSet].begin(); TimeIter != this->DataCache[DataSet].end(); ++TimeIter)
+    {
+        data.push_back((*TimeIter)[var]);
+        count++;
+    }
 
-//       std::cout << "Number of Time Steps in DataSet: " << DataSet.toAscii().data()  << ": " << count << std::endl;
+    //       std::cout << "Number of Time Steps in DataSet: " << DataSet.toAscii().data()  << ": " << count << std::endl;
     return true;
 }
 
@@ -759,12 +759,16 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
     this->processed = false;
 
     //remove list of previous files
-    this->uriList.clear();
+    this->urlMap.clear();
     this->tempFilePath.clear();
+    this->requestedData.clear();
+    this->CacheFileName.clear();
 
-//    std::cout << "Group: " << group << std::endl;
-//    std::cout << "Observatory: " << observatory << std::endl;
-//    std::cout <<  "Setting SCI Data: " << list << std::endl;
+    std::cout <<  "Setting SCI Data: " << list << std::endl;
+    std::cout << __FUNCTION__ << ": number of URL's in list pre-processing: " << this->urlMap.size() << std::endl;
+
+    //    std::cout << "Group: " << group << std::endl;
+    //    std::cout << "Observatory: " << observatory << std::endl;
 
     QString dataList = QString(list);
 
@@ -777,7 +781,6 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
     statusBar.setWindowTitle("Downloading Data...");
     statusBar.show();
 
-
     int count = 1;
     int totalcount = requestedData.size();
     double totalSets = 0;
@@ -789,8 +792,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
     for(int x = 0; x < this->requestedData.size(); x++)
     {
 
-//        std::cout << "Count: " << count << " Progress should be: " << count/totalSets * 100 << std::endl;
-
+        //        std::cout << "Count: " << count << " Progress should be: " << count/totalSets * 100 << std::endl;
 
         if(!this->requestedData[x].isEmpty())
         {
@@ -893,20 +895,23 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
                         if(currentObject->contains("Name"))
                         {
-                            this->uriList[DSet] = currentObject;
+                            this->urlMap[DSet] = currentObject;
 
-                            std::cout << "URI: " << this->uriList[DSet]->operator []("Name").toAscii().data() << std::endl;
+                            std::cout << "URL: " << this->urlMap[DSet]->operator []("Name").toAscii().data() << std::endl;
+                            std::cout << "Added to the URL map at key " << DSet.toAscii().data() << std::endl;
+                            std::cout << "Size of Map: " << this->urlMap.size() << std::endl;
 
                             //Download the actual files
                             statusBar.setStatusBarMessage(("Downloading " + DSet));
-                            statusBar.setStatusCount(QString("Getting " + QString::number(this->uriList[DSet]->operator []("Length").toDouble()/1e6) + " MBs"));
-                                                             statusBar.show();
+                            statusBar.setStatusCount(QString("Getting " + QString::number(this->urlMap[DSet]->operator []("Length").toDouble()/1e6) + " MBs"));
 
-                                                     FileDownloader recievedFile(this->uriList[DSet]->operator []("Name") );
+                            statusBar.show();
 
-                                                     // Save the file to the TEMP space on disk
-                                                     QString fileName = this->tempFilePath + DSet + "-" + QString(startTime.getISO8601DateTimeString().c_str()) +  "-" + QString(endTime.getISO8601DateTimeString().c_str()) + ".cdf";
-                                    QFile file(fileName);
+                            FileDownloader recievedFile(this->urlMap[DSet]->operator []("Name") );
+
+                            // Save the file to the TEMP space on disk
+                            QString fileName = this->tempFilePath + DSet + "-" + QString(startTime.getISO8601DateTimeString().c_str()) +  "-" + QString(endTime.getISO8601DateTimeString().c_str()) + ".cdf";
+                            QFile file(fileName);
 
                             if(file.open(QIODevice::WriteOnly))
                             {
@@ -1049,12 +1054,12 @@ int vtkSpaceCraftInfoHandler::RequestDataSource(vtkInformation *request, vtkInfo
 //===============================================//
 int vtkSpaceCraftInfoHandler::RequestInfoFilter(vtkInformation *request, vtkInformationVector **inputVector, vtkInformationVector *outputVector)
 {
-//    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
+    //    std::cout << __FUNCTION__ << " on line " << __LINE__ << std::endl;
 
     this->setInInfo(inputVector[0]->GetInformationObject(0));
     if(this->getInInfo()->Has(vtkStreamingDemandDrivenPipeline::TIME_STEPS()))
     {
-//        std::cout << "Getting Number of Time steps" << std::flush << std::endl;
+        //        std::cout << "Getting Number of Time steps" << std::flush << std::endl;
         this->NumberOfTimeSteps = this->inInfo->Length(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
         double *timeValues = this->inInfo->Get(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 
