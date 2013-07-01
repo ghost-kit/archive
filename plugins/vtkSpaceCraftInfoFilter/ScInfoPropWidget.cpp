@@ -94,7 +94,9 @@ ScInfoPropWidget::ScInfoPropWidget(vtkSMProxy *smproxy, vtkSMProperty *smpropert
 
     /** Time Connections */
     connect(ui->startTime, SIGNAL(editingFinished()), this, SLOT(timeRangeChanged()));
+    connect(ui->startTime, SIGNAL(editingFinished()), this, SLOT(startTimeChanged()));
     connect(ui->endTime, SIGNAL(editingFinished()), this, SLOT(timeRangeChanged()));
+    connect(ui->endTime, SIGNAL(editingFinished()), this, SLOT(endTimeChanged()));
 
     /** Group Connections */
     connect(ui->Group, SIGNAL(activated(QString)), this, SLOT(selectedGroup(QString)));
@@ -845,9 +847,11 @@ void ScInfoPropWidget::processDeniedDataRequests()
 void ScInfoPropWidget::timeRangeChanged()
 {
 
+
     std::cout << "Time Range has been changed" << std::endl;
     QDateTime end = ui->endTime->dateTime();
     QDateTime start = ui->startTime->dateTime();
+
     DateTime endDT;
     DateTime startDT;
 
@@ -872,6 +876,75 @@ void ScInfoPropWidget::timeRangeChanged()
 
     this->instrumentSelectionChanged();
 
+}
+
+//==================================================================
+void ScInfoPropWidget::startTimeChanged()
+{
+    std::cout << "Start Time Changed" << std::endl;
+    QDateTime end = ui->endTime->dateTime();
+    QDateTime start = ui->startTime->dateTime();
+
+    DateTime endDT;
+    DateTime startDT;
+
+    endDT.setYear(end.date().year());
+    endDT.setMonth(end.date().month());
+    endDT.setDay(end.date().day());
+
+    endDT.setHours(end.time().hour());
+    endDT.setMinutes(end.time().minute());
+    endDT.setSeconds(end.time().second());
+
+    startDT.setYear(start.date().year());
+    startDT.setMonth(start.date().month());
+    startDT.setDay(start.date().day());
+
+    startDT.setHours(start.time().hour());
+    startDT.setMinutes(start.time().minute());
+    startDT.setSeconds(start.time().second());
+
+    if(endDT < startDT)
+    {
+        std::cout << "fixing end time" << std::endl;
+        ui->endTime->setDateTime(start);
+        this->timeRangeChanged();
+
+    }
+}
+
+//==================================================================
+void ScInfoPropWidget::endTimeChanged()
+{
+    std::cout << "End Time Changed" << std::endl;
+    QDateTime end = ui->endTime->dateTime();
+    QDateTime start = ui->startTime->dateTime();
+
+    DateTime endDT;
+    DateTime startDT;
+
+    endDT.setYear(end.date().year());
+    endDT.setMonth(end.date().month());
+    endDT.setDay(end.date().day());
+
+    endDT.setHours(end.time().hour());
+    endDT.setMinutes(end.time().minute());
+    endDT.setSeconds(end.time().second());
+
+    startDT.setYear(start.date().year());
+    startDT.setMonth(start.date().month());
+    startDT.setDay(start.date().day());
+
+    startDT.setHours(start.time().hour());
+    startDT.setMinutes(start.time().minute());
+    startDT.setSeconds(start.time().second());
+
+    if(startDT > endDT)
+    {
+        std::cout << "fixing start time" << std::endl;
+        ui->startTime->setDateTime(end);
+        this->timeRangeChanged();
+    }
 }
 
 

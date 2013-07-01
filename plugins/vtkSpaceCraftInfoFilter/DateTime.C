@@ -367,7 +367,7 @@ void DateTime::setValidYMDHMS(const long &year, const long &month, const long &d
   }
   
   // We can only have positive numbers of days!
-  while (day_i < 0){
+  while (day_i < 1){
     month_i--;
 
     if (month_i <= 0){

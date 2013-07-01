@@ -93,20 +93,6 @@
         </column>
        </widget>
       </item>
-      <item row="5" column="0">
-       <widget class="QLabel" name="DataSet_Label">
-        <property name="text">
-         <string>Data Set</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="Instruments_Label">
-        <property name="text">
-         <string>Instrument</string>
-        </property>
-       </widget>
-      </item>
       <item row="7" column="2">
        <widget class="QTreeWidget" name="Variables">
         <property name="minimumSize">
@@ -273,19 +259,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QDateTimeEdit" name="startTime">
-        <property name="displayFormat">
-         <string>yyyy-MM-dd  hh:mm:ss UT</string>
-        </property>
-        <property name="calendarPopup">
-         <bool>true</bool>
-        </property>
-        <property name="timeSpec">
-         <enum>Qt::UTC</enum>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="startTime_Label">
         <property name="text">
@@ -297,6 +270,30 @@
        <widget class="QLabel" name="endTime_Label">
         <property name="text">
          <string>End Time:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="Instruments_Label">
+        <property name="text">
+         <string>Instrument</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="DataSet_Label">
+        <property name="text">
+         <string>Data Set</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QDateTimeEdit" name="startTime">
+        <property name="displayFormat">
+         <string>yyyy-MM-dd  hh:mm:ss UT</string>
+        </property>
+        <property name="calendarPopup">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -312,9 +309,9 @@
      <zorder>Variables_Label</zorder>
      <zorder>Variables</zorder>
      <zorder>endTime</zorder>
-     <zorder>startTime</zorder>
      <zorder>startTime_Label</zorder>
      <zorder>endTime_Label</zorder>
+     <zorder>startTime</zorder>
     </widget>
    </item>
   </layout>

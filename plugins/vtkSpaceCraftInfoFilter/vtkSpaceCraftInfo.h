@@ -184,7 +184,7 @@ protected:
   //------ gui attributes pannel ------//
 
   //gui data objects
-  QMap<QString, QString> CacheFileName;
+  QMap<QString, QString> DownloadedFileNames;
   QMap<QString, filterNetworkObject*> urlMap;
 
   //Info items

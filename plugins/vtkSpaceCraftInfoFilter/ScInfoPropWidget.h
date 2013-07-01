@@ -129,6 +129,8 @@ private slots:
     void processDeniedDataRequests();
 
     void timeRangeChanged();
+    void startTimeChanged();
+    void endTimeChanged();
 
 signals:
     void recheckInstrumentSelections();

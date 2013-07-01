@@ -121,7 +121,7 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
         }
     }
 
-    mb->SetNumberOfBlocks(this->CacheFileName.size());
+    mb->SetNumberOfBlocks(this->DownloadedFileNames.size());
 
     QMap<QString,spaceCraftDataElement>::Iterator elementsIter;
 
@@ -129,12 +129,12 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
     long count = 0;
 
     QMap<QString, QString>::Iterator iter;
-    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    for(iter = this->DownloadedFileNames.begin(); iter != this->DownloadedFileNames.end(); ++iter)
     {
 
         vtkTable* output = vtkTable::New();
 
-        QString DataSet = this->CacheFileName.key(*iter);
+        QString DataSet = this->DownloadedFileNames.key(*iter);
         double time = this->requestedTimeValue;
         QStringList keys = this->DataCache[DataSet][time].keys();
 
@@ -187,19 +187,19 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
     }
 
     long count = 0;
-    mb->SetNumberOfBlocks(this->CacheFileName.size());
+    mb->SetNumberOfBlocks(this->DownloadedFileNames.size());
 
     std::cout << "File Names being processed:" << std::endl;
-    for(int h=0; h < this->CacheFileName.size(); h++)
+    for(int h=0; h < this->DownloadedFileNames.size(); h++)
     {
-        std::cout << this->CacheFileName.values()[h].toAscii().data() << std::endl;
+        std::cout << this->DownloadedFileNames.values()[h].toAscii().data() << std::endl;
     }
 
     std::cout << "Number of NEW blocks: " << mb->GetNumberOfBlocks() << std::endl;
 
     //    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
 
-    QStringList DataSetsAvail = this->CacheFileName.keys();
+    QStringList DataSetsAvail = this->DownloadedFileNames.keys();
 
     //lets now get time series data
     QStringList::Iterator dataSetIter;
@@ -287,7 +287,7 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
     QVector<double> timeSteps;
 
     QMap<QString, QString>::Iterator iter;
-    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    for(iter = this->DownloadedFileNames.begin(); iter != this->DownloadedFileNames.end(); ++iter)
     {
         //        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
         //                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
@@ -297,7 +297,7 @@ void vtkSpaceCraftInfoHandler::LoadCDFData()
             timeSteps.push_back(this->timeSteps[x]);
         }
 
-        QString DataSet = this->CacheFileName.key(*iter);
+        QString DataSet = this->DownloadedFileNames.key(*iter);
         this->getDataForEpochList(DataSet, timeSteps, this->DataCache[DataSet]);
 
     }
@@ -312,10 +312,10 @@ void vtkSpaceCraftInfoHandler::LoadCDFDataSource()
     this->cleanData();
 
     QMap<QString, QString>::Iterator iter;
-    for(iter = this->CacheFileName.begin(); iter != this->CacheFileName.end(); ++iter)
+    for(iter = this->DownloadedFileNames.begin(); iter != this->DownloadedFileNames.end(); ++iter)
     {
         // get the data set name so we can organize our data
-        QString DataSet = this->CacheFileName.key(*iter);
+        QString DataSet = this->DownloadedFileNames.key(*iter);
 
         //        std::cout << "Reading File: " << (*iter).toAscii().data() << " for Data Set: "
         //                  << this->CacheFileName.key((*iter)).toAscii().data() << std::endl;
@@ -482,7 +482,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpoch(QString &DataSet, double requeste
     QString EpochVar;
 
     //Data File
-    cdfDataReader cdfFile(this->CacheFileName[DataSet]);
+    cdfDataReader cdfFile(this->DownloadedFileNames[DataSet]);
 
     //link the handler and reader to each other (Required)
     this->BDhandler->setReader(&cdfFile);
@@ -554,7 +554,7 @@ bool vtkSpaceCraftInfoHandler::getDataForEpochList(QString &DataSet, QVector<dou
     QString EpochVar;
 
     //Data File
-    cdfDataReader cdfFile(this->CacheFileName[DataSet]);
+    cdfDataReader cdfFile(this->DownloadedFileNames[DataSet]);
 
     //link the handler and reader to each other (Required)
     this->BDhandler->setReader(&cdfFile);
@@ -654,7 +654,7 @@ bool vtkSpaceCraftInfoHandler::getDataForAllEpochs(QString &DataSet, vtkSpaceCra
 
 
     //Data File
-    cdfDataReader cdfFile(this->CacheFileName[DataSet]);
+    cdfDataReader cdfFile(this->DownloadedFileNames[DataSet]);
 
     //link the handler and reader to each other (Required)
     this->BDhandler->setReader(&cdfFile);
@@ -762,13 +762,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
     this->urlMap.clear();
     this->tempFilePath.clear();
     this->requestedData.clear();
-    this->CacheFileName.clear();
-
-    std::cout <<  "Setting SCI Data: " << list << std::endl;
-    std::cout << __FUNCTION__ << ": number of URL's in list pre-processing: " << this->urlMap.size() << std::endl;
-
-    //    std::cout << "Group: " << group << std::endl;
-    //    std::cout << "Observatory: " << observatory << std::endl;
+    this->DownloadedFileNames.clear();
 
     QString dataList = QString(list);
 
@@ -919,7 +913,7 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
                                 file.write(recievedFile.downloadedData());
                                 file.close();
 
-                                this->CacheFileName[DSet] = fileName;
+                                this->DownloadedFileNames[DSet] = fileName;
                             }
                             else
                             {
