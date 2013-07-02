@@ -760,7 +760,6 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
 
     //remove list of previous files
     this->urlMap.clear();
-    this->tempFilePath.clear();
     this->requestedData.clear();
     this->DownloadedFileNames.clear();
 
@@ -1178,6 +1177,7 @@ void vtkSpaceCraftInfoHandler::setNumOutputPorts(int value)
 //===============================================//
 void vtkSpaceCraftInfoHandler::setTempPath(const char *path)
 {
-    std::cout << "You are trying to set your path to: " << path << std::endl;
-    this->tempFilePath = QString(path);
+    this->tempFilePath = QString(path) + "/";
+    std::cout << "You are trying to set your path to: " << this->tempFilePath.toAscii().data() << std::endl;
+
 }

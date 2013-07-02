@@ -3,18 +3,21 @@
     <ProxyGroup name="sources">
     <SourceProxy name="NASA CDAweb Space Craft Data Source" class="vtkSpaceCraftInfoSource">
 
-            <StringVectorProperty name="Timp File Path"
+            <StringVectorProperty name="Temp File Path"
                                   command="setTempPath"
                                   number_of_elements="1"
-                                  default_values="/tmp/"
+                                  panel_widget="PathSelectionProperty"
+                                  default_values="/tmp"
+                                  immediate_update="1"
                                   panel_visibility="advanced">
 
-
                 <Documentation>
-                    This tells the filter where to save temporary .CDF files
+                    The Temp file path is where ParaView will save all downloaded cdf files.  The default on *NIX systems is /temp/
                 </Documentation>
 
+
             </StringVectorProperty>
+
 
             <DoubleVectorProperty name="TimeRangeInfoStart"
                                   command="getStartTime"

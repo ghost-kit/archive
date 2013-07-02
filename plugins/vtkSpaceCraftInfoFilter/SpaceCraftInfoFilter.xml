@@ -18,20 +18,22 @@
 
        </InputProperty>
 
-            <StringVectorProperty name="Timp File Path"
+            <StringVectorProperty name="Temp File Path"
                                   command="setTempPath"
                                   number_of_elements="1"
-                                  default_values="/tmp/"
+                                  panel_widget="PathSelectionProperty"
+                                  label="Temp File Path"
                                   panel_visibility="advanced">
 
-
                 <Documentation>
-                    This tells the filter where to save temporary .CDF files
+                    The Temp file path is where ParaView will save all downloaded cdf files.  The default on *NIX systems is /tmp/
                 </Documentation>
+
 
             </StringVectorProperty>
 
-            <DoubleVectorProperty name="TimeRangeInfoStart"
+
+           <DoubleVectorProperty name="TimeRangeInfoStart"
                                   command="getStartTime"
                                   information_only="1"
                                   number_of_elements="1"

@@ -25,6 +25,8 @@ QT4_WRAP_CPP(
     status.h
     filedownloader.h
     vtkSpaceCraftInfo.h
+    pathSelector.h
+    newFileChooserWidget.h
     )
 
 # Wrap UI
@@ -33,19 +35,27 @@ QT4_WRAP_UI(
     ScInfoPropWidget.ui
     statusbar.ui
     status.ui
+    pathSelector.ui
     )
 
-# Property Widget
+# Property Widgets
 set(outifaces0)
 set(outsrcs0)
 ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
         TYPE "SpaceCraftInfoProperties"
         CLASS_NAME "ScInfoPropWidget")
 
+set(outifaces1)
+set(outsrcs1)
+ADD_PARAVIEW_PROPERTY_WIDGET(outifaces1 outsrcs1
+        TYPE "PathSelectionProperty"
+        CLASS_NAME "pathSelector")
 
-ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "0.1.0"
+
+#plugins
+ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "1.0.beta_1"
         SERVER_MANAGER_XML SpaceCraftInfoFilter.xml
-        GUI_INTERFACES ${outifaces0}
+        GUI_INTERFACES ${outifaces0} ${outifaces1}
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfoFilter.cpp
         SOURCES filterNetworkAccessModule.cpp
                 vtkSpaceCraftInfo.cxx
@@ -58,7 +68,10 @@ ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "0.1.0"
                 BadDataHandler.cpp
                 cdfDataReader.cpp
                 omitBDHandler.cpp
+                pathSelector.cxx
+                newFileChooserWidget.cxx
                 ${outsrcs0}
+                ${outsrcs1}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}
                 )
@@ -66,9 +79,9 @@ ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "0.1.0"
 target_link_libraries(CDAwebSpaceCraftInfoFilter ${LIBS})
 
 
-ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoSource "0.1.0"
+ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoSource "1.0.beta_1"
         SERVER_MANAGER_XML SpaceCraftInfoSource.xml
-        GUI_INTERFACES ${outifaces0}
+        GUI_INTERFACES ${outifaces0} ${outifaces1}
         SERVER_MANAGER_SOURCES vtkSpaceCraftInfoSource.cpp
         SOURCES filterNetworkAccessModule.cpp
                 vtkSpaceCraftInfo.cxx
@@ -81,7 +94,10 @@ ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoSource "0.1.0"
                 BadDataHandler.cpp
                 cdfDataReader.cpp
                 omitBDHandler.cpp
+                pathSelector.cxx
+                newFileChooserWidget.cxx
                 ${outsrcs0}
+                ${outsrcs1}
                 ${MOC_BUILT_SOURCES}
                 ${UI_BUILT_SOURCES}
                 )
