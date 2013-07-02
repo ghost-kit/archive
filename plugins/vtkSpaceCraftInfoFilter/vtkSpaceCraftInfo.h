@@ -127,6 +127,9 @@ public:
 
   void setTempPath(const char *path);
 
+  void setOverShoot(int value);
+
+  void updateForOvershoot(DateTime &startTime, DateTime &endTime);
 protected:
 
   int numInputPorts;
@@ -140,6 +143,8 @@ protected:
   double *getTimeSteps();
   double startTime;
   double endTime;
+
+  int overShoot;
 
   // This Data Structure yeilds the value of the timestep by integer step
   //    timeSteps[timeStep] = time step value

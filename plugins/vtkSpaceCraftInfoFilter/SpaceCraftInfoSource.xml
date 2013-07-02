@@ -19,6 +19,21 @@
             </StringVectorProperty>
 
 
+            <IntVectorProperty name="Minutes to Add"
+                               command="setOverShoot"
+                               number_of_elements="1"
+                               default_values="0"
+                               immediate_update="1"
+                               panel_visibility="advanced">
+
+                <Documentation>
+                    This property will tell the Filter how much time to overshoot on either end of the data request.  This allows for
+                    extra data to make fitting data properly easier.
+                </Documentation>
+
+            </IntVectorProperty>
+
+
             <DoubleVectorProperty name="TimeRangeInfoStart"
                                   command="getStartTime"
                                   information_only="1"

@@ -17,10 +17,10 @@ public:
     void SetSCIData(const char *group, const char *observatory, const char *list);
     void SetTimeFitHandler(int handler);
     void SetBadDataHandler(int handler);
-
     void setTimeRange(const double start, const double end);
-
     void setTempPath(const char *path);
+    void setOverShoot(int value);
+
 protected:
     vtkSpaceCraftInfoSource();
     ~vtkSpaceCraftInfoSource();

@@ -42,6 +42,8 @@
 #include "QStringList"
 #include "qeventloop.h"
 #include "QtAlgorithms"
+#include "QDateTime"
+
 
 #include <vector>
 #include <vtkSmartPointer.h>
@@ -81,6 +83,7 @@ vtkSpaceCraftInfoHandler::vtkSpaceCraftInfoHandler()
 
     this->startTime =0;
     this->endTime   =0;
+    this->overShoot =0;
 
 
 }
@@ -753,6 +756,47 @@ bool vtkSpaceCraftInfoHandler::getAllTemperalDataFromCacheByVar(const QString Da
 
 
 //=========================================================================================//
+void vtkSpaceCraftInfoHandler::updateForOvershoot(DateTime &startTime, DateTime &endTime)
+{
+    QDateTime startQDT;
+    QDateTime endQDT;
+
+    std::cerr << "Before Adjust Start: " << startTime.getDateTimeString() << std::endl;
+    std::cerr << "Before Adjust End:   " << endTime.getDateTimeString() << std::endl;
+
+    startQDT.setDate(QDate(startTime.getYear(), startTime.getMonth(), startTime.getDay()));
+    startQDT.setTime(QTime(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds()));
+
+    endQDT.setDate(QDate(endTime.getYear(), endTime.getMonth(), endTime.getDay()));
+    endQDT.setTime(QTime(endTime.getHours(), endTime.getMinutes(), endTime.getSeconds()));
+
+    std::cout << "overshoot: " << this->overShoot << " Minutes." << std::endl;
+
+    startQDT.addSecs(this->overShoot*(-60));
+    endQDT.addSecs(this->overShoot*60);
+
+    std::cout << "Start QDT: " << startQDT.toString("yyyy-MM-dd hh:mm:ss").toAscii().data() << std::endl;
+    std::cout << "End QDT:   " << endQDT.toString("yyyy-MM-dd hh:mm:ss").toAscii().data() << std::endl;
+
+    startTime.setYear(startQDT.date().year());
+    startTime.setMonth(startQDT.date().month());
+    startTime.setDay(startQDT.date().day());
+    startTime.setHours(startQDT.time().hour());
+    startTime.setMinutes(startQDT.time().minute());
+    startTime.setSeconds(startQDT.time().second());
+
+    endTime.setYear(endQDT.date().year());
+    endTime.setMonth(endQDT.date().month());
+    endTime.setDay(endQDT.date().day());
+    endTime.setHours(endQDT.time().hour());
+    endTime.setMinutes(endQDT.time().minute());
+    endTime.setSeconds(endQDT.time().second());
+
+    std::cerr << "After Adjust Start: " << startTime.getDateTimeString() << std::endl;
+    std::cerr << "After Adjust End:   " << endTime.getDateTimeString() << std::endl;
+}
+
+//=========================================================================================//
 void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observatory, const char *list)
 {
     //mark dirty
@@ -819,7 +863,6 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
                     filterNetworkAccessModule manager;
                     QString url;
 
-
                     //set start time
                     DateTime startTime;
                     if(this->numInputPorts == 1)
@@ -842,8 +885,9 @@ void vtkSpaceCraftInfoHandler::SetSCIData(const char *group, const char *observa
                         endTime.setMJD(this->endTime);
                     }
 
-                    endTime.incrementMinutes(+60);
-                    startTime.incrementMinutes(-60);
+                    //we need a way of overshooting the time range for fitting purposes.
+                    //HACK
+                    updateForOvershoot(startTime, endTime);
 
 
                     url = QString("http://cdaweb.gsfc.nasa.gov/WS/cdasr/1/dataviews/sp_phys")
@@ -1179,5 +1223,13 @@ void vtkSpaceCraftInfoHandler::setTempPath(const char *path)
 {
     this->tempFilePath = QString(path) + "/";
     std::cout << "You are trying to set your path to: " << this->tempFilePath.toAscii().data() << std::endl;
+
+}
+
+//===============================================//
+void vtkSpaceCraftInfoHandler::setOverShoot(int value)
+{
+    std::cout << "Setting OverShoot to " <<  value << " Minutes." << std::endl;
+    this->overShoot = value;
 
 }

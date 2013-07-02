@@ -20,7 +20,7 @@ public:
     void SetTimeFitHandler(int handler);
     void SetBadDataHandler(int handler);
     void setTempPath(const char *path);
-
+    void setOverShoot(int value);
 
 protected:
     vtkSpaceCraftInfoFilter();

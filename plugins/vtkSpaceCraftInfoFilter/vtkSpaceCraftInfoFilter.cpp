@@ -139,3 +139,10 @@ void vtkSpaceCraftInfoFilter::setTempPath(const char *path)
     this->infoHandler.setTempPath(path);
     this->Modified();
 }
+
+//===============================================//
+void vtkSpaceCraftInfoFilter::setOverShoot(int value)
+{
+    this->infoHandler.setOverShoot(value);
+    this->Modified();
+}
