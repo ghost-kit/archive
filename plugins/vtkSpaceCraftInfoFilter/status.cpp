@@ -13,6 +13,11 @@ Status::~Status()
     delete ui;
 }
 
+void Status::setStatusBarBanner(QString message)
+{
+    ui->info->setText(message);
+}
+
 void Status::setStatusBarMessage(QString message)
 {
     ui->message->setText(message);

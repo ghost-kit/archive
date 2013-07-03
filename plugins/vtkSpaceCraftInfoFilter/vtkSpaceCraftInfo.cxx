@@ -67,6 +67,8 @@
 
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include "status.h"
+
 using namespace boost::posix_time;
 using namespace boost::gregorian;
 
@@ -89,6 +91,8 @@ vtkSpaceCraftInfoHandler::vtkSpaceCraftInfoHandler()
     this->startTime =0;
     this->endTime   =0;
     this->overShoot =0;
+
+    this->super = NULL;
 
 
 }
@@ -182,9 +186,12 @@ bool vtkSpaceCraftInfoHandler::processCDAWeb(vtkMultiBlockDataSet *mb)
 bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
 {
 
+    this->super->SetProgress(0.0);
+    this->super->SetProgressText("Loading CDAweb Data...");
+
     int numCurrBlocks = mb->GetNumberOfBlocks();
 
-    std::cout << "Number of blocks reported: " << numCurrBlocks << std::endl;
+    //    std::cout << "Number of blocks reported: " << numCurrBlocks << std::endl;
     //clean the block for re-processing.
     if(numCurrBlocks > 0)
     {
@@ -197,22 +204,26 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
     long count = 0;
     mb->SetNumberOfBlocks(this->DownloadedFileNames.size());
 
-    std::cout << "File Names being processed:" << std::endl;
+//    std::cout << "File Names being processed:" << std::endl;
     for(int h=0; h < this->DownloadedFileNames.size(); h++)
     {
         std::cout << this->DownloadedFileNames.values()[h].toAscii().data() << std::endl;
     }
 
-    std::cout << "Number of NEW blocks: " << mb->GetNumberOfBlocks() << std::endl;
+//    std::cout << "Number of NEW blocks: " << mb->GetNumberOfBlocks() << std::endl;
 
     //    std::cout << __FUNCTION__ << " at Line " << __LINE__ << " in file " << __FILE__ << std::endl;
 
     QStringList DataSetsAvail = this->DownloadedFileNames.keys();
 
+    double statusCount = this->DownloadedFileNames.size();
+    int fileCount = 0;
+
     //lets now get time series data
     QStringList::Iterator dataSetIter;
     for(dataSetIter = DataSetsAvail.begin(); dataSetIter != DataSetsAvail.end(); ++dataSetIter)
     {
+        this->super->SetProgress(fileCount/statusCount*1.0);
         vtkTable* output = vtkTable::New();
 
         QList<double> availTimes = this->DataCache[*dataSetIter].keys();
@@ -270,6 +281,7 @@ bool vtkSpaceCraftInfoHandler::processCDAWebSource(vtkMultiBlockDataSet *mb)
         mb->SetBlock(count, output);
         output->Delete();
         count++;
+        fileCount++;
     }
 
     return true;
@@ -778,8 +790,8 @@ void vtkSpaceCraftInfoHandler::updateForOvershoot(DateTime &startTime, DateTime 
     tm start_tm = to_tm(modStartP);
     tm end_tm = to_tm(modEndP);
 
-    startTime.setYear(start_tm.tm_year+1900);
-    startTime.setMonth(start_tm.tm_mon+1);
+    startTime.setYear(start_tm.tm_year+1900);   //year in struct is number of years from 1900
+    startTime.setMonth(start_tm.tm_mon+1);      //month is zero based, thus need to add 1
     startTime.setDay(start_tm.tm_mday);
     startTime.setHours(start_tm.tm_hour);
     startTime.setMinutes(start_tm.tm_min);
@@ -1230,4 +1242,14 @@ void vtkSpaceCraftInfoHandler::setOverShoot(int value)
     std::cout << "Setting OverShoot to " <<  value << " Minutes." << std::endl;
     this->overShoot = value;
 
+}
+
+vtkMultiBlockDataSetAlgorithm *vtkSpaceCraftInfoHandler::getSuper() const
+{
+    return super;
+}
+
+void vtkSpaceCraftInfoHandler::setSuper(vtkMultiBlockDataSetAlgorithm *value)
+{
+    super = value;
 }

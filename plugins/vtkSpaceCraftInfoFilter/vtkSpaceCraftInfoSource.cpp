@@ -34,6 +34,8 @@ vtkSpaceCraftInfoSource::vtkSpaceCraftInfoSource()
 
     this->infoHandler.setNumInputPorts(0);
     this->infoHandler.setNumOutputPorts(1);
+
+     this->infoHandler.setSuper(this);
 }
 
 //===============================================//

@@ -36,6 +36,7 @@
 #include "cdfDataReader.h"
 
 #include "vtkMultiBlockDataSet.h"
+#include "vtkMultiBlockDataSetAlgorithm.h"
 
 class vtkDataSet;
 class vtkTable;
@@ -130,6 +131,11 @@ public:
   void setOverShoot(int value);
 
   void updateForOvershoot(DateTime &startTime, DateTime &endTime);
+
+
+  vtkMultiBlockDataSetAlgorithm *getSuper() const;
+  void setSuper(vtkMultiBlockDataSetAlgorithm *value);
+
 protected:
 
   int numInputPorts;
@@ -200,6 +206,9 @@ protected:
   //Selected Handlers
   BadDataHandler *BDhandler;
   timeFitHandler *TFhandler;
+
+  //the superclassish like thing.
+  vtkMultiBlockDataSetAlgorithm *super;
 
 
 };

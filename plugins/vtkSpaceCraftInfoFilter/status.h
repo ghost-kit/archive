@@ -15,6 +15,7 @@ public:
     explicit Status(QWidget *parent = 0);
     ~Status();
 
+    void setStatusBarBanner(QString message);
     void setStatusBarMessage(QString message);
     void setStatusCount(QString countMessage);
     void updateAll();
