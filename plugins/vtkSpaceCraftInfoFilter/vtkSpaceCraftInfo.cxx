@@ -65,6 +65,11 @@
 #include "BadDataHandler.h"
 #include "omitBDHandler.h"
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+
+using namespace boost::posix_time;
+using namespace boost::gregorian;
+
 
 //=========================================================================================//
 vtkSpaceCraftInfoHandler::vtkSpaceCraftInfoHandler()
@@ -758,42 +763,35 @@ bool vtkSpaceCraftInfoHandler::getAllTemperalDataFromCacheByVar(const QString Da
 //=========================================================================================//
 void vtkSpaceCraftInfoHandler::updateForOvershoot(DateTime &startTime, DateTime &endTime)
 {
-    QDateTime startQDT;
-    QDateTime endQDT;
 
-    std::cerr << "Before Adjust Start: " << startTime.getDateTimeString() << std::endl;
-    std::cerr << "Before Adjust End:   " << endTime.getDateTimeString() << std::endl;
+    //Use BOOST to do the time math
+    date start(startTime.getYear(), startTime.getMonth(), startTime.getDay());
+    ptime startP(start, hours(startTime.getHour())+minutes(startTime.getMinute())+seconds(startTime.getSecond()));
 
-    startQDT.setDate(QDate(startTime.getYear(), startTime.getMonth(), startTime.getDay()));
-    startQDT.setTime(QTime(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds()));
+    date end(endTime.getYear(), endTime.getMonth(), endTime.getDay());
+    ptime endP(end, hours(endTime.getHour()) + minutes(endTime.getMinute())+seconds(startTime.getSecond()));
 
-    endQDT.setDate(QDate(endTime.getYear(), endTime.getMonth(), endTime.getDay()));
-    endQDT.setTime(QTime(endTime.getHours(), endTime.getMinutes(), endTime.getSeconds()));
+    ptime modStartP = startP - minutes(this->overShoot);
+    ptime modEndP   = endP   + minutes(this->overShoot);
 
-    std::cout << "overshoot: " << this->overShoot << " Minutes." << std::endl;
+    //convert back to DateTime
+    tm start_tm = to_tm(modStartP);
+    tm end_tm = to_tm(modEndP);
 
-    startQDT.addSecs(this->overShoot*(-60));
-    endQDT.addSecs(this->overShoot*60);
+    startTime.setYear(start_tm.tm_year+1900);
+    startTime.setMonth(start_tm.tm_mon+1);
+    startTime.setDay(start_tm.tm_mday);
+    startTime.setHours(start_tm.tm_hour);
+    startTime.setMinutes(start_tm.tm_min);
+    startTime.setSeconds(start_tm.tm_sec);
 
-    std::cout << "Start QDT: " << startQDT.toString("yyyy-MM-dd hh:mm:ss").toAscii().data() << std::endl;
-    std::cout << "End QDT:   " << endQDT.toString("yyyy-MM-dd hh:mm:ss").toAscii().data() << std::endl;
+    endTime.setYear(end_tm.tm_year+1900);
+    endTime.setMonth(end_tm.tm_mon+1);
+    endTime.setDay(end_tm.tm_mday);
+    endTime.setHours(end_tm.tm_hour);
+    endTime.setMinutes(end_tm.tm_min);
+    endTime.setSeconds(end_tm.tm_sec);
 
-    startTime.setYear(startQDT.date().year());
-    startTime.setMonth(startQDT.date().month());
-    startTime.setDay(startQDT.date().day());
-    startTime.setHours(startQDT.time().hour());
-    startTime.setMinutes(startQDT.time().minute());
-    startTime.setSeconds(startQDT.time().second());
-
-    endTime.setYear(endQDT.date().year());
-    endTime.setMonth(endQDT.date().month());
-    endTime.setDay(endQDT.date().day());
-    endTime.setHours(endQDT.time().hour());
-    endTime.setMinutes(endQDT.time().minute());
-    endTime.setSeconds(endQDT.time().second());
-
-    std::cerr << "After Adjust Start: " << startTime.getDateTimeString() << std::endl;
-    std::cerr << "After Adjust End:   " << endTime.getDateTimeString() << std::endl;
 }
 
 //=========================================================================================//

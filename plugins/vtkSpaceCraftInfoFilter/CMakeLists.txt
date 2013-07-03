@@ -11,9 +11,11 @@ endif()
 
 include(ParaViewPlugins)
 
-#find_package(cdf REQUIRED)
-include_directories(${LIBCDF_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${LIBCDF_LIBRARIES})
+set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_MULTITHREADED ON)
+find_package(Boost COMPONENTS DATE_TIME)
+include_directories(${LIBCDF_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+set(LIBS ${LIBS} ${LIBCDF_LIBRARIES} ${Boost_LIBRARIES})
 
 
 # wrap QT
@@ -52,7 +54,7 @@ ADD_PARAVIEW_PROPERTY_WIDGET(outifaces1 outsrcs1
         CLASS_NAME "pathSelector")
 
 
-#plugins
+#plugin (Filter for CDAweb)
 ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "1.0.beta_1"
         SERVER_MANAGER_XML SpaceCraftInfoFilter.xml
         GUI_INTERFACES ${outifaces0} ${outifaces1}
@@ -78,7 +80,7 @@ ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoFilter "1.0.beta_1"
 
 target_link_libraries(CDAwebSpaceCraftInfoFilter ${LIBS})
 
-
+#plugin (Source for CDAweb)
 ADD_PARAVIEW_PLUGIN(CDAwebSpaceCraftInfoSource "1.0.beta_1"
         SERVER_MANAGER_XML SpaceCraftInfoSource.xml
         GUI_INTERFACES ${outifaces0} ${outifaces1}

@@ -66,6 +66,11 @@ DateTime::DateTime(const double &MJD)
 {
   fractionOfDay = modf(MJD, &mjd);
 
+  // Ensure fractionOfDay is positive.  fractionOfDay == -0.75 means 25% in to the day (ie., hour=6).
+  if (fractionOfDay < 0){
+    fractionOfDay+=1.0;
+  }
+
   updateYMDHMS();
 }
 
@@ -180,8 +185,7 @@ double DateTime::secOfDay(void) const
  */
 void DateTime::updateMJD(void)
 {
-  // If YMDHMS has any goofy values (ie. negative seconds), verify/correct it:
-  setValidYMDHMS();
+  verifyYMDHMS();
 
   long alpha;
   long julianDate;
@@ -304,43 +308,24 @@ void DateTime::updateYMDHMS(void)
  *
  * 3.    December 32, 2007 is really January 1, 2008
  */
-void DateTime::setValidYMDHMS(const long &year, const long &month, const long &day, const long &hours, const long &minutes, const double &seconds)
+void DateTime::verifyYMDHMS(void)
 {
-  long year_i = year;
-  long month_i = month;
-  long day_i = day;
-  long hours_i = hours;
-  long minutes_i = minutes;
-  double seconds_d = seconds;
-  
   /***** Check seconds *****/
-  while (seconds_d >= 60.0){
-    seconds_d -= 60.0;
-    minutes_i++;
+  while (seconds >= 60.0){
+    seconds -= 60.0;
+    minutes++;
   }
-  while (seconds_d < 0){
-    seconds_d += 60.0;
-    minutes_i--;
-  }
-  
+
   /***** Check minutes *****/
-  while (minutes_i >= 60){
-    minutes_i -= 60;
-    hours_i++;
-  }
-  while (minutes_i < 0){
-    minutes_i += 60;
-    hours_i--;
+  while (minutes >= 60){
+    minutes -= 60;
+    hours++;
   }
 
   /***** Check hours *****/
-  while (hours_i >= 24){
-    hours_i -= 24;
-    day_i++;
-  }
-  while (hours_i < 0){
-    hours_i += 24;
-    day_i--;
+  while (hours >= 24){
+    hours -= 24;
+    day++;
   }
 
   /***** Check days *****/
@@ -355,51 +340,22 @@ void DateTime::setValidYMDHMS(const long &year, const long &month, const long &d
    * Source: http://en.wikipedia.org/wiki/Leap_year
    */
   bool isLeapYear = false;
-  if (  ( (year_i%4) == 0 ) && ( (year_i%100) != 0 )  )
+  if (  ( (year%4) == 0 ) && ( (year%100) != 0 )  )
     isLeapYear = true;
-  if ( (year_i%400) == 400 )
+  if ( (year%400) == 400 )
     isLeapYear = true;
 
   // note: false=0 and true=1 
-  while (day_i >  DAYS_PER_MONTH[isLeapYear][month_i%12]){
-    day_i = day_i - DAYS_PER_MONTH[isLeapYear][month_i%12];
-    month_i++;
+  while (day >  DAYS_PER_MONTH[isLeapYear][month%12]){
+    day = day - DAYS_PER_MONTH[isLeapYear][month%12];
+    month++;
   }
-  
-  // We can only have positive numbers of days!
-  while (day_i < 1){
-    month_i--;
-
-    if (month_i <= 0){
-      month_i += 12;
-      year_i--;
-      if (  ( (year_i%4) == 0 ) && ( (year_i%100) != 0 )  )
-	isLeapYear = true;
-      if ( (year_i%400) == 400 )
-	isLeapYear = true;
-    }
-
-    day_i += DAYS_PER_MONTH[isLeapYear][month_i%12];
-  }
-
 
   /***** check months *****/
-  while (month_i > 12){
-    month_i -= 12;
-    year_i++;
+  while (month > 12){
+    month -= 12;
+    year++;
   }
-
-  /*  What does it mean to decrement the date by 1 month?  Is -1
-   *  month == 28, 29, 30 or 31 days?  
-   */
-  assert (month_i > 0);
-
-  this->year = size_t(year_i);
-  this->month = size_t(month_i);
-  this->day = size_t(day_i);
-  this->hours = size_t(hours_i);
-  this->minutes = size_t(minutes_i); 
-  this->seconds = seconds_d;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -422,36 +378,32 @@ std::string DateTime::getDateTimeString(void) const
     out << month << "-"; 
 
   if (day < 10)
-    out << "0" << day << " ";
+    out << "0" << day << "T";
   else
-    out << day << " ";
+    out << day << "T";
 
   if (hours < 10)
-    out << "0" << hours << ":";
+    out << "0" << hours << "-";
   else
-    out << hours << ":";
+    out << hours << "-";
 
   if (minutes < 10)
-    out << "0" << minutes << ":";
+    out << "0" << minutes << "-";
   else
-    out << minutes << ":";
+    out << minutes << "-";
 
   if (seconds < 10.0)
-    out << "0" << (size_t) seconds ;
+    out << "0" << (size_t) seconds << "Z";
   else
-    out << (size_t) seconds ;
+    out << (size_t) seconds << "Z";
 
   return out.str();
 }
 
-
 ////////////////////////////////////////////////////////////////////////
 
-/// Get formatted DateTime string in the format YYYYMMDDTHHMMSSZ
-/**
- *  Returns a string of the form YYYY-MM-DDTHH-MM-SSZ.  This is useful
- *  for UTIO filenames, like we have used with CMIT.
- */
+/// Get formatted DateTime string in the ISO8601 format YYYYMMDDTHHMMSSZ
+
 std::string DateTime::getISO8601DateTimeString(void) const
 {
   std::string YYYY, MM, DD, HH, MMin, SS;
@@ -465,9 +417,9 @@ std::string DateTime::getISO8601DateTimeString(void) const
     out << month;
 
   if (day < 10)
-      out << "0" << day << "T";
+    out << "0" << day << "T";
   else
-      out << day << "T";
+    out << day << "T";
 
   if (hours < 10)
     out << "0" << hours;
@@ -480,9 +432,9 @@ std::string DateTime::getISO8601DateTimeString(void) const
     out << minutes;
 
   if (seconds < 10.0)
-      out << "0" << (size_t) seconds << "Z";
+    out << "0" << (size_t) seconds << "Z";
   else
-      out << (size_t) seconds  << "Z";
+    out << (size_t) seconds << "Z";
 
   return out.str();
 }
@@ -594,8 +546,6 @@ bool operator <(const DateTime &d1, const DateTime &d2)
 bool operator <= (const DateTime &d1, const DateTime &d2)
 {
   return (d1.getMJD() < d2.getMJD() + EPSILON);
-//    return (d1.getMJD() < d2.getMJD());
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -633,10 +583,9 @@ bool operator >= (const DateTime & d1, const DateTime & d2)
  *  @return true if input == date, false otherwise
  */
 bool operator == (const DateTime & d1, const DateTime & d2)
-{
+{ 
   return ( (d1.getMJD() <= d2.getMJD() + EPSILON) &&
-       (d1.getMJD() >= d2.getMJD() - EPSILON) );
-//  return (d1.getMJD() == d2.getMJD());
+	   (d1.getMJD() >= d2.getMJD() - EPSILON) );
 }
 
 ////////////////////////////////////////////////////////////////////////
