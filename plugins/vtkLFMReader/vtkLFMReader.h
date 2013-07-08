@@ -134,6 +134,8 @@ private:
   /// \see GRID_SCALE::ScaleType
   int GridScaleType;
 
+  int nSpecies;
+
   /// TimeStepValues must match property in vtkLFMReader.xml
   std::vector<double> TimeStepValues;
     

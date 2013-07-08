@@ -22,7 +22,7 @@ vtkStandardNewMacro(vtkLFMReader);
 
 //----------------------------------------------------------------
 
-vtkLFMReader::vtkLFMReader() : HdfFileName(NULL), GridScaleType(GRID_SCALE::NONE)
+vtkLFMReader::vtkLFMReader() : HdfFileName(NULL), GridScaleType(GRID_SCALE::NONE), nSpecies(1)
 {
   // print vtkDebugMacro messages by turning debug mode on:
   // NOTE: This will make things VERY SLOW
@@ -155,6 +155,49 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
   //if (hasVariable(variables, "bi_") && hasVariable(variables, "bj_") && hasVariable(variables, "bk_"))
   //  addVectorInformation("bi_", "bj_", "bk_", "Current Vector");
   
+
+  // Multifluid Variables
+  if(hasAttribute(attributes, "n_species")){
+    io->readAttribute("n_species", nSpecies);
+
+    for(int fluidNumber=1; fluidNumber <= nSpecies; fluidNumber++){
+      stringstream ssVarName;
+      string varName;
+
+      ssVarName << "rho_" << fluidNumber << "_";
+      varName = ssVarName.str();
+      if (hasVariable(variables, varName)){
+	stringstream description;
+	description << "Plasma Density #" << fluidNumber;
+	addScalarInformation(varName, description.str());
+      }
+      
+      ssVarName.str(string());
+      ssVarName << "c_" << fluidNumber << "_";
+      varName = ssVarName.str();
+      if (hasVariable(variables, varName)){
+	stringstream description;
+	description << "Sound Speed #" << fluidNumber;
+	addScalarInformation(varName, description.str());
+      }
+
+      ssVarName.str(string());
+      ssVarName << "vx_" << fluidNumber << "_";
+      string xVarName = ssVarName.str();
+      ssVarName.str(string());
+      ssVarName << "vy_" << fluidNumber << "_";
+      string yVarName = ssVarName.str();
+      ssVarName.str(string());
+      ssVarName << "vz_" << fluidNumber << "_";
+      string zVarName = ssVarName.str();
+      if (hasVariable(variables, xVarName) && hasVariable(variables, yVarName) && hasVariable(variables, zVarName)){
+	stringstream description;
+	description << "Velocity Vector #" << fluidNumber;
+	addVectorInformation(xVarName, yVarName, zVarName, description.str());
+      }      
+    }
+  }
+  
   /********************************************************************/
   // Set WHOLE_EXTENT
   /********************************************************************/
@@ -189,7 +232,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
     this->TimeStepValues.push_back( mjd );
   }
   else if (hasAttribute(attributes, "time")){
-    cout << "has time!!" << endl;
     // Slava Merkin's LFM-Helio doesn't have the "mjd" parameter, but it does have "time":
     //time = number of seconds since beginning of simluation    
     float time;
@@ -197,7 +239,6 @@ int vtkLFMReader::RequestInformation (vtkInformation* request,
     this->TimeStepValues.push_back( time );
   }
   else{
-    cout << "gulp. has nothing." << endl;
     vtkWarningMacro("Could not find time information in file (attribute \"mjd\" or \"time\")! Defaulting to 0.0");
     this->TimeStepValues.push_back( 0.0 );
   }
@@ -355,8 +396,8 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       delete [] c;
       c = NULL;
     }
-  }
-  
+  }   
+
   /*****************************
    * Cell-centered Vector data *
    ****************************************************************************/
@@ -515,6 +556,84 @@ int vtkLFMReader::RequestData(vtkInformation* request,
       cellVector_avge->Delete();
     }
   }
+
+  /*************************
+   * Multi-fluid variables *
+   ****************************************************************************/
+
+  for (int fluidNumber=1; fluidNumber <= nSpecies; fluidNumber++){
+    stringstream ssVarName;
+    string varName;
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    // Density scalar
+    ssVarName << "rho_" << fluidNumber << "_";
+    varName = ssVarName.str();
+    if (this->CellArrayStatus[describeVariable[varName]]){
+      vtkDebugMacro(<< describeVariable[varName] << " Selected");
+      float *rho = new float [nPoints];
+      vtkFloatArray *multifluid_rho = NULL;
+      multifluid_rho = point2CellCenteredScalar(nip1,njp1,nkp1,rho);
+      multifluid_rho->SetName(describeVariable[varName].c_str());
+      output->GetPointData()->AddArray(multifluid_rho);
+      multifluid_rho->Delete();
+      delete [] rho;
+      rho = NULL;
+    }
+
+    // Density scalar
+    ssVarName.str(string());
+    ssVarName << "c_" << fluidNumber << "_";
+    varName = ssVarName.str();
+    if (this->CellArrayStatus[describeVariable[varName]]){
+      vtkDebugMacro(<< describeVariable[varName] << " Selected");
+      float *c = new float [nPoints];
+      vtkFloatArray *multifluid_c = NULL;
+      multifluid_c = point2CellCenteredScalar(nip1,njp1,nkp1,c);
+      multifluid_c->SetName(describeVariable[varName].c_str());
+      output->GetPointData()->AddArray(multifluid_c);
+      multifluid_c->Delete();
+      delete [] c;
+      c = NULL;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Velocity Vector
+    ssVarName.str(string());
+    ssVarName << "vx_" << fluidNumber << "_";
+    string xVarName = ssVarName.str();
+    ssVarName.str(string());
+    ssVarName << "vy_" << fluidNumber << "_";
+    string yVarName = ssVarName.str();
+    ssVarName.str(string());
+    ssVarName << "vz_" << fluidNumber << "_";
+    string zVarName = ssVarName.str();
+    if(this->CellArrayStatus[describeVariable[xVarName]]){
+      vtkDebugMacro(<< describeVariable[xVarName] << " Selected");
+      float *vx = new float [nPoints];
+      float *vy = new float [nPoints];
+      float *vz = new float [nPoints];
+      io->readVariable(xVarName, "", lfmGridInfo, vx);
+      io->readVariable(yVarName, "", lfmGridInfo, vy);
+      io->readVariable(zVarName, "", lfmGridInfo, vz);
+      
+      if(vx != NULL && vy != NULL && vz != NULL){
+	vtkFloatArray *multifluid_v = NULL;
+	multifluid_v = point2CellCenteredVector(nip1,njp1,nkp1, vx,vy,vz);
+	multifluid_v->SetName(describeVariable[xVarName].c_str());
+	output->GetPointData()->AddArray(multifluid_v);
+	multifluid_v->Delete();
+	
+	delete [] vx;
+	vx = NULL;
+	delete [] vy;
+	vy = NULL;
+	delete [] vz;
+	vz = NULL;
+      }
+    }
+  }  
     
   //Clean up Memory
   if (X_grid){    delete [] X_grid;    X_grid = NULL;  }
