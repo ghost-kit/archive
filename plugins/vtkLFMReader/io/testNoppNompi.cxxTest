@@ -44,6 +44,8 @@ class TestNoppNompi : public CxxTest::TestSuite
 
     TS_ASSERT( io->writeAttribute("fPi", (float) 3.1415926, 1) );
 
+    TS_ASSERT( io->writeAttribute("iPi", (int) 3, 1) );
+
     double data8byte[10] = { 3.1415926535897931, 3, 1, 4, 1, 5, 9, 2, 6, 5 };    
     array_info_t data8byteInfo;
     data8byteInfo.nDims = 1;
@@ -120,6 +122,12 @@ class TestNoppNompi : public CxxTest::TestSuite
     if (it != attributeNames.end() )
       TS_ASSERT_EQUALS( *it, "fPi" );
 
+    // is attribute "iPi" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "iPi");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "iPi" );
+
     // is attribute "Star Wars" in list?
     it = find(attributeNames.begin(), attributeNames.end(), "Star Wars");
     TS_ASSERT_DIFFERS( it, attributeNames.end() );
@@ -139,6 +147,10 @@ class TestNoppNompi : public CxxTest::TestSuite
     float fPi;
     TS_ASSERT(io->readAttribute("fPi", fPi));
     TS_ASSERT_DELTA( fPi, 3.1415926, 1e-6 );
+
+    int iPi;
+    TS_ASSERT(io->readAttribute("iPi", iPi));
+    TS_ASSERT_EQUALS( iPi, 3 );
 
     /****** Test reading variables ******/
     list<string> variableNames = io->getVariableNames();
