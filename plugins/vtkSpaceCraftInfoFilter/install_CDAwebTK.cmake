@@ -24,24 +24,19 @@ if (APPLE)
   execute_process(
       COMMAND ${PV_SUPERBUILD_LIST_DIR}/apple/fixup_plugin.py
             # The directory containing the plugin dylibs or the plugin itself.
-            ${TMP_DIR}/CDAwebTK//${SHARED_LIBRARY_PREFIX}CDAwebTK${SHARED_LIBRARY_SUFFIX}
+            ${TMP_DIR}/CDAwebTK/${SHARED_LIBRARY_PREFIX}CDAwebTK${SHARED_LIBRARY_SUFFIX}
             # names to replace (in order)
             "${PARAVIEW_BINARY_DIR}/lib/=@executable_path/../Libraries/"
-            "${QT_LIBRARY_DIR}/Qt=@executable_path/../Frameworks/Qt/"
+            "${QT_LIBRARY_DIR}/Qt=@executable_path/../Frameworks/Qt"
             "${QT_LIBRARY_DIR}/=@executable_path/../Libraries/"
             "libhdf5.7.3.0.dylib=@executable_path/../Libraries/libhdf5.1.8.9.dylib"
             "libhdf5_hl.7.3.0.dylib=@executable_path/../Libraries/libhdf5.1.8.9.dylib"
             )
 endif()
 
-message(STATUS "COMMAND: ${PV_SUPERBUILD_LIST_DIR}/apple/fixup_plugin.py
-            ${TMP_DIR}/CDAwebTK//${SHARED_LIBRARY_PREFIX}CDAwebTK${SHARED_LIBRARY_SUFFIX}
-            "${PARAVIEW_BINARY_DIR}/lib/=@executable_path/../Libraries/"
-            "${QT_LIBRARY_DIR}/Qt=@executable_path/../Frameworks/Qt/"
-            "${QT_LIBRARY_DIR}/=@executable_path/../Libraries/"
-            "libhdf5.7.3.0.dylib=@executable_path/../Libraries/libhdf5.1.8.9.dylib"
-            "libhdf5_hl.7.3.0.dylib=@executable_path/../Libraries/libhdf5.1.8.9.dylib"")
-
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E tar cvfz ${bundle_name} CDAwebTK
   WORKING_DIRECTORY ${TMP_DIR})
+
+message(STATUS "Archive Created in ${bundle_name}")
+message(STATUS "FIXUP IS NOW COMPLETE")
