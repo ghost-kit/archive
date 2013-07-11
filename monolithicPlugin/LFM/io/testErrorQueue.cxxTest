@@ -1,0 +1,71 @@
+//-*- mode: c++ -*-
+#ifndef __NOPPNOMPI_TEST_H__
+#define __NOPPNOMPI_TEST_H__
+
+#include "ErrorQueue.h"
+
+#include <string>
+
+using namespace std;
+
+class TestErrorQueue : public CxxTest::TestSuite
+{
+
+public:
+
+  void testPushString(void)
+  {
+    ErrorQueue e;
+    e.pushError("This is a string");
+    TS_ASSERT_EQUALS( e.getMessages(), "This is a string\n" );
+  }
+
+  void testPush_stringstream(void)
+  {
+    stringstream message;
+    message << "This is from a stringstream"<< endl
+	    << "So is this!" << endl;
+    ErrorQueue e;
+    e.pushError( message );
+    TS_ASSERT_EQUALS( e.getMessages(), "This is from a stringstream\nSo is this!\n\n" );
+  }
+
+//  void testPush_ostringstream(void)
+//  {
+//    ErrorQueue e;
+//    e.pushError( ostringstream().flush() << "This is from a stringstream");
+//    TS_ASSERT_EQUALS( e.getMessages(), "This is from a stringstream\n" );
+//  }
+
+  void testGetMessagesAsString( void )
+  {
+    ErrorQueue e;
+    e.pushError("Error line 1");
+    e.pushError("Error line 2");
+
+    string messages = e.getMessages();
+    
+    TS_ASSERT_EQUALS( messages, "Error line 1\nError line 2\n" );
+  }
+
+  void testPrintTo_cout( void )
+  {
+    ErrorQueue e;
+    e.pushError("Message 1 to cout");
+    e.pushError("Message 2 to cout");
+
+    //e.print(cout);
+  }
+
+  void testPrintTo_cerr( void )
+  {
+    ErrorQueue e;
+    e.pushError("Message 1 to cerr");
+    e.pushError("Message 2 to cerr");
+
+    //e.print(cerr);
+  }
+
+};
+
+#endif

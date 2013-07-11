@@ -1,0 +1,147 @@
+<ServerManagerConfiguration>
+<!-- Begin SpaceCraftInfo -->
+    <ProxyGroup name="sources">
+    <SourceProxy name="NASA CDAweb Space Craft Data Source" class="vtkSpaceCraftInfoSource">
+
+            <StringVectorProperty name="Temp File Path"
+                                  command="setTempPath"
+                                  number_of_elements="1"
+                                  panel_widget="PathSelectionProperty"
+                                  default_values="/tmp"
+                                  immediate_update="1"
+                                  panel_visibility="advanced">
+
+                <Documentation>
+                    The Temp file path is where ParaView will save all downloaded cdf files.  The default on *NIX systems is /temp/
+                </Documentation>
+
+
+            </StringVectorProperty>
+
+
+            <IntVectorProperty name="Minutes to Add"
+                               command="setOverShoot"
+                               number_of_elements="1"
+                               default_values="0"
+                               immediate_update="1"
+                               panel_visibility="advanced">
+
+                <Documentation>
+                    This property will tell the Filter how much time to overshoot on either end of the data request.  This allows for
+                    extra data to make fitting data properly easier.
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+            <DoubleVectorProperty name="TimeRangeInfoStart"
+                                  command="getStartTime"
+                                  information_only="1"
+                                  number_of_elements="1"
+                                  default_values="-1" >
+                <SimpleDoubleInformationHelper/>
+
+                <Documentation>
+                    Information on Start Time to Property panel
+                </Documentation>
+
+            </DoubleVectorProperty>
+
+            <DoubleVectorProperty name="TimeRangeInfoEnd"
+                                  command="getEndTime"
+                                  information_only="1"
+                                  number_of_elements="1"
+                                  default_values="-1" >
+                <SimpleDoubleInformationHelper/>
+
+                <Documentation>
+                    Information on End Time to Property panel
+                </Documentation>
+
+            </DoubleVectorProperty>
+
+            <DoubleVectorProperty name="TimeRange"
+                                    command="setTimeRange"
+                                    number_of_elements="2"
+                                    number_of_elements_per_command="2"
+                                    default_values="-1 -2"
+                                    immediate_update="1"
+                                    panel_visibility="never">
+
+                <Documentation>
+                    This property passes time values back to the source
+                </Documentation>
+
+
+            </DoubleVectorProperty>
+
+
+            <IntVectorProperty name="TimeFitHandler"
+                                command="SetTimeFitHandler"
+                                number_of_elements_per_command="1"
+                                label="Time Fit Handler"
+                                panel_visibility="default">
+
+                <EnumerationDomain name="enum">
+                    <Entry value="0" text="Fit to next lower available time" />
+<!--                    <Entry value="1" text="Fit to next higher available time" />
+                    <Entry value="2" text="Interpolate Linearly over time"/>-->
+                </EnumerationDomain>
+
+                <Documentation>
+                    Select how you would like to fit CDAweb data to your model data.
+                    1) "Fit to Next Lower" will provide data from the closest time less than model time
+                    2) "Fit to Next Upper" will proivde data from the closest time greater than model time
+                    3) "Interpolate Linearly" between the two closest valid data points
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+            <IntVectorProperty name="BadDataHandler"
+                                command="SetBadDataHandler"
+                                number_of_elements="1"
+                                default_values="2"
+                                label="Bad Data Handler"
+                                panel_visibility="default">
+
+                <EnumerationDomain name="enum">
+                   <Entry value="0" text="Raw Data (do nothing)"/>
+                   <!--  <Entry value="1" text="Linear Interpolation"/>-->
+                    <Entry value="2" text="Omit (Fill with NaN)"/>
+                </EnumerationDomain>
+
+                <Documentation>
+                    Select how you would like to handle bad data within the CDF files.
+                    1) "OMIT" will just not provide the value to the filter
+                    2) "Linear Interpolation" will interpolate over time
+                    3) "Raw Data" will provide data AS-IS from the CDF file
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+            <StringVectorProperty name="SpaceCraftInfoProperties"
+                                command="SetSCIData"
+                                number_of_elements_per_command="3"
+                                number_of_elements = "3"
+                                panel_widget="SpaceCraftInfoProperties"
+                                label = ""
+                                panel_visibility = "default">
+
+                <Documentation>
+                Select the Desired space craft and data sets from NASAs CDAweb.
+                </Documentation>
+
+            </StringVectorProperty>
+
+            <ExposedProperties>
+                <Property name = "SpaceCraftInfoProperties" />
+            </ExposedProperties>
+
+    </SourceProxy>
+    </ProxyGroup>
+    <!-- End SpaceCraftInfo -->
+
+
+</ServerManagerConfiguration>

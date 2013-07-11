@@ -1,0 +1,146 @@
+<ServerManagerConfiguration>
+
+
+  <ProxyGroup name="sources">
+    <SourceProxy
+       name="vtkEnlilReader"
+       class="vtkEnlilReader"
+       file_name_method="AddFileName">
+
+      <OutputPort name="Fields" index="0" />
+      <OutputPort name="MetaData" index="1" />
+
+
+      <IntVectorProperty
+         name="GridScaleFactor"
+         command="SetGridScaleType"
+         number_of_elements="1"
+         default_values="3">
+        <!-- Note: Enum values must match GRID_SCALE::ScaleType enum in vtkEnlilReader.h! -->
+        <EnumerationDomain name="enum">
+          <Entry value="0" text="No scaling: 1.0"/>
+          <Entry value="1" text="Earth Radius: 6.5e6 m"/>
+          <Entry value="2" text="Solar Radius: 6.955e8 m"/>
+          <Entry value="3" text="Astronomical Unit: 1.5e11 m"/>
+        </EnumerationDomain>
+        <Documentation>
+          This property indicates which transform mode will be used.
+        </Documentation>
+      </IntVectorProperty>
+
+    <IntVectorProperty
+        name="DataUnits"
+        command="SetDataUnits"
+        number_of_elements="1"
+        default_values="0">
+        <EnumerationDomain name="enum">
+            <Entry value="0" text="Native ENLIL Units"/>
+            <Entry value="1" text="SWPC units"/>
+            <Entry value="2" text="other units will be listed as defined"/>
+        </EnumerationDomain>
+        <Documentation>
+            This propertly tells the reade which unit systems to use.  Default is the native Enlil Reader Units.
+        </Documentation>
+    </IntVectorProperty>
+
+
+      <StringVectorProperty
+        name="PointArrayInfo"
+        information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Point"/>
+
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="PointArrayStatus"
+        command="SetPointArrayStatus"
+        number_of_elements="0"
+        repeat_command="1"
+        number_of_elements_per_command="2"
+        element_types = "2 0"
+        information_property="PointArrayInfo"
+        label="Point Arrays Available"
+        default_values = "0">
+
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This is the Cell Array Selectors.
+        </Documentation>
+
+      </StringVectorProperty>
+
+      <Hints>
+        <ReaderFactory
+           extensions="txt enc nc"
+           file_description="***GENERIC*** Data File"/>
+      </Hints>
+
+
+
+
+
+      <Documentation>
+        This Property makes it possible to open a series of files based on the integered input files.
+      </Documentation>
+
+
+      <Hints>
+        <ReaderFactory
+        extensions="enc nc"
+        file_description="Enlil Model Data File"/>
+      </Hints>
+
+
+        <ExposedProperties>
+<!-- exposed components -->
+          <Property name="GridScaleFactor" />
+
+          <Property name="CellArrayInfo" />
+          <Property name="CellArrayStatus" />
+
+          <Property name="PointArrayInfo" />
+          <Property name="PointArrayStatus" />
+
+        </ExposedProperties>
+
+      <StringVectorProperty name="FileNameInfo"
+        command="GetCurrentFileName"
+        information_only="1">
+        <SimpleStringInformationHelper />
+      </StringVectorProperty>
+
+      <StringVectorProperty name="FileNames"
+        clean_command="RemoveAllFileNames"
+        command="AddFileName"
+        animateable="1"
+        number_of_elements="0"
+        repeat_command="1">
+        <FileListDomain name="files" />
+        <Documentation>
+          The file or list of files to be read by the reader.
+          A list of files will be sequenced over time.
+        </Documentation>
+      </StringVectorProperty>
+
+      <!-- This exposes the Timestep Values to the ParaView UI.  Must be implemented in reader to get the time step values -->
+
+      <DoubleVectorProperty name="TimestepValues"
+        repeatable="1"
+        information_only="1">
+        <TimeStepsInformationHelper />
+        <Documentation>
+          Available timestep values.
+        </Documentation>
+      </DoubleVectorProperty>
+    </SourceProxy>
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

@@ -1,0 +1,277 @@
+//-*- mode: c++ -*-
+#ifndef __NOPPNOMPI_TEST_H__
+#define __NOPPNOMPI_TEST_H__
+
+#include <string>
+#include <sstream>
+
+#include <cxxtest/TestSuite.h>
+
+#include "Io.hpp"
+
+using namespace std;
+
+class TestNoppNompi : public CxxTest::TestSuite
+{
+ public:
+  string baseFilename;
+
+  void setUp( )
+  {
+    baseFilename = __FILE__;
+  }
+
+  void writeFile(const string &extension)
+  {
+    Io *io = Io::extensionSelector(extension);
+    if (io == NULL) {
+      stringstream errorMessage;
+      errorMessage << "ERROR:  Undefined I/O type ("<< extension << ").";
+      TS_WARN(errorMessage.str());      
+      TS_ASSERT(io);
+      return;
+    }
+
+    TS_ASSERT( io->isEnabled() );
+
+    string filename = baseFilename + string(".") + extension;
+    TS_ASSERT( io->openWrite(filename) );
+
+    string swQuote = "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects.";
+    TS_ASSERT( io->writeAttribute("Star Wars",swQuote, swQuote.length()) );
+
+    TS_ASSERT( io->writeAttribute("dPi", (double) 3.14159265358979311599796346854418516159057617187500000000000000000, 1) );
+
+    TS_ASSERT( io->writeAttribute("fPi", (float) 3.1415926, 1) );
+
+    double data8byte[10] = { 3.1415926535897931, 3, 1, 4, 1, 5, 9, 2, 6, 5 };    
+    array_info_t data8byteInfo;
+    data8byteInfo.nDims = 1;
+    data8byteInfo.nVars = 1;
+    // data8byteInfo.nAttr = 0; //???
+    // data8byteInfo.bytes = 0; //???
+    data8byteInfo.globalDims[0] = 10;
+    data8byteInfo.localDims[0] = 10;
+    data8byteInfo.offset[0] = 0;
+    data8byteInfo.base[0] = 0;
+    data8byteInfo.dataType = identify(data8byte[0]);
+    TS_ASSERT( io->writeVariable("data8byte", "testGroup", data8byteInfo, data8byte) );
+
+    float data4byte[100];
+    for (int i=0; i < 100; i++){
+      data4byte[i] = float(i) + float(i)/100.0;
+    }
+    array_info_t data4byteInfo;
+    data4byteInfo.nDims = 1;
+    data4byteInfo.nVars = 1;
+    // data4byteInfo.nAttr = 0; //???
+    // data4byteInfo.bytes = 0; //???
+    data4byteInfo.globalDims[0] = 100;
+    data4byteInfo.localDims[0] = 100;
+    data4byteInfo.offset[0] = 0;
+    data4byteInfo.base[0] = 0;
+    data4byteInfo.dataType = identify(data4byte[0]);
+    TS_ASSERT( io->writeVariable("data4byte", "testGroup", data4byteInfo, data4byte) );
+
+    TS_ASSERT( io->close() );
+
+    if (io){
+      delete io;
+      io = NULL;
+    }
+  }
+
+  void readFile( const string &extension )
+  {
+    Io *io = Io::extensionSelector(extension);
+    if (io == NULL) {
+      stringstream errorMessage;
+      errorMessage << "ERROR:  Undefined I/O type ("<< extension << ").";
+      TS_WARN(errorMessage.str());      
+      TS_ASSERT(io);
+      return;
+    }
+
+    TS_ASSERT( io->isEnabled() );
+
+    string filename = baseFilename + string(".") + extension;
+    TS_ASSERT( io->openRead(filename) );
+
+    /****** Test reading attributes ******/
+    list<string> attributeNames = io->getAttributeNames();
+    //for (std::list<string>::iterator it = attributeNames.begin(); it != attributeNames.end(); it++){
+    //  cout << extension << " attr " << *it << endl;
+    //}
+    TS_ASSERT_EQUALS( attributeNames.size(), 3 );
+
+    attributeNames.sort();
+
+    std::list<string>::iterator it;
+
+    // is attribute "dPi" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "dPi");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "dPi" );
+
+    // is attribute "fPi" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "fPi");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "fPi" );
+
+    // is attribute "Star Wars" in list?
+    it = find(attributeNames.begin(), attributeNames.end(), "Star Wars");
+    TS_ASSERT_DIFFERS( it, attributeNames.end() );
+    if (it != attributeNames.end() )
+      TS_ASSERT_EQUALS( *it, "Star Wars" );
+
+    string swQuote;
+    TS_ASSERT(io->readAttribute("Star Wars", swQuote));
+    TS_ASSERT_EQUALS( swQuote,
+		      "Vaporators? Sir, my first job was programing binary load lifters very similar to your vaporators in most respects."
+		      );
+
+    double dPi;
+    TS_ASSERT(io->readAttribute("dPi", dPi));
+    TS_ASSERT_DELTA( dPi, 3.1415926535897931, 1e-16);
+
+    float fPi;
+    TS_ASSERT(io->readAttribute("fPi", fPi));
+    TS_ASSERT_DELTA( fPi, 3.1415926, 1e-6 );
+
+    /****** Test reading variables ******/
+    list<string> variableNames = io->getVariableNames();
+    //for (std::list<string>::iterator it = variableNames.begin(); it != variableNames.end(); it++){
+    //  cout << extension << " attr " << *it << endl;
+    //}
+    TS_ASSERT_EQUALS( variableNames.size(), 2 );
+
+    // is variable "testGroup/data4byte" in list?
+    it = find(variableNames.begin(), variableNames.end(), "testGroup/data4byte");
+    TS_ASSERT_DIFFERS( it, variableNames.end() );
+    if (it != variableNames.end() )
+      TS_ASSERT_EQUALS( *it, "testGroup/data4byte" );
+
+    // is variable "testGroup/data8byte" in list?
+    it = find(variableNames.begin(), variableNames.end(), "testGroup/data8byte");
+    TS_ASSERT_DIFFERS( it, variableNames.end() );
+    if (it != variableNames.end() )
+      TS_ASSERT_EQUALS( *it, "testGroup/data8byte" );
+
+    /****** data8byte . . . ******/
+    array_info_t info;
+    info = io->getArrayInfo("data8byte", "testGroup");
+    TS_ASSERT_EQUALS(info.nDims, 1);
+    TS_ASSERT_EQUALS(info.nVars, 1);
+    TS_ASSERT_EQUALS(info.nAttr, 1);
+    TS_ASSERT_EQUALS(info.bytes, 80);   
+    TS_ASSERT_EQUALS(info.globalDims[0], 10);
+    TS_ASSERT_EQUALS(info.localDims[0], 10);
+    TS_ASSERT_EQUALS(info.offset[0], 0);
+    TS_ASSERT_EQUALS(info.base[0], 0);
+    TS_ASSERT_EQUALS(info.dataType, identify_double_t);
+
+    double data8byte[10];
+    array_info_t data8byteInfo;
+    data8byteInfo.nDims = 1;
+    data8byteInfo.nVars = 1;
+    // data8byteInfo.nAttr = 0; //???
+    // data8byteInfo.bytes = 0; //???
+    data8byteInfo.globalDims[0] = 10;
+    data8byteInfo.localDims[0] = 10;
+    data8byteInfo.offset[0] = 0;
+    data8byteInfo.base[0] = 0;
+    data8byteInfo.dataType = identify(data8byte[0]);
+
+    TS_ASSERT( io->readVariable("data8byte", "testGroup", data8byteInfo, data8byte) );
+
+    double expectedData8byte[10] = { 3.1415926535897931, 3, 1, 4, 1, 5, 9, 2, 6, 5 };        
+    for (int i=0; i < data8byteInfo.localDims[0]; i++){
+      TS_ASSERT_DELTA( data8byte[i], expectedData8byte[i], 1e-16 );
+    }
+
+    /****** data4byte . . . ******/
+    info = io->getArrayInfo("data4byte", "testGroup");
+    TS_ASSERT_EQUALS(info.nDims, 1);
+    TS_ASSERT_EQUALS(info.nVars, 1);
+    TS_ASSERT_EQUALS(info.nAttr, 1);
+    TS_ASSERT_EQUALS(info.bytes, 400);   
+    TS_ASSERT_EQUALS(info.globalDims[0], 100);
+    TS_ASSERT_EQUALS(info.localDims[0], 100);
+    TS_ASSERT_EQUALS(info.offset[0], 0);
+    TS_ASSERT_EQUALS(info.base[0], 0);
+    TS_ASSERT_EQUALS(info.dataType, identify_float_t);
+
+    float data4byte[100];
+    array_info_t data4byteInfo;
+    data4byteInfo.nDims = 1;
+    data4byteInfo.nVars = 1;
+    // data4byteInfo.nAttr = 0; //???
+    // data4byteInfo.bytes = 0; //???
+    data4byteInfo.globalDims[0] = 100;
+    data4byteInfo.localDims[0] = 100;
+    data4byteInfo.offset[0] = 0;
+    data4byteInfo.base[0] = 0;
+    data4byteInfo.dataType = identify(data4byte[0]);
+
+    TS_ASSERT( io->readVariable("data4byte", "testGroup", data4byteInfo, data4byte) );
+
+    for (int i=0; i < data4byteInfo.localDims[0]; i++){
+      TS_ASSERT_DELTA( data4byte[i], float(i) + float(i)/100.0, 1e-5 );
+    }
+
+    // test some failure modes now
+    int wrongDataType=999;
+    TS_ASSERT(io->readAttribute("dPi", wrongDataType)==false);
+
+    TS_ASSERT( io->close() );
+
+    if (io){
+      delete io;
+      io = NULL;
+    }
+  }
+
+  void testHdf( void ){
+    Io *io = new Hdf(0);
+    TS_ASSERT( io->openRead(string("/Users/schmitt/paraview/testData/doctoredAnimation/orig/LMs_mhd_1995-03-21T13-00-00Z.hdf")) );
+    TS_ASSERT( io->close() );
+    delete io;
+    io=NULL;
+    cout << "file opened" << endl;
+
+  }
+
+  void testHdf4( void )
+  {
+#ifdef HAS_HDF4
+    writeFile("hdf");
+    readFile("hdf");
+#else
+    TS_WARN("HAS_HDF4 not defined. Skipping Hdf4 test");
+#endif
+  }
+
+  void testHdf5( void )
+  {
+#ifdef HAS_HDF5
+    writeFile("hdf5");
+    readFile("hdf5");
+#else
+    TS_WARN("HAS_HDF5 not defined. Skipping Hdf5 test");
+#endif
+  }
+
+  void testPHdf5( void )
+  {
+#ifdef HAS_PHDF5
+    writeFile("phdf5");
+    readFile("phdf5");
+#else
+    TS_WARN("HAS_PHDF5 not defined. Skipping PHdf5 test");
+#endif
+  }
+};
+
+#endif

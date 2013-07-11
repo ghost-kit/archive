@@ -1,0 +1,148 @@
+<ServerManagerConfiguration>
+<!-- Begin SpaceCraftInfo -->
+    <ProxyGroup name="filters">
+    <SourceProxy name="NASA CDAweb Space Craft Data over Time (MJD)" class="vtkSpaceCraftInfoFilter">
+
+       <InputProperty name="Input" command="SetInputConnection">
+          <ProxyGroupDomain name="groups">
+            <Group name="sources"/>
+            <Group name="filters"/>
+          </ProxyGroupDomain>
+          <DataTypeDomain name="input_type">
+            <DataType value="vtkStructuredGrid"/>
+            <DataType value="vtkUnstructuredGrid"/>
+          </DataTypeDomain>
+
+          <InputArrayDomain name="input_array" attribute_type="point"
+                            number_of_components="1" optional="0"/>
+
+       </InputProperty>
+
+            <StringVectorProperty name="Temp File Path"
+                                  command="setTempPath"
+                                  number_of_elements="1"
+                                  panel_widget="PathSelectionProperty"
+                                  label="Temp File Path"
+                                  panel_visibility="advanced">
+
+                <Documentation>
+                    The Temp file path is where ParaView will save all downloaded cdf files.  The default on *NIX systems is /tmp/
+                </Documentation>
+
+
+            </StringVectorProperty>
+
+
+            <IntVectorProperty name="Minutes to Add"
+                               command="setOverShoot"
+                               number_of_elements="1"
+                               default_values="60"
+                               immediate_update="1"
+                               panel_visibility="advanced">
+
+                <Documentation>
+                    This property will tell the Filter how much time to overshoot on either end of the data request.  This allows for
+                    extra data to make fitting data properly easier.
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+
+           <DoubleVectorProperty name="TimeRangeInfoStart"
+                                  command="getStartTime"
+                                  information_only="1"
+                                  number_of_elements="1"
+                                  default_values="1" >
+                <SimpleDoubleInformationHelper/>
+
+                <Documentation>
+                    Information on Start Time to Property panel
+                </Documentation>
+
+            </DoubleVectorProperty>
+
+            <DoubleVectorProperty name="TimeRangeInfoEnd"
+                                  command="getEndTime"
+                                  information_only="1"
+                                  number_of_elements="1"
+                                  default_values="1" >
+                <SimpleDoubleInformationHelper/>
+
+                <Documentation>
+                    Information on End Time to Property panel
+                </Documentation>
+
+            </DoubleVectorProperty>
+
+            <IntVectorProperty name="TimeFitHandler"
+                                command="SetTimeFitHandler"
+                                number_of_elements_per_command="1"
+                                label="Time Fit Handler"
+                                panel_visibility="default">
+
+                <EnumerationDomain name="enum">
+                    <Entry value="0" text="Fit to next lower available time" />
+                   <!--
+                    <Entry value="1" text="Fit to next higher available time" />
+                    <Entry value="2" text="Interpolate Linearly over time"/>
+                    -->
+                </EnumerationDomain>
+
+                <Documentation>
+                    Select how you would like to fit CDAweb data to your model data.
+                    1) "Fit to Next Lower" will provide data from the closest time less than model time
+                    2) "Fit to Next Upper" will proivde data from the closest time greater than model time
+                    3) "Interpolate Linearly" between the two closest valid data points
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+            <IntVectorProperty name="BadDataHandler"
+                                label="Bad Data Handler"
+                                command="SetBadDataHandler"
+                                number_of_elements="1"
+                                default_values="2"
+                                panel_visibility="default">
+
+                <EnumerationDomain name="enum">
+                    <Entry value="0" text="Raw Data (do nothing)"/>
+                   <!-- <Entry value="1" text="Linear Interpolation"/> -->
+                    <Entry value="2" text="Omit (Fill with NaN)"/>
+                </EnumerationDomain>
+
+                <Documentation>
+                    Select how you would like to handle bad data within the CDF files.
+                    1) "OMIT" will just not provide the value to the filter
+                    2) "Linear Interpolation" will interpolate over time
+                    3) "Raw Data" will provide data AS-IS from the CDF file
+                </Documentation>
+
+            </IntVectorProperty>
+
+
+            <StringVectorProperty name="SpaceCraftInfoProperties"
+                                command="SetSCIData"
+                                number_of_elements_per_command="3"
+                                number_of_elements = "3"
+                                panel_widget="SpaceCraftInfoProperties"
+                                label = ""
+                                panel_visibility = "default">
+
+                <Documentation>
+                Select the Desired space craft and data sets from NASAs CDAweb.
+                </Documentation>
+
+            </StringVectorProperty>
+
+            <ExposedProperties>
+                <Property name = "SpaceCraftInfoProperties" />
+            </ExposedProperties>
+
+    </SourceProxy>
+    </ProxyGroup>
+    <!-- End SpaceCraftInfo -->
+
+
+</ServerManagerConfiguration>
