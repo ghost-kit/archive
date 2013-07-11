@@ -1,10 +1,10 @@
 PROJECT(CDAweb_Tool_Kit)
-cmake_minimum_required(VERSION 2.8.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.9 FATAL_ERROR)
 
 ##########################################################################
 # General Requirements:
 #  * This plugin requires PARAVIEW v. 4.0.1 or LATER because of feature set used
-#  * This plugin requires CMAKE 2.8.8 or later because ParaView Requires it
+#  * This plugin requires CMAKE 2.8.9 or later because ParaView Requires it
 #  * This plugin utilizes BOOST.  if boost is not built into ParaView you must have access to the
 #       BOOST static DATE_TIME library
 #  * If building on Joshua Murphy's mac for distribution, use the -DBUILD_MAC=1 flag
@@ -42,7 +42,7 @@ endif( PREFIX )
 
 #convienience funciton for ME. :)
 if( BUILD_MAC )
-  message(Warning ": Your have selected to build on Joshua Murphy's Development Mac [At LASP], so I hope that is where you are!!!")
+  message(WARNING ": Your have selected to build on Joshua Murphy's Development Mac [At LASP], so I hope that is where you are!!!")
   message(STATUS "Changing your compilers Now!")
   set(CMAKE_C_COMPILER /Applications/Xcode-4.3.app/Contents/Developer/usr/bin/gcc)
   set(CMAKE_CXX_COMPILER /Applications/Xcode-4.3.app/Contents/Developer/usr/bin/g++)
@@ -140,7 +140,7 @@ set(PLUGIN_SM_src vtkSpaceCraftInfoFilter.cpp
 
 
 #plugin (Filter for CDAweb)
-ADD_PARAVIEW_PLUGIN(CDAWebTK "1.0.beta1"
+ADD_PARAVIEW_PLUGIN(CDAWebTK "1.0.0.beta1"
         SERVER_MANAGER_XML ${SM_XML}
         GUI_INTERFACES ${PROP_ifaces}
         SERVER_MANAGER_SOURCES ${PLUGIN_SM_src}
@@ -152,6 +152,8 @@ ADD_PARAVIEW_PLUGIN(CDAWebTK "1.0.beta1"
 target_link_libraries(CDAWebTK ${LIBS})
 
 
+
+#for the mac distribution build
 add_custom_target(dist
     COMMAND ${CMAKE_COMMAND}  -DBINARY_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}
                               -DPV_SUPERBUILD_LIST_DIR:PATH=${ParaView_SuperBuild_DIR}/Projects
