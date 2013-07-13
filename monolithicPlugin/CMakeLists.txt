@@ -87,6 +87,8 @@ if(NOT SUPERBUILD)
 else(SUPERBUILD)
     set(LIBS ${LIBS} boost_date_time.a)
     message(STATUS "LIBS: ${LIBS}")
+    set(CMAKE_LIBRARY_PATH /home/jjm390/Developer/superbuild/install/lib)
+
 endif(NOT SUPERBUILD)
 
 if(CDF_LIBRARIES)
@@ -125,13 +127,13 @@ QT4_WRAP_UI(
 # Property Widgets
 set(CDA_outifaces0)
 set(CDA_outsrcs0)
-ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
+ADD_PARAVIEW_PROPERTY_WIDGET(CDA_outifaces0 CDA_outsrcs0
         TYPE "SpaceCraftInfoProperties"
         CLASS_NAME "ScInfoPropWidget")
 
 set(CDA_outifaces1)
 set(CDA_outsrcs1)
-ADD_PARAVIEW_PROPERTY_WIDGET(outifaces1 outsrcs1
+ADD_PARAVIEW_PROPERTY_WIDGET(CDA_outifaces1 CDA_outsrcs1
         TYPE "PathSelectionProperty"
         CLASS_NAME "pathSelector")
 
