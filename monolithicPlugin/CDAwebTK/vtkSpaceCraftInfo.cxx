@@ -38,7 +38,7 @@
 #include "QtXml"
 #include "QNetworkAccessManager"
 #include "QNetworkReply"
-#include "QURL"
+#include "qurl.h"
 #include "QStringList"
 #include "qeventloop.h"
 #include "QtAlgorithms"

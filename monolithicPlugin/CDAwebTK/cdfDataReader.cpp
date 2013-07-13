@@ -230,7 +230,7 @@ QList<QVector<QVariant> > cdfDataReader::getGlobalAttribute(int64_t Attribute)
                             for(int y = 0; y < numElements; y++)
                             {
                                 //add to the Data Record
-                                DataRecord.push_back(QVariant(data[y]));
+                                DataRecord.push_back(QVariant((qlonglong)data[y]));
                             }
 
                             //add to the return values
@@ -426,7 +426,7 @@ QList<QVector<QVariant > > cdfDataReader::getZVariableAttribute(const int64_t At
                         for(int y = 0; y < numElements; y++)
                         {
                             //add to the Data Record
-                            DataRecord.push_back(QVariant(data[y]));
+                            DataRecord.push_back(QVariant((qlonglong)data[y]));
                         }
 
                         //add to the return values
@@ -978,7 +978,7 @@ bool cdfDataReader::cToQVector(void *data, long dataSize, long dataType ,QVector
         int64_t *dataI8 = (int64_t*)data;
         for(int x = 0; x < dataSize; x++)
         {
-            vector.push_back(QVariant(dataI8[x]));
+            vector.push_back(QVariant((qlonglong)dataI8[x]));
         }
         break;
     }

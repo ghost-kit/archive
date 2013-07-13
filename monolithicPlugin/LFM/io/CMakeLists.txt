@@ -29,11 +29,17 @@ endif (HDF4_FOUND)
 ########
 # Hdf5 #
 ########################################################################
-find_package(Hdf5)
+if(SUPERBUILD)
+  set(HDF5_LIBRARIES hdf5)
+  add_definitions(-DHAS_HDF5)
+  message(STATUS "FOUND HDF5")
+else(NOT SUPERBUILD)
+find_package(HDF5)
 if (HDF5_FOUND)
   set(HDF5_INCLUDE_DIRS ${HDF5_C_INCLUDE_DIR})
   set( HDF5_LIBRARIES ${HDF5_hdf5_LIBRARY} ${HDF5_m_LIBRARY} ${HDF5_z_LIBRARY} )
   add_definitions(-DHAS_HDF5)
+  message(STATUS "FOUND HDF5")
 
   #################
   # Parallel Hdf5 #
@@ -41,8 +47,10 @@ if (HDF5_FOUND)
   if (HDF5_IS_PARALLEL)
     add_definitions(-DHAS_PHDF5)
   endif (HDF5_IS_PARALLEL)
+else(NOT HDF5_FOUND)
+    message(WARNING "HDF5 NOT FOUND")
 endif (HDF5_FOUND)
-
+endif(SUPERBUILD)
 ##############
 # io library #
 ########################################################################

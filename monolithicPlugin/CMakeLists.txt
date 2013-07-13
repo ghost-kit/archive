@@ -42,6 +42,7 @@ endif( PREFIX )
 
 #convienience funciton for ME. :)
 if( BUILD_MAC )
+  set(SUPERBUILD=1)
   message(WARNING ": Your have selected to build on Joshua Murphy's Development Mac [At LASP], so I hope that is where you are!!!")
   message(STATUS "Changing your compilers Now!")
   set(CMAKE_C_COMPILER /Applications/Xcode-4.3.app/Contents/Developer/usr/bin/gcc)
@@ -76,17 +77,34 @@ endif()
 include(ParaViewPlugins)
 
 #needed for these plugins
-# At present I am specifying ${LIBCDF_INCLUDE_DIRS} and ${LIBCDF_LIBRARIES} from the cmake command line
-set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost COMPONENTS DATE_TIME)
-include_directories(${LIBCDF_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} CDAwebTK LFM enlil)
-set(LIBS ${LIBS} ${LIBCDF_LIBRARIES} ${Boost_LIBRARIES})
+# At present I am specifying ${CDF_INCLUDE_DIRS} and ${CDF_LIBRARIES} from the cmake command line
 
+if(NOT SUPERBUILD)
+    set(Boost_USE_STATIC_LIBS ON)
+    set(Boost_USE_MULTITHREADED ON)
+    find_package(Boost COMPONENTS DATE_TIME REQUIRED)
+    set(LIBS ${LIBS} ${Boost_LIBRARIES})
+else(SUPERBUILD)
+    set(LIBS ${LIBS} boost_date_time.a)
+    message(STATUS "LIBS: ${LIBS}")
+endif(NOT SUPERBUILD)
 
+if(CDF_LIBRARIES)
+    include_directories(${CDF_INCLUDE_DIRS})
+    set(LIBS ${LIBS} ${CDF_LIBRARIES})
+else(NOT CDF_LIBRARIES)
+    message(FATAL_ERROR "CDF NOT FOUND!  Please provide CDF install information with CDF_LIBRARIES and CDF_INCLUDE_DIRS varaibles")
+endif(CDF_LIBRARIES)
+
+#set required include directories
+INCLUDE_DIRECTORIES( CDAwebTK LFM enlil )
+
+###########################################################
+###################  CDA WEB TOOL KIT #####################
+###########################################################
 # wrap QT
 QT4_WRAP_CPP(
-    MOC_BUILT_SOURCES
+    CDA_MOC_BUILT_SOURCES
     CDAwebTK/filterNetworkAccessModule.h
     CDAwebTK/ScInfoPropWidget.h
     CDAwebTK/status.h
@@ -98,33 +116,33 @@ QT4_WRAP_CPP(
 
 # Wrap UI
 QT4_WRAP_UI(
-    UI_BUILT_SOURCES
+    CDA_UI_BUILT_SOURCES
     CDAwebTK/ScInfoPropWidget.ui
     CDAwebTK/status.ui
     CDAwebTK/pathSelector.ui
     )
 
 # Property Widgets
-set(outifaces0)
-set(outsrcs0)
+set(CDA_outifaces0)
+set(CDA_outsrcs0)
 ADD_PARAVIEW_PROPERTY_WIDGET(outifaces0 outsrcs0
         TYPE "SpaceCraftInfoProperties"
         CLASS_NAME "ScInfoPropWidget")
 
-set(outifaces1)
-set(outsrcs1)
+set(CDA_outifaces1)
+set(CDA_outsrcs1)
 ADD_PARAVIEW_PROPERTY_WIDGET(outifaces1 outsrcs1
         TYPE "PathSelectionProperty"
         CLASS_NAME "pathSelector")
 
 # Set up files for compilation
-set(SM_XML 	CDAwebTK/SpaceCraftInfoFilter.xml 
+set(CDA_SM_XML 	CDAwebTK/SpaceCraftInfoFilter.xml
 			CDAwebTK/SpaceCraftInfoSource.xml)
 			
-set(PROP_ifaces ${outifaces0} ${outifaces1})
-set(PROP_src ${outsrcs0} ${outsrcs1})
-set(QT_Auto_src ${MOC_BUILT_SOURCES} ${UI_BUILT_SOURCES})
-set(PLUGIN_src CDAwebTK/filterNetworkAccessModule.cpp
+set(CDA_PROP_ifaces ${CDA_outifaces0} ${CDA_outifaces1})
+set(CDA_PROP_src ${CDA_outsrcs0} ${CDA_outsrcs1})
+set(CDA_QT_Auto_src ${CDA_MOC_BUILT_SOURCES} ${CDA_UI_BUILT_SOURCES})
+set(CDA_PLUGIN_src CDAwebTK/filterNetworkAccessModule.cpp
                 CDAwebTK/vtkSpaceCraftInfo.cxx
                 CDAwebTK/ScInfoPropWidget.cpp
                 CDAwebTK/status.cpp
@@ -137,19 +155,50 @@ set(PLUGIN_src CDAwebTK/filterNetworkAccessModule.cpp
                 CDAwebTK/pathSelector.cxx
                 CDAwebTK/newFileChooserWidget.cxx)
 
-set(PLUGIN_SM_src CDAwebTK/vtkSpaceCraftInfoFilter.cpp
+set(CDA_PLUGIN_SM_src CDAwebTK/vtkSpaceCraftInfoFilter.cpp
                   CDAwebTK/vtkSpaceCraftInfoSource.cpp)
+
+
+###########################################################
+##################  ENLIL READER PLUGIN ###################
+###########################################################
+add_subdirectory(enlil/cxform-0.71)
+GET_DIRECTORY_PROPERTY(CXFORM_INCLUDES DIRECTORY enlil/cxform-0.71 DEFINITION CXFORM_INCLUDES)
+GET_DIRECTORY_PROPERTY(CXFORM_LIBRARIES DIRECTORY enlil/cxform-0.71 DEFINITION CXFORM_LIBRARIES)
+INCLUDE_DIRECTORIES(${CXFORM_INCLUDES})
+
+set(LIBS ${LIBS} ${CXFORM_LIBRARIES} vtkNetCDF_cxx)
+
+set(ENLIL_SM_XML enlil/vtkEnlilReader.xml)
+set(ENLIL_UI_XML enlil/vtkEnlilGUI.xml)
+set(ENLIL_SM_SRC enlil/vtkEnlilReader.cxx)
+set(ENLIL_SRC    enlil/readerCache.cpp enlil/readerCacheManager.cpp)
+
+###########################################################
+###################  LFM READER PLUGIN ####################
+###########################################################
+add_subdirectory(LFM/io)
+GET_DIRECTORY_PROPERTY(IO_INCLUDES DIRECTORY LFM/io DEFINITION IO_INCLUDES)
+GET_DIRECTORY_PROPERTY(IO_LIBRARIES DIRECTORY LFM/io DEFINITION IO_LIBRARIES)
+include_directories( ${IO_INCLUDES} )
+
+set(LIBS ${LIBS} ${IO_LIBRARIES})
+
+set(LFM_SM_XML LFM/vtkLFMReader.xml)
+set(LFM_UI_XML LFM/vtkLFMGUI.xml)
+set(LFM_SM_SRC LFM/vtkLFMReader.xml)
 
 
 #plugin (Filter for CDAweb)
 ADD_PARAVIEW_PLUGIN(SPTK "1.0.0.beta1"
-        SERVER_MANAGER_XML ${SM_XML}
-        GUI_INTERFACES ${PROP_ifaces}
-        SERVER_MANAGER_SOURCES ${PLUGIN_SM_src}
-        SOURCES ${PLUGIN_src}
-                ${QT_Auto_src}
-                ${PROP_src}
-                )
+        SERVER_MANAGER_XML ${CDA_SM_XML} ${ENLIL_SM_XML} ${LFM_SM_XML}
+        GUI_RESOURCE_FILES ${ENLIL_UI_XML} ${LFM_UI_XML}
+        GUI_INTERFACES ${CDA_PROP_ifaces}
+        SERVER_MANAGER_SOURCES ${CDA_PLUGIN_SM_src} ${ENLIL_SM_SRC} ${LFM_SM_SRC}
+        SOURCES ${CDA_PLUGIN_src}
+                ${CDA_QT_Auto_src}
+                ${CDA_PROP_src}
+                ${ENLIL_SRC})
 
 target_link_libraries(SPTK ${LIBS})
 

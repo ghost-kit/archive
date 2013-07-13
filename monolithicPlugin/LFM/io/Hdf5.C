@@ -1,4 +1,6 @@
 #include "Hdf5.hpp"
+#include <cstdlib>
+#include <string.h>
 
 using namespace std;
 

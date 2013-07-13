@@ -3,7 +3,7 @@
 #include <iostream>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <QURL>
+#include <qurl.h>
 #include <QObject>
 #include <QtXml>
 #include <QMap>
