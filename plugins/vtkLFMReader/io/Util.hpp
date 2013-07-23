@@ -77,7 +77,7 @@ template<class T> identify_data_type identify(const T& v) {
   else if ( v_type == typeid(signed char) )   { return identify_char_t;   }
   else if ( v_type == typeid(char*) )         { return identify_string_t; }
   else if ( v_type == typeid(const char*) )   { return identify_string_t; }
-  else if ( v_type == typeid(char[]) )        { return identify_string_t; }
+  else if ( v_type == typeid(char) )        { return identify_string_t; }
   else if ( v_type == typeid(std::string) )        { return identify_string_t; }
   else if ( v_type == typeid(const std::string) )  { return identify_string_t; }
 
