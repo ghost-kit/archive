@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 2.8)
 option (USE_APP "Use A++ and/or P++ for array storage" OFF)
 option (USE_MPI "Build parallel I/O (Warning: leave this off, it's untested)" OFF)
 
+#this is the temp fix for fPIC error... just uncomment and rebuild
+#set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} -fPIC)
+
 if (USE_APP)
   add_definitions(-DBUILD_WITH_APP)
 endif (USE_APP)

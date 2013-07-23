@@ -2,6 +2,8 @@
 
 #include "io/Io.hpp"
 
+#include <algorithm>
+
 #include "vtkPointData.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
