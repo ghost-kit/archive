@@ -556,9 +556,10 @@ static herr_t appendAttributeNameToList(hid_t id, const char *name, const H5A_in
 const list<string> Hdf5::getAttributeNames() const
 {
   list<string> attrNames;
+#ifdef HAS_HDF5
   //herr_t H5Aiterate2( hid_t obj_id, H5_index_t idx_type, H5_iter_order_t order, hsize_t *n, H5A_operator2_t op, void *op_data, )
   H5Aiterate2( fileId, H5_INDEX_NAME, H5_ITER_NATIVE, NULL, appendAttributeNameToList, &attrNames);
-
+#endif
   return attrNames;
 }
 
