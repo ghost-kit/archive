@@ -715,7 +715,7 @@ void vtkLFMReader::PrintSelf(ostream &os, vtkIndent indent)
 //----------------------------------------------------------------
 
 vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1, const int &nkp1,
-						const float const *X_grid, const float const *Y_grid, const float const *Z_grid)
+						const float *const X_grid, const float *const Y_grid, const float *const Z_grid)
 {
   const int ni = nip1-1;
   const int nim1 = ni-1;
@@ -809,7 +809,7 @@ vtkPoints *vtkLFMReader::point2CellCenteredGrid(const int &nip1, const int &njp1
 
 //----------------------------------------------------------------
 
-vtkFloatArray *vtkLFMReader::point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float const *data)
+vtkFloatArray *vtkLFMReader::point2CellCenteredScalar(const int &nip1, const int &njp1, const int &nkp1,  const float *const data)
 {
   return point2CellCenteredVector(nip1,njp1,nkp1, data, NULL, NULL);
 }
@@ -818,7 +818,7 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredScalar(const int &nip1, const int
 
 
 vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int &njp1, const int &nkp1,
-						      const float const *xData, const float const *yData, const float const *zData)
+						      const float *const xData, const float *const yData, const float *const zData)
 {
   const int ni = nip1-1;
   const int nim1 = ni-1;
@@ -924,8 +924,8 @@ vtkFloatArray *vtkLFMReader::point2CellCenteredVector(const int &nip1, const int
 //--------------------------------------------------------------------
 
 void vtkLFMReader::calculateElectricField(const int &nip1, const int &njp1, const int &nkp1,
-					  const float const *X_grid, const float const *Y_grid, const float const *Z_grid,
-					  const float const *ei, const float const *ej, const float const *ek,
+					  const float *const X_grid, const float *const Y_grid, const float *const Z_grid,
+					  const float *const ei, const float *const ej, const float *const ek,
 					  float *ex, float *ey, float *ez)
 {
   const int ni = nip1-1;
