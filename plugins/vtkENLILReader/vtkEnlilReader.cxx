@@ -585,13 +585,13 @@ int vtkEnlilReader::LoadVariableData(vtkInformationVector* outputVector)
                 //                                             << std::endl;
 
                 //when loading from state fiile, we may get some junk marking us to read bad data
-                if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
-                {
-                    //                    std::cout << "Bad SubExtents" << std::endl;
-                    this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
-                    this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
+//                if(this->ExtentOutOfBounds(this->SubExtent, this->WholeExtent))
+//                {
+//                    //                    std::cout << "Bad SubExtents" << std::endl;
+////                    this->printExtents(this->WholeExtent, (char*)"Whole Extents: ");
+////                    this->printExtents(this->SubExtent, (char*)"Bad SubExtent: ");
 
-                }
+//                }
 
                 this->LoadArrayValues(array, outputVector);
                 this->SetProgress(progress);
@@ -839,7 +839,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
                 if(subExtents < wholeExtents)
                 {
                     //add the element to the cache
-                    this->bFieldCache.addCacheElement(this->current_MJD, subExtents, DataArray);
+                    //lets not use the cache yet.. not ready for prime time
+                    //TODO: finish cache system
+
+                    //this->bFieldCache.addCacheElement(this->current_MJD, subExtents, DataArray);
 
                 }
 
@@ -877,7 +880,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
                 if(subExtents < wholeExtents)
                 {
                     //add the element to the cache
-                    this->velocityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
+                    //lets not use the cache yet.. not ready for prime time
+                    //TODO: finish cache system
+
+                    //this->velocityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
 
                 }
             }
@@ -939,7 +945,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
                 if(subExtents < wholeExtents)
                 {
                     //add the element to the cache
-                    this->pDensityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
+                    //lets not use the cache yet.. not ready for prime time
+                    //TODO: finish cache system
+
+                    //this->pDensityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
 
                 }
             }
@@ -970,7 +979,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
                 if(subExtents < wholeExtents)
                 {
                     //add the element to the cache
-                    this->cDensityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
+                    //lets not use the cache yet.. not ready for prime time
+                    //TODO: finish cache system
+
+                    //this->cDensityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
 
                 }
             }
@@ -999,7 +1011,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
                 if(subExtents < wholeExtents)
                 {
                     //add the element to the cache
-                    this->polarityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
+                    //lets not use the cache yet.. not ready for prime time
+                    //TODO: finish cache system
+
+                    //this->polarityCache.addCacheElement(this->current_MJD, subExtents, DataArray);
 
                 }
             }
@@ -1028,7 +1043,10 @@ int vtkEnlilReader::LoadArrayValues(std::string array, vtkInformationVector* out
                 if(subExtents < wholeExtents)
                 {
                     //add the element to the cache
-                    this->temperatureCache.addCacheElement(this->current_MJD, subExtents, DataArray);
+                    //lets not use the cache yet.. not ready for prime time
+                    //TODO: finish cache system
+
+                    //this->temperatureCache.addCacheElement(this->current_MJD, subExtents, DataArray);
 
                 }
 
